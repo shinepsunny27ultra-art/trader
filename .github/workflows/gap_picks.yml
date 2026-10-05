@@ -1,0 +1,46 @@
+name: NSE 08:45 AM Morning Gap Ranker
+
+on:
+  schedule:
+    # 03:15 UTC is 08:45 AM IST (Monday to Friday)
+    - cron: '15 3 * * 1-5'
+  workflow_dispatch: # Allows manual trigger anytime from GitHub UI
+
+jobs:
+  morning_picks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run 08:45 AM Morning Gap Ranker
+        env:
+          PYTHONPATH: src
+        run: |
+          python scripts/gap_reversal.py picks --push
+
+      - name: Commit and Push Today's Picks to GitHub
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data/gap_reversal/picks.json 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(data): publish morning gap picks [skip ci]"
+            git push origin HEAD
+          fi
