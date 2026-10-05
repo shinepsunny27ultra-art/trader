@@ -167,6 +167,15 @@ def cmd_picks(args) -> None:
         f"\n~₹{CONFIG.capital / CONFIG.picks:,.0f} each, based on {last} closes." + ranked
     )
     push(f"📉 Gap-reversal shorts for {session:%a %d %b}", body, enabled=args.push)
+    try:
+        import subprocess
+        subprocess.run(["git", "add", "-f", str(OUT / "picks.json"), str(ROOT / "data" / "intraday" / "live.json")],
+                       check=False, cwd=str(ROOT), capture_output=True)
+        subprocess.run(["git", "commit", "-m", f"chore(data): publish morning picks for {session} [skip ci]"],
+                       check=False, cwd=str(ROOT), capture_output=True)
+        subprocess.run(["git", "push", "origin", "main"], check=False, cwd=str(ROOT), timeout=30, capture_output=True)
+    except Exception:
+        pass
 
 
 def cmd_final(args) -> None:
