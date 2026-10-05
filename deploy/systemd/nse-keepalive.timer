@@ -1,0 +1,9 @@
+[Unit]
+Description=Ping Streamlit Cloud and local app every 10 minutes to prevent sleep
+
+[Timer]
+OnCalendar=*:00/10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
