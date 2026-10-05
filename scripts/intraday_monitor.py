@@ -76,6 +76,16 @@ def run(session: date, nbar: int, *, fetch: bool, push: bool, record: bool, now:
     if record and nbar > M.SQ_BAR:
         n = M.record_day(session, payload["signals"])
         print(f"  shadow book: {n} paper trades recorded for {session}")
+    # Auto-push live data to GitHub on completed 5-min bars so Streamlit Cloud stays live
+    if now.minute % 5 == 0:
+        try:
+            import subprocess
+            subprocess.run(["git", "add", "-f", str(M.LIVE_PATH)], cwd=str(M.ROOT), check=False, capture_output=True)
+            subprocess.run(["git", "commit", "-m", f"chore(data): live sync bar {payload.get('last_bar')} [skip ci]"],
+                           cwd=str(M.ROOT), check=False, capture_output=True)
+            subprocess.run(["git", "push", "origin", "main"], cwd=str(M.ROOT), check=False, timeout=25, capture_output=True)
+        except Exception:
+            pass
     return payload
 
 
