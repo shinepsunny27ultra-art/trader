@@ -84,7 +84,7 @@ Scripts (`scripts/`):
 | `compare_rankers.py` | Production-faithful walk-forward A/B with Holm and DSR. |
 | `backfill_nse.py`, `backfill_corp.py` | History backfills. |
 | `ticket_api.py` | JSON API for the Android app. |
-| `intraday_monitor.py` | Subcommands `scan [--push] [--force]` (live NIFTY-500 + gap-book watch), `replay --date`, `board` (shadow-board stats). |
+| `intraday_monitor.py` | Subcommands `scan [--push] [--force]` (live NIFTY-500 + indices + gap-book watch), `replay --date`, `board` (shadow-board stats), `catchup` (grade shadow-board sessions missed while the machine was off). |
 
 ## 4. Daily data flow and schedule (systemd user timers, IST)
 
@@ -93,7 +93,7 @@ Scripts (`scripts/`):
 | 08:45 Mon–Fri | `nse-gap-picks` | Holiday check, then `refresh()` the NSE files, corporate events and global closes. `learn_through(previous session)` grades every session not yet learned (a day the laptop was off included) and updates the guard and CUSUM. Features are built for today and ranked by the guarded expert. Shorts whose stop lies beyond the price band are dropped (reserves move up). Limits are attached and `picks.json` is written, with a dated copy in `gap_reversal/history/` (what `record` grades). Push, and `cloud_sync` it to GitHub. |
 | 09:10:30 | `nse-gap-final` | Fetch and archive the pre-open auction. If a promoted open model passes its guard, re-rank and push the final list. Otherwise the 08:45 list stands. |
 | 09:18 | `nse-gap-levels` | Push stop prices from the official opens (the archived auction; the first 5-minute bar only if no archive exists). Names that opened below their limit are marked NOT FILLED. |
-| every minute 09:20–15:45 (completed 5-minute bars) | `nse-intraday-scan` | `intraday_monitor.py scan --push`: Yahoo 5-minute bars for NIFTY-500 + today's gap shorts → `data/intraday/live.json`. Phone alert (deduplicated per day in `alerts_YYYYMMDD.json`) only when a gap-book short hits or comes within 1% of its stop. After 15:15 the day's paper shadow-board trades are appended to `shadow_book.csv`. |
+| every minute 09:20–15:45 (completed 5-minute bars) | `nse-intraday-scan` | `intraday_monitor.py scan --push`: Yahoo 5-minute bars for NIFTY-500, today's gap shorts and NIFTY 50 / NIFTY BANK / India VIX → `data/intraday/live.json` (snapshot, breadth through the day, sector board). Phone alert (deduplicated per day in `alerts_YYYYMMDD.json`) only when a gap-book short hits or comes within 1% of its stop. After 15:15 the day's paper shadow-board trades are appended to `shadow_book.csv`; the first scan of a day grades any session missed while the machine was off (`board_sessions.json`, once per day per session). |
 | 15:40 | `nse-gap-record` | Record the session's *published* list in `paper_book.csv`: entry at the archived official open, then the 5-minute path (`NO_FILL` rows for unfilled limits). `nse-gap-monitor` (16:05) and `nse-health` are ordered after it, so a boot-time catch-up reports on fresh data. |
 | 19:00 daily | `nse-gap-learn` | `learn.py --if-needed` retrains on Saturdays, on a drift alarm, or when no review exists. It runs `weekly()`: walk-forward over the last 2 years with quarterly refits, and promotes each model only if it beats its reference with paired t ≥ 2 and a positive edge. |
 | every 30 min | `nse-health` | `health_check.py`: failures exit 1, warnings exit 0. |

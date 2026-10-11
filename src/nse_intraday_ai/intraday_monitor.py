@@ -2,7 +2,7 @@
 
 What it is
 ----------
-* **Monitor** (information, not advice): every 5 minutes during the session the
+* **Monitor** (information, not advice): every minute during the session the
   5-minute bars of the NIFTY-500 are refreshed into the candle cache and turned
   into a snapshot: stocks in play (volume vs the same time of day over the last
   20 sessions), gainers/losers, new session highs/lows, names near their price
@@ -40,6 +40,7 @@ ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "intraday"
 LIVE_PATH = OUT / "live.json"
 BOOK_PATH = OUT / "shadow_book.csv"
+GRADED_PATH = OUT / "board_sessions.json"   # sessions graded (incl. zero-signal days) / catch-up attempts
 DB_PATH = ROOT / "data" / "candles.sqlite3"
 UNIVERSE_CSV = ROOT / "data" / "nifty500_symbols.csv"
 
@@ -49,7 +50,9 @@ FIRST_HOUR = 12                # bars 0..11 = 09:15..10:15
 COST_BPS = 13.3                # Groww MIS round trip incl. 3 bps slippage per leg
 BASELINE_SESSIONS = 20
 MIN_SESSIONS = 60              # live sessions before a strategy can be reviewed
+BOARD_START = date(2026, 10, 5)  # first live session of the shadow board (after the research cut-off)
 NEAR_STOP_PCT = 1.0            # gap-book alert threshold
+INDICES = {"^NSEI": "NIFTY 50", "^NSEBANK": "NIFTY BANK", "^INDIAVIX": "India VIX"}
 NOISE_DESC = {
     "ESOP/ESOS/ESPS", "Trading Window", "Copy of Newspaper Publication", "Loss of Share Certificates",
     "Duplicate Share Certificate", "Certificate under SEBI (Depositories and Participants) Regulations, 2018",
@@ -112,10 +115,10 @@ def completed_bars(now: datetime) -> int:
     return int(min(max(minutes // 5, 0), NBARS))
 
 
-def _read_5m(symbols: list[str], start: date, end: date, db_path: Path) -> pd.DataFrame:
+def _read_5m(symbols: list[str], start: date, end: date, db_path: Path, suffix: str = ".NS") -> pd.DataFrame:
     a = pd.Timestamp(start, tz=IST).tz_convert("UTC").isoformat()
     b = (pd.Timestamp(end, tz=IST) + pd.Timedelta(days=1)).tz_convert("UTC").isoformat()
-    tickers = [f"{s}.NS" for s in symbols]
+    tickers = [f"{s}{suffix}" for s in symbols]
     con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=30)
     try:
         frame = pd.read_sql_query(
@@ -234,6 +237,82 @@ def snapshot(p: DayPanel, ctx: Context) -> pd.DataFrame:
         "atr_pct": ctx.atr / ctx.prev_close * 100,
     })
     return df[np.isfinite(df["last"])].reset_index(drop=True)
+
+
+# ── market context (indices, breadth through the day, sectors) ──────────────
+def bar_label(bar: int) -> str:
+    """Start time of a 5-minute bar, HH:MM IST."""
+    m = 555 + 5 * int(bar)
+    return f"{m // 60:02d}:{m % 60:02d}"
+
+
+def index_prev_close(ticker: str, session: date, db_path: Path = DB_PATH) -> float | None:
+    """Last daily close before `session` from the candle cache (else the last 5-min close)."""
+    cut = pd.Timestamp(session, tz=IST).tz_convert("UTC").isoformat()
+    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=30)
+    try:
+        for interval in ("1d", "5m"):
+            row = con.execute("SELECT close FROM candles WHERE symbol=? AND interval=? AND ts<? "
+                              "ORDER BY ts DESC LIMIT 1", (ticker, interval, cut)).fetchone()
+            if row and row[0] and math.isfinite(row[0]):
+                return float(row[0])
+    finally:
+        con.close()
+    return None
+
+
+def index_context(session: date, nbar: int, db_path: Path = DB_PATH) -> list[dict]:
+    """Completed 5-minute closes of the INDICES for `session`, with the move vs the previous close."""
+    frame = _read_5m(list(INDICES), session, session, db_path, suffix="")
+    out = []
+    for ticker, name in INDICES.items():
+        f = frame[(frame["symbol"] == ticker) & (frame["bar"] < nbar)] if not frame.empty else frame
+        if f.empty:
+            continue
+        f = f.drop_duplicates("bar", keep="last").sort_values("bar")
+        pc, last = index_prev_close(ticker, session, db_path), float(f["close"].iloc[-1])
+        out.append({"ticker": ticker, "name": name, "last": round(last, 2), "prev_close": pc,
+                    "chg_pct": round((last / pc - 1) * 100, 2) if pc else None,
+                    "time": [bar_label(b) for b in f["bar"]], "close": [round(float(x), 2) for x in f["close"]]})
+    return out
+
+
+def breadth_path(p: DayPanel, ctx: Context, keep: np.ndarray | None = None) -> dict:
+    """Advancers / decliners vs the previous close at every completed bar."""
+    if not p.nbar:
+        return {"time": [], "adv": [], "dec": []}
+    rows = np.ones(len(p.symbols), bool) if keep is None else keep
+    with _quiet():
+        closes = pd.DataFrame(p.c[rows, : p.nbar]).ffill(axis=1).to_numpy(dtype=float)
+        chg = closes / ctx.prev_close[rows, None] - 1
+    return {"time": [bar_label(b) for b in range(p.nbar)],
+            "adv": [int(x) for x in (chg > 0).sum(axis=0)], "dec": [int(x) for x in (chg < 0).sum(axis=0)]}
+
+
+def sector_map() -> dict[str, str]:
+    if not UNIVERSE_CSV.exists():
+        return {}
+    df = pd.read_csv(UNIVERSE_CSV)
+    if "Industry" not in df.columns:
+        return {}
+    return dict(zip(df["Symbol"].astype(str).str.strip(), df["Industry"].astype(str).str.strip()))
+
+
+def sector_rows(snap: pd.DataFrame, sectors: dict[str, str]) -> list[dict]:
+    """Per-sector median move, breadth, volume and the leader / laggard."""
+    if snap.empty or not sectors:
+        return []
+    df = snap.assign(sector=snap["symbol"].map(sectors)).dropna(subset=["sector", "chg_pct"])
+    out = []
+    for sector, g in df.groupby("sector"):
+        g = g.sort_values("chg_pct")
+        out.append({"sector": sector, "stocks": int(len(g)), "median_chg_pct": round(float(g["chg_pct"].median()), 2),
+                    "advancing": int((g["chg_pct"] > 0).sum()), "declining": int((g["chg_pct"] < 0).sum()),
+                    "median_rel_volume": round(float(g["rel_volume"].median()), 2)
+                    if g["rel_volume"].notna().any() else None,
+                    "leader": f"{g['symbol'].iloc[-1]} {g['chg_pct'].iloc[-1]:+.1f}%",
+                    "laggard": f"{g['symbol'].iloc[0]} {g['chg_pct'].iloc[0]:+.1f}%"})
+    return sorted(out, key=lambda r: -r["median_chg_pct"])
 
 
 # ── shadow strategies (pure; completed bars only) ───────────────────────────
@@ -378,16 +457,26 @@ def run_strategies(p: DayPanel, ctx: Context) -> list[dict]:
 
 
 # ── shadow book & promotion ─────────────────────────────────────────────────
-def record_day(session: date, rows: list[dict], path: Path = BOOK_PATH) -> int:
+def _read_book(path: Path) -> pd.DataFrame:
+    try:
+        return pd.read_csv(path) if path.exists() and path.stat().st_size else pd.DataFrame()
+    except pd.errors.EmptyDataError:
+        return pd.DataFrame()
+
+
+def record_day(session: date, rows: list[dict], path: Path | None = None) -> int:
     """Replace `session`'s rows in the shadow book with the final grades."""
+    path = path or BOOK_PATH
     final = [r for r in rows if r["status"] != "OPEN"]
     new = pd.DataFrame(final)
     if not new.empty:
         new.insert(0, "session", session.isoformat())
-    old = pd.read_csv(path) if path.exists() else pd.DataFrame()
+    old = _read_book(path)
     if not old.empty:
         old = old[old["session"] != session.isoformat()]
-    book = pd.concat([old, new], ignore_index=True)
+    if new.empty and old.empty:
+        return 0                                          # nothing to write (no header-less files)
+    book = pd.concat([df for df in (old, new) if not df.empty], ignore_index=True)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     book.to_csv(tmp, index=False)
@@ -403,19 +492,22 @@ def board_stats(book: pd.DataFrame) -> pd.DataFrame:
     for name in STRATEGIES:
         t = book[book["strategy"] == name] if not book.empty else pd.DataFrame()
         if t.empty:
-            rows.append({"strategy": name, "sessions": 0, "trades": 0, "net_bps": None, "t": None, "p": 1.0})
+            rows.append({"strategy": name, "sessions": 0, "trades": 0, "net_bps": None, "daily_bps": None,
+                         "t": None, "p": 1.0})
             continue
         daily = t.groupby("session")["net_bps"].mean()
         tstat = float(daily.mean() / (daily.std(ddof=1) / math.sqrt(len(daily)))) if len(daily) > 2 and daily.std() > 0 else 0.0
         p = 0.5 * (1 - erf(tstat / math.sqrt(2)))                       # one-sided, normal approx.
         rows.append({"strategy": name, "sessions": int(len(daily)), "trades": int(len(t)),
-                     "net_bps": round(float(t["net_bps"].mean()), 1), "t": round(tstat, 2), "p": p,
-                     "hit_rate": round(float((t["net_bps"] > 0).mean()), 3)})
+                     "net_bps": round(float(t["net_bps"].mean()), 1),
+                     "daily_bps": round(float(daily.mean()), 1),        # the mean the t-stat tests
+                     "t": round(tstat, 2), "p": p,
+                     "hit_rate": round(float((t["net_bps"] > 0).mean()) * 100, 1)})
     df = pd.DataFrame(rows).sort_values("p").reset_index(drop=True)
     m = len(df)
     df["holm_p"] = [min(1.0, max((m - j) * df["p"].iloc[j] for j in range(i + 1))) for i in range(m)]
     df["status"] = [
-        "eligible for review" if (r.sessions >= MIN_SESSIONS and r.holm_p < 0.05 and (r.net_bps or 0) > 0)
+        "eligible for review" if (r.sessions >= MIN_SESSIONS and r.holm_p < 0.05 and (r.daily_bps or 0) > 0)
         else f"paper ({r.sessions}/{MIN_SESSIONS} sessions)" for r in df.itertuples()]
     return df
 
@@ -518,7 +610,7 @@ def _clean(records: list[dict]) -> list[dict]:
 
 
 def build_live(p: DayPanel, ctx: Context, ann: pd.DataFrame, picks_payload: dict | None,
-               now: datetime) -> dict:
+               now: datetime, indices: list[dict] | None = None) -> dict:
     snap = snapshot(p, ctx)
     uni = set(universe()) if UNIVERSE_CSV.exists() else set(p.symbols)
     if not snap.empty:
@@ -529,11 +621,13 @@ def build_live(p: DayPanel, ctx: Context, ann: pd.DataFrame, picks_payload: dict
                "nbar": p.nbar, "last_bar": None, "breadth": {}, "in_play": [], "gainers": [], "losers": [],
                "highs": [], "lows": [], "circuit_watch": [], "announcements": announcement_rows(ann, p),
                "signals": _clean(signals), "gap_book": _clean(gap_book_watch(p, picks_payload, ctx.band)),
+               "indices": indices or [], "sectors": [],
+               "breadth_path": breadth_path(p, ctx, np.array([s in uni for s in p.symbols], dtype=bool)),
                "research": {k: list(v) for k, v in RESEARCH.items()}}
     if p.nbar:
-        m = 555 + 5 * (p.nbar - 1)
-        payload["last_bar"] = f"{m // 60:02d}:{m % 60:02d}"
+        payload["last_bar"] = bar_label(p.nbar - 1)
     if not snap.empty:
+        payload["sectors"] = _clean(sector_rows(snap, sector_map()))
         payload["breadth"] = {"advancing": int((snap.chg_pct > 0).sum()), "declining": int((snap.chg_pct < 0).sum()),
                               "unchanged": int((snap.chg_pct == 0).sum()), "symbols": int(len(snap)),
                               "median_chg_pct": round(float(snap.chg_pct.median()), 2)}

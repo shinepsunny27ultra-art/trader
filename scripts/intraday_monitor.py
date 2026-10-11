@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Intraday NSE-500 monitor: one scan per run (systemd timer, every 5 minutes).
+"""Intraday NSE-500 monitor: one scan per run (systemd timer, every minute; signals use completed 5-minute bars).
 
     python scripts/intraday_monitor.py scan [--push]          # live, during the session
     python scripts/intraday_monitor.py replay --date 2026-10-01   # past session, no fetch/record
@@ -55,10 +55,11 @@ def run(session: date, nbar: int, *, fetch: bool, push: bool, record: bool, now:
     if fetch:
         got = G.refresh([f"{s}.NS" for s in symbols], interval="5m", period="1d", batch=100, log=print)
         print(f"  5m bars: {len(got)}/{len(symbols)} symbols")
+        G.refresh(list(M.INDICES), interval="5m", period="1d", batch=10, log=lambda *_: None)
     ctx = context(session, symbols, fetch_bands=fetch)
     panel = M.load_day(session, symbols, nbar)
     ann = M.todays_announcements(session, set(symbols)) if fetch else pd.DataFrame(columns=["symbol", "ts", "desc", "text"])
-    payload = M.build_live(panel, ctx, ann, picks, now)
+    payload = M.build_live(panel, ctx, ann, picks, now, indices=M.index_context(session, nbar))
     M.write_live(payload)
     print(f"  {session} bar {payload['last_bar']}: {len(payload['in_play'])} in play, "
           f"{len(payload['signals'])} paper signals, {len(payload['announcements'])} announcements")
@@ -85,6 +86,58 @@ def run(session: date, nbar: int, *, fetch: bool, push: bool, record: bool, now:
     return payload
 
 
+def missing_board_sessions(today: date) -> list[date]:
+    """Trading sessions since the board started (before `today`) not graded yet."""
+    from datetime import timedelta
+
+    from nse_intraday_ai.nse_calendar import is_trading_day
+    done = set((atomic_read_json(M.GRADED_PATH, default={}) or {}).get("graded", []))
+    book = M._read_book(M.BOOK_PATH)
+    if not book.empty:
+        done |= set(book["session"].astype(str))
+    out, day = [], M.BOARD_START
+    while day < today:
+        if is_trading_day(day) and day.isoformat() not in done:
+            out.append(day)
+        day += timedelta(days=1)
+    return out
+
+
+def catch_up(today: date, *, fetch: bool = True) -> int:
+    """Grade missed sessions (laptop off at 15:15) from cached / re-fetched 5-minute bars.
+
+    Each missed session is attempted at most once per calendar day, so the
+    every-minute scan does not re-download a month of bars each time.
+    """
+    state = atomic_read_json(M.GRADED_PATH, default={}) or {}
+    graded, tried = set(state.get("graded", [])), dict(state.get("tried", {}))
+    missing = [d for d in missing_board_sessions(today) if tried.get(d.isoformat()) != today.isoformat()]
+    if not missing:
+        return 0
+    if fetch:
+        age = (today - missing[0]).days
+        period = "5d" if age <= 5 else "1mo" if age <= 28 else "60d"
+        got = G.refresh([f"{s}.NS" for s in M.universe()], interval="5m", period=period, batch=100,
+                        log=lambda *_: None)
+        print(f"  catch-up: refreshed {len(got)} symbols ({period}) for {len(missing)} missed session(s)")
+    recorded, symbols = 0, M.universe()
+    for session in missing:
+        tried[session.isoformat()] = today.isoformat()
+        panel = M.load_day(session, symbols, M.NBARS)
+        if np.isfinite(panel.c).sum() < 0.5 * len(symbols) * M.NBARS:
+            print(f"  catch-up: {session} has too few 5-minute bars, skipped (retry tomorrow)")
+            continue
+        uni = set(symbols)
+        sigs = [s for s in M.run_strategies(panel, context(session, symbols, fetch_bands=False))
+                if s["symbol"] in uni]
+        n = M.record_day(session, sigs)
+        graded.add(session.isoformat())
+        recorded += 1
+        print(f"  catch-up: {session} — {n} paper trades recorded")
+    atomic_write_json(M.GRADED_PATH, {"graded": sorted(graded), "tried": tried})
+    return recorded
+
+
 def cmd_scan(args) -> None:
     now = datetime.now(IST)
     from nse_intraday_ai.nse_calendar import is_trading_day
@@ -95,7 +148,16 @@ def cmd_scan(args) -> None:
     if not args.force and not (9 * 60 + 20 <= hm <= 15 * 60 + 45):
         print(f"{now:%H:%M}: outside the scan window (09:20-15:45)")
         return
+    try:
+        catch_up(now.date())
+    except Exception as exc:                             # noqa: BLE001 — never block the live scan
+        print(f"  catch-up failed: {exc}")
     run(now.date(), M.completed_bars(now), fetch=True, push=args.push, record=True, now=now)
+
+
+def cmd_catchup(_args) -> None:
+    n = catch_up(datetime.now(IST).date())
+    print(f"  {n} session(s) caught up")
 
 
 def cmd_replay(args) -> None:
@@ -110,7 +172,7 @@ def cmd_replay(args) -> None:
 
 
 def cmd_board(_args) -> None:
-    book = pd.read_csv(M.BOOK_PATH) if M.BOOK_PATH.exists() else pd.DataFrame()
+    book = M._read_book(M.BOOK_PATH)
     print(M.board_stats(book).to_string(index=False))
 
 
@@ -127,6 +189,8 @@ def main() -> None:
     r.add_argument("--bars", type=int, default=M.NBARS)
     r.set_defaults(fn=cmd_replay)
     sub.add_parser("board").set_defaults(fn=cmd_board)
+    sub.add_parser("catchup", help="grade shadow-board sessions missed while the machine was off"
+                   ).set_defaults(fn=cmd_catchup)
     args = ap.parse_args()
     args.fn(args)
 
