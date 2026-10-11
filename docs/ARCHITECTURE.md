@@ -69,7 +69,7 @@ flowchart LR
 | `costs` | Groww/NSE MIS round-trip cost model (brokerage, STT, exchange, SEBI, stamp, GST, slippage). |
 | `alerts` | ntfy push (topic from `NTFY_TOPIC` or the git-ignored `data/notify.json`); Telegram is optional. |
 | `atomic_io` | Atomic JSON writes and retrying reads, shared by every state file. |
-| `cloud_sync` | Pushes `picks.json` / `live.json` to GitHub `main` for the Streamlit Cloud copy, via git plumbing in a throwaway index: the checked-out branch, its index and the working tree are never touched. A no-op inside GitHub Actions. |
+| `cloud_sync` | Pushes the list, paper book, model summaries (`state_files()`) and the live scan to GitHub `main` for the Streamlit Cloud copy, via git plumbing in a throwaway index: the checked-out branch, its index and the working tree are never touched. A no-op inside GitHub Actions. |
 | `intraday_monitor` | Live NIFTY-500 monitor (information only). `load_day` keeps completed 5-minute bars only; `snapshot` gives move, gap, relative volume vs a 20-session cumulative profile, breadth, highs/lows and near-circuit names. Paper strategies `orb60`, `gap_fade`, `vol_breakout` are pure functions graded at 13.3 bps (`grade`, `record_day`, `board_stats` with Holm). `gap_book_watch`/`gap_alerts` watch today's gap shorts against their stops. Writes `data/intraday/live.json`. |
 | `app`, `gap_reversal_ui`, `intraday_ui` | Streamlit dashboard "NSE Trading Desk": Gap book — Today, Intraday monitor, Performance, Model, About. Plotly charts with zoom, a unified-hover data cursor, units and CSV export. |
 
@@ -101,7 +101,9 @@ Scripts (`scripts/`):
 
 Timers use `Persistent=true` (except the time-bound 09:10 final, 09:18 levels and the intraday scan), so a job missed while the laptop was asleep runs at wake-up. The 08:15 list prints a LATE banner after 09:08.
 
-**Laptop off.** `.github/workflows/gap_picks.yml` (08:20 IST, often started late by GitHub) is the cloud fallback: unless `main` already has today's model-ranked list, it ranks by the gap rule on 45 days of NSE files (it has no model and no archive) and commits `picks.json`. With an `NTFY_TOPIC` repository secret it also pushes the list to the phone.
+**Cloud copy (Streamlit Cloud, branch `main`).** `main` carries the code (merged from `devel`) plus small data files that `cloud_sync` mirrors from the laptop: `picks.json` (08:15 list, 09:10 final, 09:18 levels), `paper_book.csv` (15:40), `backtest.json`, the model summaries `champion.json` / `weekly_report.json` / `meta_state.json` (learn), and `live.json` + `shadow_book.csv` (every 5 minutes during the scan). Model binaries and raw market data are never published (the repo is public). The cloud app logs in with the `DASHBOARD_PASSWORD` Streamlit secret and fails closed without it. When the newest scan is from an earlier session, the intraday page says so and shows no stop alerts.
+
+**Laptop off.** `.github/workflows/gap_picks.yml` on `main` is the cloud fallback. It runs `scripts/gap_reversal.py picks --push`; inside Actions the script stands aside when today's list was already built by the laptop this morning (`publisher == "laptop"`), and otherwise ranks by the gap rule on 45 days of NSE files (it has no model and no archive). `picks.json` records which `publisher` built it. With an `NTFY_TOPIC` repository secret the fallback also pushes the list to the phone. (Workflow files can only be changed with a token that has the `workflow` scope or in the GitHub web editor.)
 
 **Intraday shadow board.** The 2026-10 search (≈100 published intraday variants, `docs/research-log.md`) found none that survives costs. The three closest are run as a paper board only, labelled NOT VALIDATED, and never pushed as trades. A strategy becomes "eligible for review" only after ≥ 60 live sessions with a positive mean net of costs and Holm-adjusted p < 0.05; any promotion still needs a walk-forward study.
 

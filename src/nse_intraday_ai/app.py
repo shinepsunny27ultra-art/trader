@@ -76,8 +76,9 @@ def login_gate() -> bool:
         return True
     st.title(f"🔒 {APP_NAME}")
     if not auth.is_configured():
-        st.error("No dashboard password is set. On the server run:  \n"
-                 "`PYTHONPATH=src .venv/bin/python -m nse_intraday_ai.auth --set-password`")
+        st.error("No dashboard password is set.  \n"
+                 "**Streamlit Cloud:** app ⋮ → Settings → Secrets → add `DASHBOARD_PASSWORD = \"…\"`.  \n"
+                 "**Laptop:** `PYTHONPATH=src .venv/bin/python -m nse_intraday_ai.auth --set-password`")
         return False
     with st.form("login", clear_on_submit=True):
         pw = st.text_input("Password", type="password", key="pw")
