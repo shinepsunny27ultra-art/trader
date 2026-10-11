@@ -107,12 +107,12 @@ def _prev_trading_day(day):
 
 
 def check_data(now: datetime) -> list[tuple[str, str, str]]:
-    """The inputs the 08:45 list is built from must cover the last session."""
+    """The inputs the 08:15 list is built from must cover the last session."""
     out = []
     files = sorted((ROOT / "data" / "nse_bhav").glob("*/bhav_*.parquet"))
     latest = datetime.strptime(files[-1].stem.split("_")[1], "%Y%m%d").date() if files else None
-    # NSE publishes the bhavcopy ~18:00; the morning job fetches it at 08:45.
-    need = _prev_trading_day(now.date()) if now.strftime("%H:%M") >= "08:50" else \
+    # NSE publishes the bhavcopy ~18:00; the morning job fetches it at 08:15.
+    need = _prev_trading_day(now.date()) if now.strftime("%H:%M") >= "08:20" else \
         _prev_trading_day(_prev_trading_day(now.date()))
     status = OK if latest and latest >= need else FAIL
     out.append(("NSE bhavcopy", status, f"latest {latest}, need {need}"))
@@ -224,8 +224,8 @@ def check_book(now: datetime) -> list[tuple[str, str, str]]:
         out.append(("gap-reversal picks", FAIL, "data/gap_reversal/picks.json missing"))
     else:
         session = json.loads(picks.read_text()).get("session", "?")
-        # From 08:45 on a trading day the list must be for today.
-        due = is_trading_day(now.date()) and now.strftime("%H:%M") >= "08:50"
+        # From 08:15 on a trading day the list must be for today.
+        due = is_trading_day(now.date()) and now.strftime("%H:%M") >= "08:20"
         stale = due and now.strftime("%H:%M") <= "15:30" and session < now.date().isoformat()
         out.append(("gap-reversal picks", FAIL if stale else OK, f"list for {session}"))
 

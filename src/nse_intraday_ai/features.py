@@ -168,7 +168,7 @@ def _wide(frame: pd.DataFrame, col: str, sessions: pd.Index, symbols: pd.Index) 
 
 
 # Features that exist only once the pre-open auction has set today's opening
-# price (09:08 IST).  The 08:45 model must never see them; the 09:09 model does.
+# price (09:08 IST).  The 08:15 model must never see them; the 09:09 model does.
 OPEN_FEATURES = ("gap0", "gap0_atr", "gap0_xrank", "gap0_sec", "gap0_vs_sec", "gap0_minus_mkt",
                  "gap01", "gap0_x_relvol", "gap0_x_lowdeliv", "x_gap0_med", "x_gap0_breadth",
                  "x_gap0_disp") + ("po_imbalance", "po_ato_imbalance", "po_auction_rel")
@@ -318,7 +318,7 @@ def build(inputs: Inputs, *, universe: int = 400, live_session: date | None = No
 
     # Catalysts (nse_corp): results / filings in the window that produced gap1,
     # the results calendar, exchange "unexplained move" queries.  Only events
-    # public before 08:45 on t; NaN where the cache does not cover the window.
+    # public before 08:15 on t; NaN where the cache does not cover the window.
     f.update(nse_corp.corp_features(inputs.corp, sessions, symbols))
 
     # Effective spread (Abdi & Ranaldo 2017) from close/high/low, causal: the

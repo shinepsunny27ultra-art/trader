@@ -183,7 +183,7 @@ def test_open_features_live_equal_research_and_stay_out_of_the_morning_build():
                                atol=1e-6, equal_nan=True)
     morning = FT.build(_inputs(bhav[bhav["session"] < target]), universe=10, min_price=1.0,
                        live_session=target)
-    assert not set(FT.OPEN_FEATURES) & set(morning.columns), "08:45 rows must not know the open"
+    assert not set(FT.OPEN_FEATURES) & set(morning.columns), "08:15 rows must not know the open"
 
 
 def test_new_anomaly_features_are_causal():

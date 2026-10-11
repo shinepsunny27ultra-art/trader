@@ -62,9 +62,9 @@ flowchart LR
 | `auth` | Dashboard password: salted PBKDF2-SHA256 hash in the git-ignored `data/auth.json` (mode 600). Set with `python -m nse_intraday_ai.auth --set-password`. |
 | `candle_cache` | SQLite (WAL) cache of Yahoo daily/5-minute candles: global series, the fallback path, and replay. |
 | `features` | `load_inputs()` → `build()`: one row per (session, symbol), every feature dated strictly before the decision time, ±inf → NaN. It defines the feature groups `OPEN_FEATURES`, `PREOPEN_FEATURES`, `CORP_FEATURES` and the gate `UNVALIDATED_FEATURES`. |
-| `ranker` | `Ranker` (sklearn HistGB by default; LightGBM regression/LambdaRank optional) with `walk_forward()`, `book()`, `summarize()`, `paired()`. Also the selection-bias controls `deflated_sharpe()` and `holm()`, plus champion persistence. `fit` records each feature's usual blank rate; `missing_inputs()` flags features that are blank for every candidate today (a data source is down). The flag is shown in the 08:45 push and in the health check. |
+| `ranker` | `Ranker` (sklearn HistGB by default; LightGBM regression/LambdaRank optional) with `walk_forward()`, `book()`, `summarize()`, `paired()`. Also the selection-bias controls `deflated_sharpe()` and `holm()`, plus champion persistence. `fit` records each feature's usual blank rate; `missing_inputs()` flags features that are blank for every candidate today (a data source is down). The flag is shown in the 08:15 push and in the health check. |
 | `meta` | `MetaState`: a paired per-expert daily record (*guard*: trade the ranker unless it is worse than the rule at t < −2 over 60 sessions), a CUSUM drift alarm with cautious mode, and diagnostic Hedge weights. |
-| `pipeline` | `morning()` (08:45 list), `open_rerank()` (09:10:30, archives the auction and re-ranks if an open model is promoted), `learn_through()`/`learn_from()` (grade every unlearned session) and `weekly()` (retrain, walk-forward, promote on evidence). |
+| `pipeline` | `morning()` (08:15 list), `open_rerank()` (09:10:30, archives the auction and re-ranks if an open model is promoted), `learn_through()`/`learn_from()` (grade every unlearned session) and `weekly()` (retrain, walk-forward, promote on evidence). |
 | `gap_reversal` | The book itself: `GapReversalConfig`, `Pick`, tick-size and entry-limit rules, the rule ranker, daily and 5-minute simulators, the picks file, and the paper record. It also holds the Yahoo fallback path. |
 | `costs` | Groww/NSE MIS round-trip cost model (brokerage, STT, exchange, SEBI, stamp, GST, slippage). |
 | `alerts` | ntfy push (topic from `NTFY_TOPIC` or the git-ignored `data/notify.json`); Telegram is optional. |
@@ -90,8 +90,8 @@ Scripts (`scripts/`):
 
 | Time | Unit | What happens |
 |---|---|---|
-| 08:45 Mon–Fri | `nse-gap-picks` | Holiday check, then `refresh()` the NSE files, corporate events and global closes. `learn_through(previous session)` grades every session not yet learned (a day the laptop was off included) and updates the guard and CUSUM. Features are built for today and ranked by the guarded expert. Shorts whose stop lies beyond the price band are dropped (reserves move up). Limits are attached and `picks.json` is written, with a dated copy in `gap_reversal/history/` (what `record` grades). Push, and `cloud_sync` it to GitHub. |
-| 09:10:30 | `nse-gap-final` | Fetch and archive the pre-open auction. If a promoted open model passes its guard, re-rank and push the final list. Otherwise the 08:45 list stands. |
+| 08:15 Mon–Fri | `nse-gap-picks` | Holiday check, then `refresh()` the NSE files, corporate events and global closes. `learn_through(previous session)` grades every session not yet learned (a day the laptop was off included) and updates the guard and CUSUM. Features are built for today and ranked by the guarded expert. Shorts whose stop lies beyond the price band are dropped (reserves move up). Limits are attached and `picks.json` is written, with a dated copy in `gap_reversal/history/` (what `record` grades). Push, and `cloud_sync` it to GitHub. |
+| 09:10:30 | `nse-gap-final` | Fetch and archive the pre-open auction. If a promoted open model passes its guard, re-rank and push the final list. Otherwise the 08:15 list stands. |
 | 09:18 | `nse-gap-levels` | Push stop prices from the official opens (the archived auction; the first 5-minute bar only if no archive exists). Names that opened below their limit are marked NOT FILLED. |
 | every minute 09:20–15:45 (completed 5-minute bars) | `nse-intraday-scan` | `intraday_monitor.py scan --push`: Yahoo 5-minute bars for NIFTY-500, today's gap shorts and NIFTY 50 / NIFTY BANK / India VIX → `data/intraday/live.json` (snapshot, breadth through the day, sector board). Phone alert (deduplicated per day in `alerts_YYYYMMDD.json`) only when a gap-book short hits or comes within 1% of its stop. After 15:15 the day's paper shadow-board trades are appended to `shadow_book.csv`; the first scan of a day grades any session missed while the machine was off (`board_sessions.json`, once per day per session). |
 | 15:40 | `nse-gap-record` | Record the session's *published* list in `paper_book.csv`: entry at the archived official open, then the 5-minute path (`NO_FILL` rows for unfilled limits). `nse-gap-monitor` (16:05) and `nse-health` are ordered after it, so a boot-time catch-up reports on fresh data. |
@@ -99,7 +99,7 @@ Scripts (`scripts/`):
 | every 30 min | `nse-health` | `health_check.py`: failures exit 1, warnings exit 0. |
 | always | `nse-signal-lab` | Streamlit on :8501. |
 
-Timers use `Persistent=true` (except the time-bound 09:10 final, 09:18 levels and the intraday scan), so a job missed while the laptop was asleep runs at wake-up. The 08:45 list prints a LATE banner after 09:08.
+Timers use `Persistent=true` (except the time-bound 09:10 final, 09:18 levels and the intraday scan), so a job missed while the laptop was asleep runs at wake-up. The 08:15 list prints a LATE banner after 09:08.
 
 **Laptop off.** `.github/workflows/gap_picks.yml` (08:20 IST, often started late by GitHub) is the cloud fallback: unless `main` already has today's model-ranked list, it ranks by the gap rule on 45 days of NSE files (it has no model and no archive) and commits `picks.json`. With an `NTFY_TOPIC` repository secret it also pushes the list to the phone.
 

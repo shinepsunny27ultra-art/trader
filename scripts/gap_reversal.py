@@ -1,6 +1,6 @@
 """Run the gap-reversal book: pre-open picks, opening stops, paper record, backtest.
 
-    python scripts/gap_reversal.py picks            # 08:45: the session's short list
+    python scripts/gap_reversal.py picks            # 08:15: the session's short list
     python scripts/gap_reversal.py final            # 09:09: re-rank on today's opening prices
     python scripts/gap_reversal.py levels           # after 09:15: exact stop prices
     python scripts/gap_reversal.py record           # after the close: paper result
@@ -144,11 +144,11 @@ def cmd_picks(args) -> None:
                         "entering now is a different, untested trade. Skip today.")
     # A list built before its session's day (2026-10-06 20:31: the boot-time
     # catch-up after a day off) lacks the overnight global closes the model is
-    # trained on; the 08:45 run rebuilds it.
+    # trained on; the 08:15 run rebuilds it.
     preliminary = session > now.date()
     if preliminary:
         lines.insert(0, f"PRELIMINARY (built {now:%a %H:%M}, before the overnight global closes). "
-                        "The 08:45 list replaces it — trade that one.")
+                        "The 08:15 list replaces it — trade that one.")
     if info.get("drift_alarm") or info.get("cautious_mode"):
         mult = info.get("size_multiplier", 0.6)
         lines.insert(0, f"⚠ DRIFT ALARM / CAUTIOUS MODE: the live book has been running persistently "
@@ -194,20 +194,20 @@ def cmd_final(args) -> None:
     session = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
     payload = G.read_picks()
     if payload is None or payload.get("session") != session.isoformat():
-        print(f"no 08:45 list for {session}; nothing to re-rank")
+        print(f"no 08:15 list for {session}; nothing to re-rank")
         return
     try:
         result = P.open_rerank(session, CONFIG)
     except Exception as exc:                                  # noqa: BLE001
-        print(f"09:09 re-rank failed ({type(exc).__name__}: {exc}); the 08:45 list stands")
-        push(f"Gap-reversal {session:%d %b}: 08:45 list stands",
-             f"The 09:09 re-rank could not run ({type(exc).__name__}). Trade the 08:45 list.",
+        print(f"09:09 re-rank failed ({type(exc).__name__}: {exc}); the 08:15 list stands")
+        push(f"Gap-reversal {session:%d %b}: 08:15 list stands",
+             f"The 09:09 re-rank could not run ({type(exc).__name__}). Trade the 08:15 list.",
              enabled=args.push, priority="default")
         return
     if result is None:
-        # No open model promoted, or its guard is off: the 08:45 list already is
+        # No open model promoted, or its guard is off: the 08:15 list already is
         # the final one, and a second message saying so would only be noise.
-        print("the 08:45 list stands (no promoted open model, or its guard is off)")
+        print("the 08:15 list stands (no promoted open model, or its guard is off)")
         return
     picks, info = result
     picks = _band_filter(session, picks, info, fetch=True)
@@ -225,7 +225,7 @@ def cmd_final(args) -> None:
         f"\nReserves: {reserves}"
         f"\nEnter: MIS market SELL at 09:15:00 sharp (this list uses today's opening prices)."
         f"\nThen: BUY SL-M at your fill + the stop shown. Cover all at {CONFIG.square_off}."
-        f"\n{changed} of 8 names differ from the 08:45 list. If you already entered the 08:45 "
+        f"\n{changed} of 8 names differ from the 08:15 list. If you already entered the 08:15 "
         f"list in the pre-open, keep it — do not double up.")
     push(f"🎯 FINAL gap-reversal shorts {session:%a %d %b}", body, enabled=args.push)
 

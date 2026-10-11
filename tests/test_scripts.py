@@ -1,4 +1,4 @@
-"""Script-level smoke tests: every CLI parses, and the 08:45 message renders.
+"""Script-level smoke tests: every CLI parses, and the 08:15 message renders.
 
 A SyntaxError in scripts/gap_reversal.py once slipped past the unit tests
 (they only import src/); these tests exercise the scripts themselves.
@@ -76,7 +76,7 @@ def test_a_list_built_the_evening_before_is_marked_preliminary(monkeypatch, caps
     monkeypatch.setattr(cloud_sync, "publish", lambda *a, **k: None)
     gs.cmd_picks(SimpleNamespace(date="2099-01-02", push=False, no_fetch=True, history_days=20))
     out = capsys.readouterr().out
-    assert "Preliminary gap-reversal shorts" in out and "The 08:45 list replaces it" in out
+    assert "Preliminary gap-reversal shorts" in out and "The 08:15 list replaces it" in out
 
 
 def _load_health():

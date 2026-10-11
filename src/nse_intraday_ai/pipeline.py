@@ -1,6 +1,6 @@
 """The book's daily and weekly loops: data in, experts scored, weights learned, picks out.
 
-08:45 (before the pre-open auction):
+08:15 (before the pre-open auction):
   1. refresh   NSE equity + F&O bhavcopies, crowding files, participant OI,
                overnight global closes
   2. learn     grade every session not yet learned (normally just the previous
@@ -65,7 +65,7 @@ def refresh(through: date, *, days: int = 20, log=print) -> None:
         log(f"  participant OI refresh failed: {exc}")
     arrived = G.refresh(list(FT.MARKET_SERIES) + list(FT.ADRS), interval="1d", period="1mo", log=log)
     log(f"  global/market series: {len(arrived)}/{len(FT.MARKET_SERIES) + len(FT.ADRS)}")
-    # Corporate events through this morning (filings up to 08:45 count for
+    # Corporate events through this morning (filings up to 08:15 count for
     # today's list) and the board-meeting schedule ahead.  Optional: without
     # them the catalyst features are NaN, never wrong.
     try:
@@ -268,7 +268,7 @@ def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), 
 
 def open_rerank(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), *,
                 preopen: pd.DataFrame | None = None, log=print) -> tuple[list[G.Pick], dict] | None:
-    """Re-rank with the auction's opening prices; None = keep the 08:45 list.
+    """Re-rank with the auction's opening prices; None = keep the 08:15 list.
 
     Returns None when no open model is promoted, or when its paired record says
     it has recently been worse than the morning ranker.
@@ -292,10 +292,10 @@ def open_rerank(session: date, config: G.GapReversalConfig = G.GapReversalConfig
     except Exception as exc:                                  # noqa: BLE001
         log(f"  pre-open archive failed: {exc}")
     if open_model is None:
-        log("  no promoted open model: the 08:45 list stands (auction archived)")
+        log("  no promoted open model: the 08:15 list stands (auction archived)")
         return None
     if traded_expert(state, {"rule", "ranker", "ranker_open"}) != "ranker_open":
-        log("  the open model's guard is off (recent record not good enough): 08:45 list stands")
+        log("  the open model's guard is off (recent record not good enough): 08:15 list stands")
         return None
     cached = pickle.loads(LIVE_INPUTS.read_bytes()) if LIVE_INPUTS.exists() else None
     inputs = (cached["inputs"] if cached and cached["session"] == session
@@ -321,7 +321,7 @@ def open_rerank(session: date, config: G.GapReversalConfig = G.GapReversalConfig
 def weekly(*, eval_years: float = 2.0, min_t: float = 2.0, log=print) -> dict:
     """Retrain both models, re-validate walk-forward, promote each only on evidence.
 
-    ranker       (08:45, no knowledge of the open)   must beat the gap rule
+    ranker       (08:15, no knowledge of the open)   must beat the gap rule
     ranker_open  (09:09, knows today's opening gap)  must beat the ranker, net of
                                                      the extra cost of a 09:15 entry
     """

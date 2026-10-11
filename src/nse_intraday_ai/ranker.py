@@ -214,7 +214,7 @@ def missing_inputs(model: Ranker, rows: pd.DataFrame, *, threshold: float = 0.99
 
 
 def champion_path(name: str = "ranker") -> Path:
-    """Pointer file for a named champion: 'ranker' (08:45) or 'ranker_open' (09:09)."""
+    """Pointer file for a named champion: 'ranker' (08:15) or 'ranker_open' (09:09)."""
     return MODELS / ("champion.json" if name == "ranker" else f"champion_{name}.json")
 
 

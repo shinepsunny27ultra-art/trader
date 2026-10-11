@@ -133,7 +133,7 @@ def test_backtest_replaces_a_pick_without_bars_by_the_reserve():
 
 
 @pytest.mark.parametrize("now, expected", [
-    ("2026-09-28 08:45", date(2026, 9, 28)),     # Monday morning -> today
+    ("2026-09-28 08:15", date(2026, 9, 28)),     # Monday morning -> today
     ("2026-09-28 15:40", date(2026, 9, 29)),     # after the close -> tomorrow
     ("2026-10-02 18:00", date(2026, 10, 5)),     # Friday evening -> Monday
     ("2026-10-03 10:00", date(2026, 10, 5)),     # Saturday -> Monday

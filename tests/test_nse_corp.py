@@ -143,10 +143,10 @@ def test_gap1_window_evening_t_minus_2_counts_morning_t_minus_1_does_not():
     assert f["res_in_gap1"].dtypes.eq(np.float32).all()
 
 
-def test_nothing_after_the_0845_cutoff_is_visible():
+def test_nothing_after_the_list_cutoff_is_visible():
     t = SESS[10]                                         # Mon 16 Mar
-    ev = _events(results=[("A", "2026-03-16 08:30:00"), ("B", "2026-03-16 08:50:00")],
-                 ann=[("A", "2026-03-16 08:30:00", "Spurt in Volume"), ("B", "2026-03-16 08:50:00", "Spurt in Volume")])
+    ev = _events(results=[("A", "2026-03-16 08:00:00"), ("B", "2026-03-16 08:20:00")],
+                 ann=[("A", "2026-03-16 08:00:00", "Spurt in Volume"), ("B", "2026-03-16 08:20:00", "Spurt in Volume")])
     f = C.corp_features(ev, SESS, ["A", "B"])
     assert f["res_night0"].loc[t, "A"] == 1 and f["res_night0"].loc[t, "B"] == 0
     assert f["clar_gap1"].loc[t, "A"] == 1 and f["clar_gap1"].loc[t, "B"] == 0
@@ -175,7 +175,7 @@ def test_board_meeting_schedule_is_known_in_advance_only_once_announced():
     t = date(2026, 3, 12)
     assert f["bm_results_today"].loc[t, "A"] == 1 and f["bm_results_today"].loc[t, "B"] == 0
     assert f["days_to_bm"].loc[date(2026, 3, 9), "A"] == 3
-    assert f["days_to_bm"].loc[date(2026, 3, 4), "A"] == 30   # announced after 08:45 that day
+    assert f["days_to_bm"].loc[date(2026, 3, 4), "A"] == 30   # announced after 08:15 that day
     assert f["days_to_bm"].loc[date(2026, 3, 5), "A"] == 7
     assert f["days_to_bm"].loc[t, "Z"] == 30
 

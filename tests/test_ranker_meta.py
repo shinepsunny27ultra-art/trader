@@ -73,7 +73,7 @@ def test_save_and_load_reproduce_scores(tmp_path):
 
 def test_load_tolerates_retired_config_fields(tmp_path):
     # The live champion was saved with a field (seeds_multi) later removed from
-    # RankerConfig; loading must not break the 08:45 list.
+    # RankerConfig; loading must not break the 08:15 list.
     import json
     p = _panel(n_days=300)
     directory = R.Ranker.fit(p, FAST).save(tmp_path / "m")

@@ -57,7 +57,7 @@ def main() -> None:
     v, vo = report["vs_rule"], report["open_vs_ranker"]
     verdict = lambda n: "PROMOTED" if report["verdicts"][n]["promoted"] else "kept previous"  # noqa: E731
     body = (f"Walk-forward {report['window'][0]}..{report['window'][1]} (net bps/trade):\n"
-            f"rule {b.get('net_bps_per_trade', float('nan')):+.1f} | 08:45 ranker "
+            f"rule {b.get('net_bps_per_trade', float('nan')):+.1f} | 08:15 ranker "
             f"{r.get('net_bps_per_trade', float('nan')):+.1f} | 09:09 open ranker "
             f"{o.get('net_bps_per_trade', float('nan')):+.1f}\n"
             f"ranker - rule {v['mean_diff_bps']:+.1f}/day (t {v['t_stat']}): {verdict('ranker')}\n"

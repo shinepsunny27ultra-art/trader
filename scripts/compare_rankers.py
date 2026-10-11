@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Walk-forward A/B of ranker variants, faithful to the live 08:45 book.
+"""Walk-forward A/B of ranker variants, faithful to the live 08:15 book.
 
 Every variant goes through the same expanding-window, quarterly-refit
 walk-forward as `pipeline.weekly()`, and is booked exactly as the live list is
@@ -52,7 +52,7 @@ START = "2019-01-01"
 # Variants already tried in docs/research-log.md; the DSR charges for them.
 TRIALS_SO_FAR = 35
 
-MORNING = DEFAULT_EXCLUDE + FT.OPEN_FEATURES          # what the 08:45 model may not see
+MORNING = DEFAULT_EXCLUDE + FT.OPEN_FEATURES          # what the 08:15 model may not see
 VARIANTS: dict[str, RankerConfig] = {
     # the production champion's recipe
     "morning": RankerConfig(exclude=MORNING + FT.CORP_FEATURES),
