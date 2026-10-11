@@ -49,6 +49,7 @@ Three things that matter more than they look:
 from __future__ import annotations
 
 import math
+import os
 import sqlite3
 from dataclasses import asdict, dataclass, field
 from datetime import date
@@ -720,6 +721,7 @@ def save_picks(session: date, picks: list[Pick], config: GapReversalConfig = Gap
     payload = {
         "session": session.isoformat(),
         "generated_at": pd.Timestamp.now(tz=IST).isoformat(timespec="seconds"),
+        "publisher": "github-actions" if os.environ.get("GITHUB_ACTIONS") else "laptop",
         "config": asdict(config),
         "picks": [p.to_dict() for p in picks],
         **extra,

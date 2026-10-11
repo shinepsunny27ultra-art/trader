@@ -109,3 +109,17 @@ def test_health_flags_a_session_the_learner_skipped_and_a_day_without_a_list(tmp
     (book / "history" / "picks_20261005.json").write_text("{}")
     _, status, detail = hc.check_published(datetime(2026, 10, 6, 20, 0, tzinfo=hc.IST))
     assert status == hc.WARN and detail.startswith("no list for 2026-10-06")
+
+
+def test_cloud_fallback_stands_aside_only_for_the_laptops_final_list():
+    gs = _load_gap_script()
+    today = date(2026, 10, 12)
+    final = {"session": "2026-10-12", "generated_at": "2026-10-12T08:15:40+05:30", "publisher": "laptop"}
+    assert gs.laptop_already_published(final, today)
+    assert not gs.laptop_already_published({**final, "publisher": "github-actions"}, today)
+    assert not gs.laptop_already_published({**final, "generated_at": "2026-10-11T20:30:00+05:30"}, today)  # preliminary
+    assert not gs.laptop_already_published({**final, "session": "2026-10-09"}, today)                    # stale
+    legacy = {"session": "2026-10-12", "generated_at": "2026-10-12T08:45:10+05:30", "model": {"n_train": 1}}
+    assert gs.laptop_already_published(legacy, today)
+    assert not gs.laptop_already_published({k: v for k, v in legacy.items() if k != "model"}, today)
+    assert not gs.laptop_already_published(None, today)

@@ -13,6 +13,7 @@ and evidence: src/nse_intraday_ai/gap_reversal.py.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from dataclasses import asdict
 from datetime import date, datetime, timedelta
@@ -31,6 +32,7 @@ OUT = G.OUT_DIR
 PAPER = OUT / "paper_book.csv"
 BACKTEST = OUT / "backtest.json"
 CONFIG = G.GapReversalConfig()
+HISTORY_DAYS_DEFAULT = 20          # calendar days of NSE files the morning refresh looks back
 # The first session of the forward (never-backtested) paper record.
 FORWARD_START = date(2026, 9, 29)
 
@@ -113,18 +115,45 @@ def _publish(session: date | None, *, fetch: bool,
         return target, last, picks, info
 
 
+def laptop_already_published(payload: dict | None, today: date) -> bool:
+    """True if `payload` is the laptop's final list for today (built this morning).
+
+    An evening PRELIMINARY list (built before the overnight global closes) does
+    not count: on a morning the laptop is off, the cloud's fresh list replaces it.
+    """
+    if not payload or payload.get("session") != today.isoformat():
+        return False
+    if not str(payload.get("generated_at", "")).startswith(today.isoformat()):
+        return False
+    if payload.get("publisher"):
+        return payload["publisher"] == "laptop"
+    return bool(payload.get("model"))              # lists written before the publisher field
+
+
 def cmd_picks(args) -> None:
     wait_for_clock()
     session = date.fromisoformat(args.date) if args.date else None
+    in_actions = bool(os.environ.get("GITHUB_ACTIONS"))
     if session is None:
         from nse_intraday_ai.nse_calendar import is_trading_day
         today = datetime.now(IST).date()
         if today.weekday() < 5 and not is_trading_day(today):
             print(f"{today}: NSE holiday — no list published")
             return
+        # The cloud runner has no model or archive: it only stands in for a laptop
+        # that has not published today's list (the checkout holds main's copy).
+        if in_actions and laptop_already_published(G.read_picks(), today):
+            print(f"{today}: the laptop already published today's list — the cloud fallback stands aside")
+            return
+    history_days = args.history_days
+    if in_actions and history_days == HISTORY_DAYS_DEFAULT:
+        # A fresh runner starts with an empty data/: the 20-session liquidity rank
+        # and the 14-session ATR need a full window (2026-10-06: 12 sessions let
+        # FEDDERSHOL and SEDEMAC into the "top 300").
+        history_days = 45
     try:
         session, last, picks, info = _publish(session, fetch=not args.no_fetch,
-                                              history_days=args.history_days)
+                                              history_days=history_days)
     except G.StaleDataError as exc:
         push("⚠ Gap-reversal: NO LIST", f"{exc}.\nNo picks published — do not trade a list "
              "from an earlier message. Retry: python scripts/gap_reversal.py picks",
@@ -437,7 +466,7 @@ def main() -> None:
         p.add_argument("--push", action="store_true", help="send to the phone via ntfy")
         p.add_argument("--no-fetch", action="store_true", help="use the candle cache as-is")
         if name == "picks":
-            p.add_argument("--history-days", type=int, default=20,
+            p.add_argument("--history-days", type=int, default=HISTORY_DAYS_DEFAULT,
                            help="calendar days of NSE files to refresh (45 on a fresh machine)")
     b = sub.add_parser("backtest")
     b.add_argument("--sessions", type=int, default=14, help="replay the last N sessions")
