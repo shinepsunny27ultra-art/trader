@@ -28,10 +28,31 @@ def state_files(root: Path = ROOT) -> list[Path]:
             data / "models" / "weekly_report.json", data / "models" / "meta_state.json"]
 
 
+def read_remote(path: Path, *, branch: str = "main", remote: str = "origin", root: Path = ROOT,
+                timeout: float = 30) -> str | None:
+    """Text of `path` as it is on `remote/branch` right now; None if unavailable."""
+    try:
+        rel = Path(path).resolve().relative_to(root.resolve()).as_posix()
+        run = lambda *a: subprocess.run(["git", *a], cwd=root, capture_output=True, text=True,  # noqa: E731
+                                        timeout=timeout, check=True).stdout
+        run("fetch", "--quiet", remote, branch)
+        return run("show", f"FETCH_HEAD:{rel}")
+    except (subprocess.SubprocessError, OSError, ValueError):
+        return None
+
+
 def publish(paths: list[Path], message: str, *, branch: str = "main", remote: str = "origin",
-            root: Path = ROOT, timeout: float = 30, attempts: int = 2, log=print) -> bool:
-    """Commit `paths` (as they are on disk) onto `remote/branch` and push. True on success."""
-    if os.environ.get("GITHUB_ACTIONS"):
+            root: Path = ROOT, timeout: float = 30, attempts: int = 2, log=print,
+            force: bool = False, guard=None) -> bool:
+    """Commit `paths` (as they are on disk) onto `remote/branch` and push. True on success.
+
+    Inside GitHub Actions this is a no-op unless `force` (the cloud fallback).
+    `guard(read)` is called with a reader of the files on the commit the new
+    commit will be built on (`read(rel_path) -> str | None`); if it returns
+    False nothing is pushed.  A push only succeeds if `branch` still points at
+    that commit, so the guard's verdict cannot go stale.
+    """
+    if os.environ.get("GITHUB_ACTIONS") and not force:
         return False
     paths = [Path(p) for p in paths if Path(p).exists()]
     if not paths:
@@ -45,6 +66,15 @@ def publish(paths: list[Path], message: str, *, branch: str = "main", remote: st
         try:
             git("fetch", "--quiet", remote, branch)
             base = git("rev-parse", "FETCH_HEAD")
+            if guard is not None:
+                def read(rel: str, base: str = base) -> str | None:
+                    try:
+                        return git("show", f"{base}:{rel}")
+                    except subprocess.SubprocessError:
+                        return None
+                if not guard(read):
+                    log("  cloud sync: guard refused (main changed); nothing pushed")
+                    return False
             with tempfile.TemporaryDirectory() as tmp:
                 env = {**os.environ, "GIT_INDEX_FILE": str(Path(tmp) / "index")}
                 git("read-tree", base, env=env)

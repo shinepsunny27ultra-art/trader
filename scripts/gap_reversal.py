@@ -115,19 +115,25 @@ def _publish(session: date | None, *, fetch: bool,
         return target, last, picks, info
 
 
-def laptop_already_published(payload: dict | None, today: date) -> bool:
-    """True if `payload` is the laptop's final list for today (built this morning).
+def published_today(payload: dict | None, today: date) -> str | None:
+    """Who built `payload` as today's list this morning: "laptop", "github-actions" or None.
 
-    An evening PRELIMINARY list (built before the overnight global closes) does
-    not count: on a morning the laptop is off, the cloud's fresh list replaces it.
+    An evening PRELIMINARY list (built the day before) does not count: on a
+    morning the laptop is off, the cloud's fresh list replaces it.
     """
     if not payload or payload.get("session") != today.isoformat():
-        return False
+        return None
     if not str(payload.get("generated_at", "")).startswith(today.isoformat()):
-        return False
-    if payload.get("publisher"):
-        return payload["publisher"] == "laptop"
-    return bool(payload.get("model"))              # lists written before the publisher field
+        return None
+    if payload.get("publisher") in ("laptop", "github-actions"):
+        return payload["publisher"]
+    # Lists written before the publisher field: only the laptop has a model.
+    return "laptop" if payload.get("model") else "github-actions"
+
+
+def laptop_already_published(payload: dict | None, today: date) -> bool:
+    """True if `payload` is the laptop's list for today, built this morning."""
+    return published_today(payload, today) == "laptop"
 
 
 def cmd_picks(args) -> None:
@@ -160,13 +166,23 @@ def cmd_picks(args) -> None:
              enabled=args.push)
         raise SystemExit(2) from exc
 
+    now = datetime.now(IST)
+    title, body, priority = _list_message(session, last, picks, info, now)
+    if args.push and not in_actions and session == now.date():
+        body = _replaces_fallback_note(session) + body
+    push(title, body, enabled=args.push, priority=priority)
+    _sync(f"chore(data): publish picks for {session} [skip ci]")
+
+
+def _list_message(session: date, last, picks: list[G.Pick], info: dict,
+                  now: datetime) -> tuple[str, str, str]:
+    """(title, body, priority) of the phone message for a list."""
     main = [p for p in picks if not p.reserve]
     lines = [f"{p.rank}. SHORT {p.quantity} {p.symbol.removesuffix('.NS'):<11} "
              + (f"LIMIT ₹{p.limit_price:,.2f}  " if p.limit_price else "")
              + f"gap yday {p.gap_prev_pct:+.1f}%  stop +₹{p.stop_distance:,.1f} ({p.stop_pct:.1f}%)"
              for p in main]
     reserves = ", ".join(p.symbol.removesuffix(".NS") for p in picks if p.reserve)
-    now = datetime.now(IST)
     late = session == now.date() and now.strftime("%H:%M") > "09:08"   # auction entry can close from 09:08
     if late:
         lines.insert(0, "⚠ LATE: the open has passed. The tested entry is the open itself — "
@@ -211,9 +227,33 @@ def cmd_picks(args) -> None:
         + f"\nThen: BUY SL-M at your fill + the stop shown. Cover all at {CONFIG.square_off}."
         f"\n~₹{CONFIG.capital / CONFIG.picks:,.0f} each, based on {last} closes." + ranked
     )
-    push(f"{'🕗 Preliminary' if preliminary else '📉'} gap-reversal shorts for {session:%a %d %b}", body,
-         enabled=args.push, priority="default" if preliminary else "high")
-    _sync(f"chore(data): publish picks for {session} [skip ci]")
+    title = f"{'🕗 Preliminary' if preliminary else '📉'} gap-reversal shorts for {session:%a %d %b}"
+    if os.environ.get("GITHUB_ACTIONS"):
+        title = f"☁ Cloud-fallback gap-reversal shorts for {session:%a %d %b}"
+    return title, body, ("default" if preliminary else "high")
+
+
+def _remote_picks() -> dict | None:
+    """The list currently on GitHub `main` (what the cloud app and the fallback see)."""
+    import json
+
+    from nse_intraday_ai import cloud_sync
+
+    raw = cloud_sync.read_remote(G.PICKS_PATH)
+    try:
+        return json.loads(raw) if raw else None
+    except ValueError:
+        return None
+
+
+def _replaces_fallback_note(session: date) -> str:
+    """A first line for the laptop's message when the cloud fallback already sent a list."""
+    prior = _remote_picks()
+    if prior and prior.get("session") == session.isoformat() and \
+            published_today(prior, session) == "github-actions":
+        return (f"REPLACES the cloud-fallback list sent at {str(prior.get('generated_at', ''))[11:16]} — "
+                "trade THIS list, not that one.\n")
+    return ""
 
 
 def _sync(message: str) -> None:
@@ -221,6 +261,97 @@ def _sync(message: str) -> None:
     from nse_intraday_ai import cloud_sync
 
     cloud_sync.publish(cloud_sync.state_files(), message)
+
+
+# All times IST.  The laptop's 08:15 job lands on `main` by ~08:16 (25-45 s run).
+FALLBACK_BUILD_AT = "08:00"     # build the gap-rule list from here (it needs no morning data)
+FALLBACK_DEADLINE = "08:20"     # the laptop's list has priority until here; publish right after
+FALLBACK_POLL_SECONDS = 20
+
+
+def _at(day: date, hhmm: str) -> datetime:
+    h, m = map(int, hhmm.split(":"))
+    return datetime(day.year, day.month, day.day, h, m, tzinfo=IST)
+
+
+def cmd_cloud_fallback(args, *, clock=None, sleep=None, remote=None, publish=None) -> str:
+    """GitHub Actions: publish a gap-rule list by ~08:21 IST unless the laptop does.
+
+    1. Sleep until FALLBACK_BUILD_AT (the 03:00 run waits here, so GitHub's late
+       starts — 15 min is normal, hours are possible — cannot make it miss 08:30).
+    2. Stand aside if today's list is already on `main` (laptop or an earlier run).
+    3. Build the list (no push yet), then poll `main` until FALLBACK_DEADLINE:
+       if the laptop publishes, stand aside.
+    4. Commit it to `main`, then push it to the phone.
+    Returns what happened (for the tests and the log).
+    """
+    import time as _time
+
+    clock = clock or (lambda: datetime.now(IST))
+    sleep = sleep or _time.sleep
+    remote = remote or _remote_picks
+    if publish is None:
+        import json
+
+        from nse_intraday_ai import cloud_sync
+        rel = G.PICKS_PATH.resolve().relative_to(ROOT.resolve()).as_posix()
+
+        def nobody_published(read) -> bool:
+            raw = read(rel)
+            try:
+                return published_today(json.loads(raw) if raw else None, today) is None
+            except ValueError:
+                return True
+
+        def publish(msg: str) -> bool:
+            return cloud_sync.publish([G.PICKS_PATH], msg, force=True, attempts=3, guard=nobody_published)
+
+    today = clock().date()
+    if not args.any_day:
+        from nse_intraday_ai.nse_calendar import is_trading_day
+        if not is_trading_day(today):
+            print(f"{today}: not an NSE trading day — nothing to do")
+            return "holiday"
+    build_at, deadline = _at(today, args.build_at), _at(today, args.deadline)
+    if clock() < build_at:
+        wait = (build_at - clock()).total_seconds()
+        print(f"{clock():%H:%M:%S} IST: waiting {wait / 60:.0f} min until {args.build_at} IST", flush=True)
+        sleep(wait)
+    who = published_today(remote(), today)
+    if who:
+        print(f"{clock():%H:%M:%S} IST: today's list is already on main ({who}) — standing aside")
+        return f"stood aside: {who}"
+    target = G.next_session() if args.any_day else today
+    try:
+        session, last, picks, info = _publish(target, fetch=not args.no_fetch, history_days=args.history_days)
+    except G.StaleDataError as exc:
+        push("⚠ Gap-reversal: NO LIST (cloud fallback)", f"{exc}.\nNo picks published.", enabled=args.push)
+        raise SystemExit(2) from exc
+    print(f"{clock():%H:%M:%S} IST: gap-rule list built "
+          f"({', '.join(p.symbol.removesuffix('.NS') for p in picks if not p.reserve)})", flush=True)
+    while clock() < deadline:
+        who = published_today(remote(), today)
+        if who:
+            print(f"{clock():%H:%M:%S} IST: the {who} list arrived — standing aside")
+            return f"stood aside: {who}"
+        sleep(max(1.0, min(FALLBACK_POLL_SECONDS, (deadline - clock()).total_seconds())))
+    who = published_today(remote(), today)
+    if who:
+        print(f"{clock():%H:%M:%S} IST: today's list is already on main ({who}) — standing aside")
+        return f"stood aside: {who}"
+    title, body, priority = _list_message(session, last, picks, info, clock())
+    if args.dry_run:
+        print(f"{clock():%H:%M:%S} IST: DRY RUN — would publish and push:\n[{title}]\n{body}")
+        return "dry run"
+    if not publish(f"chore(data): cloud-fallback picks for {session} [skip ci]"):
+        who = published_today(remote(), today)
+        if who:
+            print(f"{clock():%H:%M:%S} IST: the {who} list landed first — standing aside")
+            return f"stood aside: {who}"
+        raise SystemExit("could not publish the fallback list to main")
+    print(f"{clock():%H:%M:%S} IST: published to main")
+    push(title, body, enabled=args.push, priority=priority)
+    return "published"
 
 
 def cmd_final(args) -> None:
@@ -479,6 +610,15 @@ def main() -> None:
         if name == "picks":
             p.add_argument("--history-days", type=int, default=HISTORY_DAYS_DEFAULT,
                            help="calendar days of NSE files to refresh (45 on a fresh machine)")
+    f = sub.add_parser("cloud-fallback", help="GitHub Actions: gap-rule list by 08:21 IST unless the laptop "
+                                               "publishes first")
+    f.add_argument("--push", action="store_true", help="send to the phone via ntfy when published")
+    f.add_argument("--no-fetch", action="store_true", help="use the local cache as-is")
+    f.add_argument("--history-days", type=int, default=45, help="calendar days of NSE files to refresh")
+    f.add_argument("--build-at", default=FALLBACK_BUILD_AT, help="HH:MM IST to start building")
+    f.add_argument("--deadline", default=FALLBACK_DEADLINE, help="HH:MM IST the laptop has priority until")
+    f.add_argument("--dry-run", action="store_true", help="build and decide, but neither publish nor push")
+    f.add_argument("--any-day", action="store_true", help="skip the trading-day check (tests/dry runs)")
     b = sub.add_parser("backtest")
     b.add_argument("--sessions", type=int, default=14, help="replay the last N sessions")
     b.add_argument("--since", help="replay every session from this ISO date instead")
@@ -487,7 +627,7 @@ def main() -> None:
     b.add_argument("--save", action="store_true", help=f"write {BACKTEST.relative_to(ROOT)} for the app")
     args = parser.parse_args()
     {"picks": cmd_picks, "final": cmd_final, "levels": cmd_levels, "record": cmd_record,
-     "backtest": cmd_backtest}[args.cmd](args)
+     "backtest": cmd_backtest, "cloud-fallback": cmd_cloud_fallback}[args.cmd](args)
 
 
 if __name__ == "__main__":
