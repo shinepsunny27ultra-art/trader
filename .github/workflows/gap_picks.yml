@@ -1,14 +1,25 @@
-name: NSE 08:45 AM Morning Gap Ranker
+name: NSE morning gap list (cloud fallback)
+
+# The laptop publishes the model-ranked list at 08:15 IST (scripts/gap_reversal.py
+# picks -> cloud_sync).  This runner has no model and no archive: inside Actions
+# the script stands aside when the laptop already built today's list, and
+# otherwise ranks by the gap rule so the cloud app still has a list.
 
 on:
   schedule:
-    # 03:15 UTC is 08:45 AM IST (Monday to Friday)
-    - cron: '15 3 * * 1-5'
-  workflow_dispatch: # Allows manual trigger anytime from GitHub UI
+    # 02:45 UTC = 08:15 IST, Mon-Fri.  GitHub usually starts scheduled runs 5-20
+    # minutes late; the pre-open limit window closes at 09:08.
+    - cron: '45 2 * * 1-5'
+  workflow_dispatch: # manual run from the Actions tab
+
+concurrency:
+  group: gap-picks
+  cancel-in-progress: false
 
 jobs:
   morning_picks:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
 
@@ -27,20 +38,28 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run 08:45 AM Morning Gap Ranker
+      - name: Build the list (stands aside if the laptop already published)
         env:
           PYTHONPATH: src
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}   # optional: phone push on days the laptop is off
         run: |
-          python scripts/gap_reversal.py picks --push
+          python scripts/gap_reversal.py picks --push --history-days 45
 
-      - name: Commit and Push Today's Picks to GitHub
+      - name: Commit and push the list
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add -f data/gap_reversal/picks.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No changes to commit"
-          else
-            git commit -m "chore(data): publish morning gap picks [skip ci]"
-            git push origin HEAD
+            exit 0
           fi
+          git fetch --quiet origin main
+          # The laptop may have published while this job ran: its list wins.
+          if ! git diff --quiet HEAD origin/main -- data/gap_reversal/picks.json; then
+            echo "main got a newer list meanwhile; keeping it"
+            exit 0
+          fi
+          git commit -m "chore(data): publish morning gap picks (cloud fallback) [skip ci]"
+          git rebase origin/main
+          git push origin HEAD:main
