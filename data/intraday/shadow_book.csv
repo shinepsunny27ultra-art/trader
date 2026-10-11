@@ -1,0 +1,315 @@
+session,strategy,symbol,side,bar,entry,stop,target,reason,time,status,exit,exit_bar,gross_bps,net_bps
+2026-10-05,orb60,SCI,1,53,287.3,272.7,,first-hour volume 18.8x normal,13:40,CLOSED,290.55,72,113.1,99.8
+2026-10-05,orb60,DMART,-1,13,3642.2,3785.0,,first-hour volume 10.7x normal,10:20,CLOSED,3558.8,72,229.0,215.7
+2026-10-05,orb60,NYKAA,1,12,342.7,335.55,,first-hour volume 10.5x normal,10:15,STOP,335.55,25,-208.6,-221.9
+2026-10-05,orb60,LGEINDIA,1,12,1786.3,1715.9,,first-hour volume 8.1x normal,10:15,CLOSED,1777.0,72,-52.1,-65.4
+2026-10-05,orb60,CYIENT,1,12,1171.4,1119.0,,first-hour volume 6.9x normal,10:15,CLOSED,1140.9,72,-260.4,-273.7
+2026-10-05,gap_fade,NYKAA,-1,1,341.15,345.86,324.95,gap +1.2 ATR,09:20,CLOSED,338.2,72,86.5,73.2
+2026-10-05,gap_fade,BSOFT,-1,1,274.6,278.57,269.75,gap +1.0 ATR,09:20,STOP,278.57,2,-144.6,-157.9
+2026-10-05,vol_breakout,NYKAA,1,12,342.7,338.94,349.76,⭐ high-conviction new session high on 10.5x volume,10:15,STOP,338.94,13,-109.7,-123.0
+2026-10-05,vol_breakout,LGEINDIA,1,12,1786.3,1769.05,1818.64,⭐ high-conviction new session high on 8.1x volume,10:15,TARGET,1818.64,23,181.0,167.7
+2026-10-05,vol_breakout,DMART,-1,13,3642.2,3672.21,3585.92,⭐ high-conviction new session low on 10.2x volume,10:20,TARGET,3585.92,28,154.5,141.2
+2026-10-05,vol_breakout,ZFCVINDIA,-1,13,2205.2,2229.67,2159.32,⭐ high-conviction new session low on 3.8x volume,10:20,CLOSED,2205.9,72,-3.2,-16.5
+2026-10-05,vol_breakout,SAMMAANCAP,-1,14,134.1,135.69,131.11,new session low on 2.8x volume,10:25,CLOSED,133.33,72,57.4,44.1
+2026-10-05,vol_breakout,BHARTIHEXA,1,15,1393.2,1377.11,1423.38,⭐ high-conviction new session high on 34.1x volume,10:30,CLOSED,1382.9,72,-73.9,-87.2
+2026-10-05,vol_breakout,RECLTD,1,15,294.5,291.86,299.44,new session high on 2.8x volume,10:30,STOP,291.86,25,-89.6,-102.9
+2026-10-05,vol_breakout,HDFCBANK,-1,16,713.05,719.33,701.27,new session low on 2.9x volume,10:35,TARGET,701.27,34,165.2,151.9
+2026-10-05,vol_breakout,GAIL,-1,17,169.05,170.2,166.9,new session low on 2.7x volume,10:40,TARGET,166.9,31,127.2,113.9
+2026-10-05,vol_breakout,VAML,-1,18,397.5,404.91,383.6,new session low on 1.9x volume,10:45,CLOSED,396.75,72,18.9,5.6
+2026-10-05,vol_breakout,APOLLOHOSP,1,19,8032.0,7950.53,8184.76,new session high on 2.6x volume,10:50,CLOSED,8000.0,72,-39.8,-53.1
+2026-10-05,vol_breakout,IRCTC,-1,19,455.0,459.05,447.41,new session low on 2.3x volume,10:50,STOP,459.05,42,-89.0,-102.3
+2026-10-05,vol_breakout,PRIVISCL,-1,20,3465.9,3507.97,3387.02,new session low on 2.1x volume,10:55,STOP,3507.97,24,-121.4,-134.7
+2026-10-05,vol_breakout,HCLTECH,-1,20,1209.8,1224.12,1182.96,new session low on 2.0x volume,10:55,CLOSED,1200.0,72,81.0,67.7
+2026-10-05,vol_breakout,POLICYBZR,1,21,1003.1,951.55,1099.75,⭐ high-conviction new session high on 3.0x volume,11:00,CLOSED,980.1,72,-229.3,-242.6
+2026-10-05,vol_breakout,DRREDDY,1,21,1203.4,1191.64,1225.45,new session high on 2.0x volume,11:00,CLOSED,1204.8,72,11.6,-1.7
+2026-10-05,vol_breakout,SUNTV,1,22,634.5,621.84,658.24,⭐ high-conviction new session high on 3.3x volume,11:05,CLOSED,627.55,72,-109.5,-122.8
+2026-10-05,vol_breakout,UCOBANK,-1,22,23.18,23.36,22.85,new session low on 2.8x volume,11:05,STOP,23.36,55,-77.7,-91.0
+2026-10-05,vol_breakout,J&KBANK,-1,23,140.38,142.01,137.33,new session low on 1.9x volume,11:10,STOP,142.01,53,-116.1,-129.4
+2026-10-05,vol_breakout,KOTAKBANK,-1,23,416.3,420.11,409.16,new session low on 1.6x volume,11:10,CLOSED,416.5,72,-4.8,-18.1
+2026-10-05,vol_breakout,SOBHA,-1,24,1206.0,1220.23,1179.32,new session low on 2.0x volume,11:15,CLOSED,1199.6,72,53.1,39.8
+2026-10-05,vol_breakout,ASIANPAINT,-1,24,2347.7,2365.24,2314.81,new session low on 1.9x volume,11:15,CLOSED,2363.0,72,-65.2,-78.5
+2026-10-05,vol_breakout,TRIDENT,-1,25,21.89,22.08,21.53,new session low on 1.9x volume,11:20,CLOSED,21.87,72,9.1,-4.2
+2026-10-05,vol_breakout,ONGC,-1,25,222.76,224.65,219.21,new session low on 1.8x volume,11:20,STOP,224.65,43,-84.8,-98.1
+2026-10-05,vol_breakout,M&M,1,26,2861.0,2834.92,2909.9,new session high on 1.8x volume,11:25,CLOSED,2853.3,72,-26.9,-40.2
+2026-10-05,vol_breakout,AXISBANK,-1,26,1220.8,1231.65,1200.45,new session low on 1.7x volume,11:25,STOP,1231.65,53,-88.9,-102.2
+2026-10-05,vol_breakout,ITC,1,27,262.75,260.79,266.42,new session high on 2.8x volume,11:30,STOP,260.79,47,-74.6,-87.9
+2026-10-05,vol_breakout,ICICIBANK,1,27,1320.4,1311.78,1336.56,new session high on 1.8x volume,11:30,STOP,1311.78,33,-65.3,-78.6
+2026-10-05,vol_breakout,INFY,-1,28,1015.7,1026.45,995.54,new session low on 1.6x volume,11:35,CLOSED,1019.0,72,-32.5,-45.8
+2026-10-05,vol_breakout,IOB,-1,29,30.78,31.03,30.31,⭐ high-conviction new session low on 3.0x volume,11:40,STOP,31.03,41,-81.2,-94.5
+2026-10-05,vol_breakout,BAJAJFINSV,-1,29,1740.2,1756.09,1710.41,new session low on 2.1x volume,11:40,CLOSED,1738.0,72,12.6,-0.7
+2026-10-05,vol_breakout,MINDACORP,-1,30,650.45,658.26,635.8,new session low on 1.6x volume,11:45,CLOSED,648.15,72,35.4,22.1
+2026-10-05,vol_breakout,NUVAMA,1,32,1796.0,1773.45,1838.29,new session high on 2.9x volume,11:55,TARGET,1838.29,38,235.5,222.2
+2026-10-05,vol_breakout,MOTHERSON,-1,32,155.36,157.23,151.85,new session low on 1.5x volume,11:55,CLOSED,155.5,72,-9.0,-22.3
+2026-10-05,vol_breakout,TARIL,-1,33,287.1,291.19,279.43,⭐ high-conviction new session low on 4.5x volume,12:00,CLOSED,285.75,72,47.0,33.7
+2026-10-05,vol_breakout,SCHNEIDER,-1,33,1279.2,1296.68,1246.42,new session low on 2.7x volume,12:00,CLOSED,1269.9,72,72.7,59.4
+2026-10-05,vol_breakout,KIMS,-1,34,710.2,720.08,691.67,new session low on 2.1x volume,12:05,CLOSED,707.85,72,33.1,19.8
+2026-10-05,vol_breakout,UPL,-1,34,509.25,514.77,498.9,new session low on 2.0x volume,12:05,TARGET,498.9,58,203.2,189.9
+2026-10-05,vol_breakout,LINDEINDIA,-1,35,5996.0,6059.61,5876.72,new session low on 2.2x volume,12:10,STOP,6059.61,53,-106.1,-119.4
+2026-10-05,vol_breakout,SHREECEM,-1,35,21785.0,22011.29,21360.71,new session low on 1.8x volume,12:10,CLOSED,21900.0,72,-52.8,-66.1
+2026-10-05,vol_breakout,AUBANK,1,36,1020.2,1009.42,1040.42,new session high on 2.5x volume,12:15,CLOSED,1031.4,72,109.8,96.5
+2026-10-05,vol_breakout,ENDURANCE,-1,36,2514.0,2546.24,2453.56,new session low on 1.6x volume,12:15,CLOSED,2529.5,72,-61.7,-75.0
+2026-10-05,vol_breakout,POONAWALLA,1,37,450.65,443.89,463.32,new session high on 1.6x volume,12:20,CLOSED,451.85,72,26.6,13.3
+2026-10-05,vol_breakout,TATACONSUM,-1,38,948.45,955.93,934.43,new session low on 1.6x volume,12:25,CLOSED,953.0,72,-48.0,-61.3
+2026-10-05,vol_breakout,ABSLAMC,1,42,1031.95,1013.13,1067.24,new session high on 1.5x volume,12:45,CLOSED,1028.25,72,-35.9,-49.2
+2026-10-05,vol_breakout,ETERNAL,1,43,318.9,315.32,325.62,new session high on 2.0x volume,12:50,CLOSED,320.05,72,36.1,22.8
+2026-10-05,vol_breakout,RADICO,1,43,4299.1,4247.65,4395.56,new session high on 1.6x volume,12:50,CLOSED,4290.0,72,-21.2,-34.5
+2026-10-05,vol_breakout,TDPOWERSYS,-1,45,803.85,821.71,770.36,⭐ high-conviction new session low on 6.9x volume,13:00,CLOSED,813.55,72,-120.7,-134.0
+2026-10-05,vol_breakout,NESTLEIND,-1,45,1297.0,1308.61,1275.24,new session low on 2.4x volume,13:00,CLOSED,1298.9,72,-14.6,-27.9
+2026-10-05,vol_breakout,PETRONET,-1,46,287.75,290.16,283.23,new session low on 2.2x volume,13:05,STOP,290.16,68,-83.8,-97.1
+2026-10-05,vol_breakout,UNITDSPR,-1,46,1332.1,1344.44,1308.96,new session low on 1.7x volume,13:05,STOP,1344.44,58,-92.6,-105.9
+2026-10-05,vol_breakout,NBCC,-1,47,75.75,76.64,74.09,new session low on 1.6x volume,13:10,STOP,76.64,53,-117.5,-130.8
+2026-10-05,vol_breakout,LT,-1,47,3717.0,3745.9,3662.81,new session low on 1.5x volume,13:10,STOP,3745.9,71,-77.8,-91.1
+2026-10-05,vol_breakout,COROMANDEL,1,49,1796.2,1773.06,1839.59,new session high on 2.2x volume,13:20,CLOSED,1806.5,72,57.3,44.0
+2026-10-05,vol_breakout,ESCORTS,1,49,2771.7,2742.8,2825.89,new session high on 1.6x volume,13:20,CLOSED,2809.9,72,137.8,124.5
+2026-10-05,vol_breakout,ENRIN,-1,50,3323.0,3371.39,3232.28,new session low on 1.5x volume,13:25,CLOSED,3342.6,72,-59.0,-72.3
+2026-10-05,vol_breakout,SCI,1,53,287.3,284.11,293.28,⭐ high-conviction new session high on 14.4x volume,13:40,STOP,284.11,53,-111.0,-124.3
+2026-10-05,vol_breakout,CROMPTON,1,53,211.71,209.65,215.58,new session high on 1.8x volume,13:40,CLOSED,211.44,72,-12.8,-26.1
+2026-10-05,vol_breakout,BOSCHLTD,-1,56,44850.0,45365.57,43883.3,new session low on 1.8x volume,13:55,CLOSED,44760.0,72,20.1,6.8
+2026-10-05,vol_breakout,CUMMINSIND,-1,56,4799.2,4846.84,4709.87,new session low on 1.8x volume,13:55,CLOSED,4829.0,72,-62.1,-75.4
+2026-10-05,vol_breakout,KAJARIACER,1,58,1224.3,1210.89,1249.44,new session high on 1.7x volume,14:05,CLOSED,1217.0,72,-59.6,-72.9
+2026-10-05,vol_breakout,ABREL,-1,61,1085.0,1104.45,1048.53,new session low on 1.8x volume,14:20,CLOSED,1082.0,72,27.6,14.3
+2026-10-05,vol_breakout,KFINTECH,1,62,871.9,861.66,891.09,new session high on 1.6x volume,14:25,CLOSED,869.65,72,-25.8,-39.1
+2026-10-05,vol_breakout,PWL,1,65,128.84,126.46,133.3,new session high on 1.7x volume,14:40,CLOSED,131.11,72,176.2,162.9
+2026-10-05,vol_breakout,MFSL,-1,67,1345.7,1370.19,1299.77,new session low on 1.6x volume,14:50,CLOSED,1348.0,72,-17.1,-30.4
+2026-10-06,orb60,TRENT,1,49,2893.7,2783.1,,first-hour volume 22.4x normal,13:20,CLOSED,2900.0,72,21.8,8.5
+2026-10-06,orb60,HONASA,1,13,478.25,454.2,,first-hour volume 7.3x normal,10:20,CLOSED,476.2,72,-42.9,-56.2
+2026-10-06,orb60,BHEL,1,40,448.95,427.95,,first-hour volume 6.7x normal,12:35,CLOSED,451.5,72,56.8,43.5
+2026-10-06,orb60,STARHEALTH,1,17,546.75,541.05,,first-hour volume 4.7x normal,10:40,STOP,541.05,20,-104.3,-117.6
+2026-10-06,orb60,GRAVITA,1,12,1498.0,1429.5,,first-hour volume 4.6x normal,10:15,CLOSED,1501.1,72,20.7,7.4
+2026-10-06,orb60,JSWENERGY,1,12,502.0,492.25,,first-hour volume 4.4x normal,10:15,CLOSED,494.15,72,-156.4,-169.7
+2026-10-06,orb60,CUMMINSIND,1,28,4863.2,4809.2,,first-hour volume 4.4x normal,11:35,CLOSED,4932.0,72,141.5,128.2
+2026-10-06,gap_fade,TRENT,-1,1,2838.0,2868.41,2580.0,gap +3.4 ATR,09:20,STOP,2868.41,3,-107.2,-120.5
+2026-10-06,gap_fade,HONASA,-1,1,465.45,474.48,442.1,gap +1.1 ATR,09:20,STOP,474.48,2,-194.0,-207.3
+2026-10-06,vol_breakout,GRAVITA,1,12,1498.0,1480.1,1531.57,⭐ high-conviction new session high on 4.6x volume,10:15,CLOSED,1501.1,72,20.7,7.4
+2026-10-06,vol_breakout,JSWENERGY,1,12,502.0,497.09,511.21,⭐ high-conviction new session high on 4.4x volume,10:15,STOP,497.09,35,-97.8,-111.1
+2026-10-06,vol_breakout,HONASA,1,13,478.25,471.02,491.8,⭐ high-conviction new session high on 7.4x volume,10:20,TARGET,491.8,21,283.3,270.0
+2026-10-06,vol_breakout,PGEL,1,13,503.5,497.24,515.25,⭐ high-conviction new session high on 3.2x volume,10:20,TARGET,515.25,26,233.4,220.1
+2026-10-06,vol_breakout,URBANCO,1,14,169.2,166.2,174.83,⭐ high-conviction new session high on 3.6x volume,10:25,CLOSED,173.3,72,242.3,229.0
+2026-10-06,vol_breakout,PETRONET,1,15,297.4,294.88,302.12,new session high on 2.7x volume,10:30,CLOSED,297.45,72,1.7,-11.6
+2026-10-06,vol_breakout,HDFCLIFE,1,16,547.85,540.89,560.9,⭐ high-conviction new session high on 3.2x volume,10:35,CLOSED,542.3,72,-101.3,-114.6
+2026-10-06,vol_breakout,JIOFIN,1,16,217.79,215.95,221.23,new session high on 2.0x volume,10:35,CLOSED,217.2,72,-27.1,-40.4
+2026-10-06,vol_breakout,STARHEALTH,1,17,546.75,539.26,560.8,⭐ high-conviction new session high on 4.9x volume,10:40,STOP,539.26,20,-137.0,-150.3
+2026-10-06,vol_breakout,ADANIGREEN,1,17,1326.3,1311.27,1354.48,new session high on 3.0x volume,10:40,STOP,1311.27,50,-113.3,-126.6
+2026-10-06,vol_breakout,VEDL,1,18,264.9,262.17,270.02,⭐ high-conviction new session high on 3.1x volume,10:45,CLOSED,266.25,72,51.0,37.7
+2026-10-06,vol_breakout,NUVAMA,1,18,1855.9,1830.23,1904.03,new session high on 2.5x volume,10:45,STOP,1830.23,71,-138.3,-151.6
+2026-10-06,vol_breakout,ECLERX,-1,19,1886.7,1915.15,1833.35,new session low on 2.0x volume,10:50,STOP,1915.15,71,-150.8,-164.1
+2026-10-06,vol_breakout,AZAD,1,19,3078.6,3021.83,3185.05,new session high on 1.9x volume,10:50,CLOSED,3065.7,72,-41.9,-55.2
+2026-10-06,vol_breakout,FRACTAL,1,20,731.05,722.3,747.45,⭐ high-conviction new session high on 3.8x volume,10:55,CLOSED,743.25,72,166.9,153.6
+2026-10-06,vol_breakout,HDBFS,-1,20,616.05,622.34,604.25,new session low on 2.3x volume,10:55,STOP,622.34,36,-102.1,-115.4
+2026-10-06,vol_breakout,BLUESTARCO,1,21,1571.7,1551.35,1609.86,new session high on 2.4x volume,11:00,CLOSED,1571.0,72,-4.5,-17.8
+2026-10-06,vol_breakout,MEESHO,1,21,239.45,234.88,248.01,new session high on 2.2x volume,11:00,CLOSED,237.32,72,-89.0,-102.3
+2026-10-06,vol_breakout,TIINDIA,1,22,2391.0,2363.29,2442.96,new session high on 2.9x volume,11:05,TARGET,2442.96,30,217.3,204.0
+2026-10-06,vol_breakout,KPIL,1,22,1437.0,1420.04,1468.79,new session high on 2.0x volume,11:05,TARGET,1468.79,51,221.2,207.9
+2026-10-06,vol_breakout,CPPLUS,-1,23,4030.0,4101.41,3896.1,new session low on 1.9x volume,11:10,CLOSED,3984.9,72,111.9,98.6
+2026-10-06,vol_breakout,RRKABEL,1,23,2763.7,2730.25,2826.43,new session high on 1.8x volume,11:10,STOP,2730.25,46,-121.0,-134.3
+2026-10-06,vol_breakout,JINDALSTEL,1,24,1078.8,1066.88,1101.16,⭐ high-conviction new session high on 11.3x volume,11:15,CLOSED,1082.1,72,30.6,17.3
+2026-10-06,vol_breakout,UNITDSPR,-1,24,1358.8,1371.86,1334.31,new session low on 1.8x volume,11:15,CLOSED,1349.4,72,69.2,55.9
+2026-10-06,vol_breakout,PWL,-1,25,127.75,130.17,123.21,new session low on 2.7x volume,11:20,STOP,130.17,50,-189.4,-202.7
+2026-10-06,vol_breakout,UNOMINDA,1,25,1121.5,1104.74,1152.93,new session high on 2.4x volume,11:20,CLOSED,1120.0,72,-13.4,-26.7
+2026-10-06,vol_breakout,PIIND,1,26,2222.5,2197.14,2270.06,new session high on 1.6x volume,11:25,CLOSED,2245.2,72,102.1,88.8
+2026-10-06,vol_breakout,AETHER,1,26,1731.8,1707.26,1777.81,new session high on 1.5x volume,11:25,TARGET,1777.81,49,265.7,252.4
+2026-10-06,vol_breakout,ONGC,-1,27,222.35,224.06,219.14,new session low on 2.2x volume,11:30,CLOSED,223.5,72,-51.7,-65.0
+2026-10-06,vol_breakout,AWL,1,27,182.99,181.13,186.48,new session high on 2.2x volume,11:30,TARGET,186.48,42,190.7,177.4
+2026-10-06,vol_breakout,CUMMINSIND,1,28,4863.2,4816.23,4951.26,new session high on 2.9x volume,11:35,CLOSED,4932.0,72,141.5,128.2
+2026-10-06,vol_breakout,PRIVISCL,1,28,3456.5,3413.96,3536.26,new session high on 1.7x volume,11:35,TARGET,3536.26,35,230.8,217.5
+2026-10-06,vol_breakout,KALYANKJIL,-1,31,555.05,562.38,541.31,⭐ high-conviction new session low on 3.4x volume,11:50,CLOSED,549.35,72,102.7,89.4
+2026-10-06,vol_breakout,NAUKRI,1,32,1227.0,1210.43,1258.07,new session high on 1.6x volume,11:55,CLOSED,1235.5,72,69.3,56.0
+2026-10-06,vol_breakout,AARTIIND,1,32,485.55,479.15,497.56,new session high on 1.6x volume,11:55,CLOSED,481.05,72,-92.7,-106.0
+2026-10-06,vol_breakout,GODREJCP,1,33,862.25,855.87,874.22,new session high on 2.5x volume,12:00,CLOSED,870.75,72,98.6,85.3
+2026-10-06,vol_breakout,SHRIRAMFIN,-1,34,966.75,977.14,947.26,new session low on 1.6x volume,12:05,CLOSED,963.8,72,30.5,17.2
+2026-10-06,vol_breakout,ITC,-1,39,265.0,267.24,260.8,new session low on 1.8x volume,12:30,CLOSED,265.35,72,-13.2,-26.5
+2026-10-06,vol_breakout,BHEL,1,40,448.95,443.77,458.67,⭐ high-conviction new session high on 4.0x volume,12:35,CLOSED,451.5,72,56.8,43.5
+2026-10-06,vol_breakout,MOTILALOFS,1,40,1052.9,1041.04,1075.14,new session high on 1.7x volume,12:35,TARGET,1075.14,65,211.2,197.9
+2026-10-06,vol_breakout,MFSL,1,41,1356.7,1331.73,1403.52,new session high on 2.6x volume,12:40,CLOSED,1352.1,72,-33.9,-47.2
+2026-10-06,vol_breakout,HAVELLS,1,42,1052.4,1041.99,1071.92,new session high on 1.5x volume,12:45,CLOSED,1053.5,72,10.5,-2.8
+2026-10-06,vol_breakout,KOTAKBANK,1,44,434.4,430.59,441.54,new session high on 2.6x volume,12:55,STOP,430.59,71,-87.7,-101.0
+2026-10-06,vol_breakout,DEEPAKFERT,1,45,1327.8,1307.87,1365.16,new session high on 1.6x volume,13:00,TARGET,1365.16,47,281.4,268.1
+2026-10-06,vol_breakout,HUDCO,-1,47,159.99,162.11,156.02,new session low on 1.5x volume,13:10,TARGET,156.02,58,248.1,234.8
+2026-10-06,vol_breakout,LUPIN,1,48,2027.5,2011.39,2057.71,new session high on 1.8x volume,13:15,CLOSED,2030.0,72,12.3,-1.0
+2026-10-06,vol_breakout,NESTLEIND,1,48,1325.3,1313.96,1346.56,new session high on 1.5x volume,13:15,CLOSED,1338.5,72,99.6,86.3
+2026-10-06,vol_breakout,TRENT,1,49,2893.7,2869.37,2939.32,⭐ high-conviction new session high on 11.0x volume,13:20,CLOSED,2900.0,72,21.8,8.5
+2026-10-06,vol_breakout,BPCL,-1,50,296.0,298.92,290.53,new session low on 1.6x volume,13:25,STOP,298.92,68,-98.6,-111.9
+2026-10-06,vol_breakout,BSE,1,52,3298.6,3254.86,3380.61,new session high on 1.5x volume,13:35,CLOSED,3301.0,72,7.3,-6.0
+2026-10-06,vol_breakout,NAVA,1,53,577.45,571.16,589.24,new session high on 2.2x volume,13:40,CLOSED,575.35,72,-36.4,-49.7
+2026-10-06,vol_breakout,BHARTIHEXA,1,58,1385.3,1369.64,1414.66,new session high on 1.6x volume,14:05,STOP,1369.64,58,-113.0,-126.3
+2026-10-06,vol_breakout,KIMS,-1,60,693.1,703.92,672.82,new session low on 1.7x volume,14:15,CLOSED,692.65,72,6.5,-6.8
+2026-10-06,vol_breakout,GPIL,1,67,219.59,216.85,224.74,new session high on 1.6x volume,14:50,CLOSED,220.48,72,40.5,27.2
+2026-10-06,vol_breakout,RKFORGE,1,68,733.55,723.89,751.66,new session high on 1.6x volume,14:55,CLOSED,731.2,72,-32.0,-45.3
+2026-10-06,vol_breakout,BBOX,1,68,839.0,821.79,871.27,new session high on 1.5x volume,14:55,CLOSED,839.0,72,0.0,-13.3
+2026-10-07,orb60,BHARTIHEXA,1,38,1454.3,1379.3,,first-hour volume 18.3x normal,12:25,CLOSED,1479.9,72,176.0,162.7
+2026-10-07,orb60,HDBFS,-1,16,612.8,618.7,,first-hour volume 7.2x normal,10:35,CLOSED,602.55,72,167.3,154.0
+2026-10-07,orb60,PTCIL,1,57,24270.0,23785.0,,first-hour volume 5.7x normal,14:00,CLOSED,24625.0,72,146.3,133.0
+2026-10-07,gap_fade,JSWCEMENT,-1,1,112.42,113.79,113.2,gap +1.2 ATR,09:20,TARGET,111.48,2,83.6,70.3
+2026-10-07,gap_fade,TITAN,1,1,4386.5,4338.55,4550.0,gap -1.2 ATR,09:20,STOP,4338.55,1,-109.3,-122.6
+2026-10-07,vol_breakout,GLAND,1,12,3086.0,3051.55,3150.59,⭐ high-conviction new session high on 4.0x volume,10:15,TARGET,3150.59,35,209.3,196.0
+2026-10-07,vol_breakout,CHENNPETRO,1,12,1498.0,1471.02,1548.59,⭐ high-conviction new session high on 3.8x volume,10:15,TARGET,1548.59,27,337.7,324.4
+2026-10-07,vol_breakout,IEX,1,13,107.67,106.75,109.4,new session high on 2.9x volume,10:20,STOP,106.75,27,-85.4,-98.7
+2026-10-07,vol_breakout,CUPID,1,13,342.0,335.26,354.64,new session high on 2.7x volume,10:20,CLOSED,343.65,72,48.2,34.9
+2026-10-07,vol_breakout,AEGISLOG,1,15,1460.9,1432.51,1514.13,new session high on 2.1x volume,10:30,CLOSED,1457.7,72,-21.9,-35.2
+2026-10-07,vol_breakout,AXISBANK,1,15,1256.5,1245.83,1276.51,new session high on 2.0x volume,10:30,STOP,1245.83,46,-84.9,-98.2
+2026-10-07,vol_breakout,HDBFS,-1,16,612.8,619.19,600.82,⭐ high-conviction new session low on 6.5x volume,10:35,CLOSED,602.55,72,167.3,154.0
+2026-10-07,vol_breakout,PWL,1,16,137.85,135.39,142.45,⭐ high-conviction new session high on 3.1x volume,10:35,CLOSED,139.63,72,129.1,115.8
+2026-10-07,vol_breakout,RAINBOW,-1,17,1198.5,1216.62,1164.53,new session low on 2.2x volume,10:40,STOP,1216.62,22,-151.2,-164.5
+2026-10-07,vol_breakout,DEEPAKFERT,1,17,1403.4,1382.89,1441.85,new session high on 2.1x volume,10:40,CLOSED,1411.1,72,54.9,41.6
+2026-10-07,vol_breakout,PIRAMALFIN,1,18,2014.9,1970.85,2097.49,new session high on 2.1x volume,10:45,CLOSED,1984.0,72,-153.4,-166.7
+2026-10-07,vol_breakout,CUMMINSIND,1,18,4956.5,4913.06,5037.94,new session high on 1.9x volume,10:45,STOP,4913.06,45,-87.6,-100.9
+2026-10-07,vol_breakout,CANFINHOME,-1,19,722.1,729.7,707.86,new session low on 3.0x volume,10:50,STOP,729.7,68,-105.2,-118.5
+2026-10-07,vol_breakout,MRPL,1,19,182.45,179.58,187.84,new session high on 2.4x volume,10:50,CLOSED,182.88,72,23.6,10.3
+2026-10-07,vol_breakout,MOTHERSON,1,20,159.45,157.65,162.83,new session high on 2.5x volume,10:55,STOP,157.65,37,-112.9,-126.2
+2026-10-07,vol_breakout,BAJFINANCE,1,20,978.0,967.09,998.46,new session high on 2.4x volume,10:55,STOP,967.09,35,-111.6,-124.9
+2026-10-07,vol_breakout,MEDANTA,-1,21,1262.8,1283.09,1224.75,new session low on 2.3x volume,11:00,STOP,1283.09,27,-160.7,-174.0
+2026-10-07,vol_breakout,ASTRAL,1,21,1446.0,1433.3,1469.81,new session high on 2.1x volume,11:00,STOP,1433.3,35,-87.8,-101.1
+2026-10-07,vol_breakout,PNB,1,22,114.35,113.28,116.36,new session high on 2.1x volume,11:05,STOP,113.28,47,-93.6,-106.9
+2026-10-07,vol_breakout,UNIONBANK,1,22,172.21,170.36,175.69,new session high on 1.9x volume,11:05,CLOSED,172.99,72,45.3,32.0
+2026-10-07,vol_breakout,TATACOMM,-1,23,1659.0,1678.36,1622.7,⭐ high-conviction new session low on 7.5x volume,11:10,TARGET,1622.7,44,218.8,205.5
+2026-10-07,vol_breakout,CANHLIFE,1,23,143.0,140.59,147.51,⭐ high-conviction new session high on 7.0x volume,11:10,CLOSED,146.12,72,218.2,204.9
+2026-10-07,vol_breakout,ITC,1,24,266.75,264.53,270.91,⭐ high-conviction new session high on 4.9x volume,11:15,STOP,264.53,44,-83.2,-96.5
+2026-10-07,vol_breakout,NATIONALUM,-1,24,324.5,328.28,317.4,new session low on 2.7x volume,11:15,CLOSED,321.4,72,95.5,82.2
+2026-10-07,vol_breakout,BHEL,-1,25,447.8,453.18,437.71,new session low on 2.3x volume,11:20,CLOSED,448.5,72,-15.6,-28.9
+2026-10-07,vol_breakout,KARURVYSYA,1,25,328.45,324.66,335.56,new session high on 2.0x volume,11:20,CLOSED,330.75,72,70.0,56.7
+2026-10-07,vol_breakout,BBOX,1,26,862.95,847.69,891.56,new session high on 2.1x volume,11:25,TARGET,891.56,35,331.5,318.2
+2026-10-07,vol_breakout,TBOTEK,-1,27,1691.2,1714.15,1648.17,⭐ high-conviction new session low on 11.8x volume,11:30,STOP,1714.15,27,-135.7,-149.0
+2026-10-07,vol_breakout,ANGELONE,1,27,303.95,300.77,309.92,⭐ high-conviction new session high on 4.7x volume,11:30,STOP,300.77,47,-104.6,-117.9
+2026-10-07,vol_breakout,MINDACORP,-1,28,644.55,652.39,629.84,new session low on 2.8x volume,11:35,CLOSED,639.65,72,76.0,62.7
+2026-10-07,vol_breakout,PVRINOX,1,28,1312.9,1293.15,1349.92,new session high on 2.2x volume,11:35,TARGET,1349.92,36,282.0,268.7
+2026-10-07,vol_breakout,KEC,-1,29,363.4,367.71,355.32,new session low on 2.2x volume,11:40,CLOSED,362.4,72,27.5,14.2
+2026-10-07,vol_breakout,AWL,-1,29,183.7,185.76,179.84,new session low on 2.1x volume,11:40,STOP,185.76,35,-112.1,-125.4
+2026-10-07,vol_breakout,BHARTIARTL,1,30,1828.0,1815.02,1852.34,new session high on 2.0x volume,11:45,TARGET,1852.34,40,133.2,119.9
+2026-10-07,vol_breakout,TIINDIA,-1,30,2391.2,2420.88,2335.54,new session low on 1.9x volume,11:45,CLOSED,2385.0,72,25.9,12.6
+2026-10-07,vol_breakout,ABBOTINDIA,-1,31,25990.0,26266.86,25470.89,new session low on 1.9x volume,11:50,CLOSED,26120.0,72,-50.0,-63.3
+2026-10-07,vol_breakout,AMBUJACEM,-1,32,357.55,361.2,350.71,new session low on 1.6x volume,11:55,CLOSED,356.6,72,26.6,13.3
+2026-10-07,vol_breakout,IRCTC,1,32,457.0,452.67,465.13,new session high on 1.5x volume,11:55,CLOSED,453.0,72,-87.5,-100.8
+2026-10-07,vol_breakout,BHARTIHEXA,1,38,1454.3,1438.64,1483.66,⭐ high-conviction new session high on 15.9x volume,12:25,TARGET,1483.66,59,201.9,188.6
+2026-10-07,vol_breakout,JSWENERGY,-1,39,484.85,489.57,476.01,new session low on 1.6x volume,12:30,STOP,489.57,68,-97.3,-110.6
+2026-10-07,vol_breakout,IKS,1,43,1752.4,1726.27,1801.4,new session high on 1.8x volume,12:50,CLOSED,1736.4,72,-91.3,-104.6
+2026-10-07,vol_breakout,NESTLEIND,-1,44,1321.0,1332.77,1298.93,new session low on 1.7x volume,12:55,CLOSED,1325.0,72,-30.3,-43.6
+2026-10-07,vol_breakout,SRF,-1,44,2448.5,2470.37,2407.5,new session low on 1.6x volume,12:55,CLOSED,2454.0,72,-22.5,-35.8
+2026-10-07,vol_breakout,IOB,-1,46,30.9,31.16,30.4,new session low on 1.9x volume,13:05,STOP,31.16,63,-84.1,-97.4
+2026-10-07,vol_breakout,COROMANDEL,-1,47,1738.1,1761.87,1693.53,new session low on 1.9x volume,13:10,CLOSED,1745.3,72,-41.4,-54.7
+2026-10-07,vol_breakout,RECLTD,-1,47,297.6,300.39,292.36,new session low on 1.6x volume,13:10,STOP,300.39,51,-93.7,-107.0
+2026-10-07,vol_breakout,IGL,1,48,145.5,144.26,147.83,new session high on 1.7x volume,13:15,TARGET,147.83,68,160.1,146.8
+2026-10-07,vol_breakout,BSE,1,52,3369.0,3326.18,3449.28,new session high on 1.8x volume,13:35,CLOSED,3362.0,72,-20.8,-34.1
+2026-10-07,vol_breakout,POLYCAB,1,55,8223.5,8162.84,8337.23,new session high on 1.5x volume,13:50,CLOSED,8309.0,72,104.0,90.7
+2026-10-07,vol_breakout,PTCIL,1,57,24270.0,23975.0,24823.12,⭐ high-conviction new session high on 3.9x volume,14:00,CLOSED,24625.0,72,146.3,133.0
+2026-10-07,vol_breakout,GROWW,1,62,197.0,194.66,201.39,new session high on 1.6x volume,14:25,CLOSED,197.82,72,41.6,28.3
+2026-10-08,orb60,GMRAIRPORT,-1,13,88.84,90.55,,first-hour volume 8.9x normal,10:20,CLOSED,88.14,72,78.8,65.5
+2026-10-08,orb60,ITC,-1,15,257.35,264.55,,first-hour volume 7.8x normal,10:30,CLOSED,255.5,72,71.9,58.6
+2026-10-08,orb60,JUBLFOOD,-1,19,438.05,456.5,,first-hour volume 4.7x normal,10:50,CLOSED,428.75,72,212.3,199.0
+2026-10-08,gap_fade,PAYTM,1,1,1588.0,1558.67,1732.0,gap -1.3 ATR,09:20,CLOSED,1641.0,72,333.8,320.5
+2026-10-08,gap_fade,FSL,-1,1,281.6,285.59,259.2,gap +1.2 ATR,09:20,CLOSED,268.6,72,461.6,448.3
+2026-10-08,vol_breakout,BANKBARODA,1,12,239.35,237.52,242.79,⭐ high-conviction new session high on 3.1x volume,10:15,STOP,237.52,21,-76.5,-89.8
+2026-10-08,vol_breakout,ADANIENT,-1,12,2629.4,2662.99,2566.42,new session low on 2.8x volume,10:15,TARGET,2566.42,36,239.5,226.2
+2026-10-08,vol_breakout,GMRAIRPORT,-1,13,88.84,89.82,86.99,⭐ high-conviction new session low on 8.6x volume,10:20,CLOSED,88.14,72,78.8,65.5
+2026-10-08,vol_breakout,FSL,-1,14,267.65,270.84,261.67,⭐ high-conviction new session low on 12.8x volume,10:25,TARGET,261.67,48,223.4,210.1
+2026-10-08,vol_breakout,TIINDIA,-1,14,2344.4,2373.8,2289.27,new session low on 2.8x volume,10:25,TARGET,2289.27,36,235.2,221.9
+2026-10-08,vol_breakout,ITC,-1,15,257.35,259.51,253.31,⭐ high-conviction new session low on 7.0x volume,10:30,TARGET,253.31,69,157.0,143.7
+2026-10-08,vol_breakout,NAVA,-1,15,557.95,564.01,546.59,new session low on 2.6x volume,10:30,TARGET,546.59,39,203.6,190.3
+2026-10-08,vol_breakout,NAUKRI,-1,16,1189.3,1205.92,1158.14,⭐ high-conviction new session low on 3.6x volume,10:35,STOP,1205.92,51,-139.7,-153.0
+2026-10-08,vol_breakout,ENGINERSIN,-1,16,282.0,287.54,271.62,⭐ high-conviction new session low on 3.3x volume,10:35,STOP,287.54,47,-196.5,-209.8
+2026-10-08,vol_breakout,BHEL,-1,17,441.85,447.17,431.87,new session low on 2.1x volume,10:40,TARGET,431.87,59,225.9,212.6
+2026-10-08,vol_breakout,ADANIPOWER,-1,17,189.0,191.48,184.35,new session low on 1.9x volume,10:40,TARGET,184.35,44,246.0,232.7
+2026-10-08,vol_breakout,GLAXO,-1,18,2583.7,2617.13,2521.02,new session low on 2.2x volume,10:45,CLOSED,2538.5,72,174.9,161.6
+2026-10-08,vol_breakout,HINDPETRO,-1,18,335.7,339.07,329.39,new session low on 1.9x volume,10:45,TARGET,329.39,36,188.0,174.7
+2026-10-08,vol_breakout,JUBLFOOD,-1,19,438.05,444.0,426.89,⭐ high-conviction new session low on 4.0x volume,10:50,TARGET,426.89,71,254.8,241.5
+2026-10-08,vol_breakout,TITAN,1,19,4437.3,4395.0,4516.62,new session high on 2.1x volume,10:50,STOP,4395.0,48,-95.3,-108.6
+2026-10-08,vol_breakout,INDIACEM,-1,20,295.6,300.6,286.22,⭐ high-conviction new session low on 23.8x volume,10:55,CLOSED,293.0,72,88.0,74.7
+2026-10-08,vol_breakout,NMDC,-1,20,71.65,72.4,70.24,new session low on 2.4x volume,10:55,TARGET,70.24,61,196.8,183.5
+2026-10-08,vol_breakout,PHOENIXLTD,-1,21,1800.9,1822.97,1759.53,new session low on 2.0x volume,11:00,CLOSED,1780.0,72,116.1,102.8
+2026-10-08,vol_breakout,INTELLECT,-1,21,581.6,589.83,566.17,new session low on 1.9x volume,11:00,TARGET,566.17,71,265.3,252.0
+2026-10-08,vol_breakout,BSOFT,-1,22,277.1,279.84,271.96,new session low on 2.3x volume,11:05,TARGET,271.96,69,185.5,172.2
+2026-10-08,vol_breakout,IFCI,1,22,67.75,66.43,70.23,new session high on 1.6x volume,11:05,STOP,66.43,70,-194.8,-208.1
+2026-10-08,vol_breakout,JSWSTEEL,-1,23,1196.3,1206.58,1177.03,new session low on 2.0x volume,11:10,TARGET,1177.03,47,161.1,147.8
+2026-10-08,vol_breakout,ABCAPITAL,1,24,373.0,369.14,380.24,⭐ high-conviction new session high on 3.5x volume,11:15,CLOSED,370.5,72,-67.0,-80.3
+2026-10-08,vol_breakout,OLECTRA,-1,24,1069.0,1085.15,1038.72,new session low on 1.6x volume,11:15,TARGET,1038.72,61,283.3,270.0
+2026-10-08,vol_breakout,CEMPRO,-1,25,1166.6,1184.36,1133.29,⭐ high-conviction new session low on 3.5x volume,11:20,CLOSED,1141.8,72,212.6,199.3
+2026-10-08,vol_breakout,PETRONET,-1,25,290.0,292.48,285.36,new session low on 2.3x volume,11:20,CLOSED,289.0,72,34.5,21.2
+2026-10-08,vol_breakout,AMBER,-1,26,6641.0,6719.54,6493.73,new session low on 2.7x volume,11:25,CLOSED,6569.0,72,108.4,95.1
+2026-10-08,vol_breakout,KPRMILL,-1,26,1076.8,1090.56,1050.99,new session low on 2.7x volume,11:25,CLOSED,1053.5,72,216.4,203.1
+2026-10-08,vol_breakout,TATACOMM,1,27,1689.9,1670.82,1725.67,⭐ high-conviction new session high on 3.7x volume,11:30,STOP,1670.3,37,-116.0,-129.3
+2026-10-08,vol_breakout,BHARTIARTL,-1,27,1815.4,1829.09,1789.73,new session low on 1.6x volume,11:30,CLOSED,1795.0,72,112.4,99.1
+2026-10-08,vol_breakout,DEEPAKNTR,1,28,1612.4,1596.67,1641.9,⭐ high-conviction new session high on 3.4x volume,11:35,STOP,1596.67,36,-97.6,-110.9
+2026-10-08,vol_breakout,M&MFIN,-1,28,315.85,320.02,308.03,new session low on 2.0x volume,11:35,CLOSED,310.1,72,182.0,168.7
+2026-10-08,vol_breakout,PAYTM,1,29,1661.0,1637.53,1705.0,⭐ high-conviction new session high on 6.1x volume,11:40,STOP,1637.53,48,-141.3,-154.6
+2026-10-08,vol_breakout,COROMANDEL,-1,29,1705.5,1730.02,1659.53,new session low on 1.6x volume,11:40,CLOSED,1671.2,72,201.1,187.8
+2026-10-08,vol_breakout,INOXWIND,-1,30,63.8,64.81,61.9,new session low on 2.4x volume,11:45,CLOSED,62.7,72,172.4,159.1
+2026-10-08,vol_breakout,ADANIGREEN,-1,30,1252.3,1268.47,1221.99,new session low on 2.3x volume,11:45,TARGET,1221.99,34,242.0,228.7
+2026-10-08,vol_breakout,KAJARIACER,-1,31,1220.1,1234.3,1193.48,new session low on 2.6x volume,11:50,CLOSED,1210.5,72,78.7,65.4
+2026-10-08,vol_breakout,SRF,1,31,2519.9,2498.72,2559.62,new session high on 1.8x volume,11:50,STOP,2498.72,37,-84.1,-97.4
+2026-10-08,vol_breakout,ADANIPORTS,-1,32,1686.3,1704.75,1651.71,new session low on 1.7x volume,11:55,STOP,1704.75,71,-109.4,-122.7
+2026-10-08,vol_breakout,SJVN,-1,32,54.9,55.45,53.87,new session low on 1.5x volume,11:55,CLOSED,54.2,72,127.5,114.2
+2026-10-08,vol_breakout,INDIANB,-1,33,819.65,827.0,805.88,new session low on 2.0x volume,12:00,CLOSED,810.1,72,116.5,103.2
+2026-10-08,vol_breakout,GRSE,-1,33,2038.0,2062.61,1991.86,new session low on 1.5x volume,12:00,CLOSED,2017.9,72,98.6,85.3
+2026-10-08,vol_breakout,CHENNPETRO,-1,34,1538.7,1569.91,1480.18,new session low on 2.7x volume,12:05,CLOSED,1530.9,72,50.7,37.4
+2026-10-08,vol_breakout,FEDERALBNK,1,34,326.05,322.61,332.49,new session high on 2.3x volume,12:05,STOP,322.61,38,-105.5,-118.8
+2026-10-08,vol_breakout,ALKEM,-1,35,5315.5,5370.0,5213.31,new session low on 1.8x volume,12:10,CLOSED,5320.0,72,-8.5,-21.8
+2026-10-08,vol_breakout,TORNTPOWER,-1,36,1205.5,1217.24,1183.49,new session low on 1.7x volume,12:15,STOP,1217.24,68,-97.4,-110.7
+2026-10-08,vol_breakout,TATAPOWER,-1,38,336.75,339.85,330.94,new session low on 2.1x volume,12:25,CLOSED,335.2,72,46.0,32.7
+2026-10-08,vol_breakout,M&M,-1,39,2764.2,2787.74,2720.07,new session low on 1.7x volume,12:30,CLOSED,2751.6,72,45.6,32.3
+2026-10-08,vol_breakout,PIRAMALFIN,-1,39,1966.0,2009.92,1883.66,new session low on 1.5x volume,12:30,CLOSED,1953.8,72,62.1,48.8
+2026-10-08,vol_breakout,ANGELONE,-1,40,293.5,296.89,287.14,new session low on 1.6x volume,12:35,STOP,296.89,51,-115.5,-128.8
+2026-10-08,vol_breakout,APOLLOHOSP,-1,41,7641.5,7724.64,7485.61,new session low on 1.5x volume,12:40,CLOSED,7643.0,72,-2.0,-15.3
+2026-10-08,vol_breakout,VMM,-1,42,97.7,98.94,95.38,new session low on 1.8x volume,12:45,CLOSED,97.75,72,-5.1,-18.4
+2026-10-08,vol_breakout,HDFCAMC,-1,43,2252.7,2273.94,2212.87,new session low on 1.7x volume,12:50,CLOSED,2245.4,72,32.4,19.1
+2026-10-08,vol_breakout,TATATECH,-1,44,700.0,708.6,683.88,new session low on 3.0x volume,12:55,CLOSED,696.6,72,48.6,35.3
+2026-10-08,vol_breakout,NETWEB,-1,44,4689.1,4748.88,4577.01,new session low on 2.8x volume,12:55,STOP,4748.88,63,-127.5,-140.8
+2026-10-08,vol_breakout,INFY,-1,46,996.75,1006.77,977.97,new session low on 2.0x volume,13:05,CLOSED,997.0,72,-2.5,-15.8
+2026-10-08,vol_breakout,ZENTEC,-1,47,1497.8,1515.28,1465.03,new session low on 1.5x volume,13:10,STOP,1515.28,71,-116.7,-130.0
+2026-10-08,vol_breakout,CHAMBLFERT,-1,49,381.9,385.14,375.83,new session low on 1.5x volume,13:20,CLOSED,379.0,72,75.9,62.6
+2026-10-08,vol_breakout,PIDILITIND,-1,51,1471.0,1485.42,1443.96,new session low on 1.6x volume,13:30,CLOSED,1467.3,72,25.2,11.9
+2026-10-08,vol_breakout,SUNDARMFIN,-1,54,4155.1,4209.31,4053.45,new session low on 1.5x volume,13:45,CLOSED,4107.3,72,115.0,101.7
+2026-10-08,vol_breakout,GILLETTE,-1,57,7130.5,7196.2,7007.31,new session low on 1.5x volume,14:00,STOP,7196.2,68,-92.1,-105.4
+2026-10-08,vol_breakout,VEDL,-1,59,254.15,256.98,248.85,new session low on 2.0x volume,14:10,CLOSED,254.15,72,0.0,-13.3
+2026-10-08,vol_breakout,NTPCGREEN,1,60,90.76,89.71,92.72,new session high on 1.5x volume,14:15,CLOSED,90.81,72,5.5,-7.8
+2026-10-08,vol_breakout,BBOX,-1,61,859.95,876.23,829.42,new session low on 2.0x volume,14:20,CLOSED,860.6,72,-7.6,-20.9
+2026-10-08,vol_breakout,JINDALSTEL,-1,62,1002.3,1015.11,978.27,new session low on 2.3x volume,14:25,CLOSED,1010.0,72,-76.8,-90.1
+2026-10-08,vol_breakout,TVSMOTOR,-1,62,3884.0,3923.8,3809.37,new session low on 1.5x volume,14:25,CLOSED,3870.4,72,35.0,21.7
+2026-10-08,vol_breakout,ANANDRATHI,1,64,2149.6,2126.98,2192.01,⭐ high-conviction new session high on 3.6x volume,14:35,STOP,2126.98,64,-105.2,-118.5
+2026-10-08,vol_breakout,IOC,-1,65,125.7,126.76,123.71,new session low on 1.6x volume,14:40,CLOSED,125.45,72,19.9,6.6
+2026-10-08,vol_breakout,HUDCO,-1,68,156.9,159.14,152.7,new session low on 1.5x volume,14:55,CLOSED,156.89,72,0.6,-12.7
+2026-10-09,orb60,CYIENT,1,12,1171.9,1099.7,,first-hour volume 15.0x normal,10:15,CLOSED,1159.9,72,-102.4,-115.7
+2026-10-09,orb60,THERMAX,1,13,3314.8,3183.9,,first-hour volume 8.4x normal,10:20,CLOSED,3256.6,72,-175.6,-188.9
+2026-10-09,orb60,INTELLECT,1,22,587.45,573.0,,first-hour volume 7.0x normal,11:05,CLOSED,582.85,72,-78.3,-91.6
+2026-10-09,orb60,TCS,1,12,2190.8,2095.0,,first-hour volume 6.3x normal,10:15,CLOSED,2171.5,72,-88.1,-101.4
+2026-10-09,orb60,NCC,-1,23,123.04,127.6,,first-hour volume 5.6x normal,11:10,CLOSED,125.09,72,-166.6,-179.9
+2026-10-09,gap_fade,HEXT,-1,1,560.5,567.79,511.4,gap +1.7 ATR,09:20,STOP,567.79,3,-130.1,-143.4
+2026-10-09,gap_fade,APOLLOHOSP,-1,1,7886.0,7996.96,7666.0,gap +1.3 ATR,09:20,STOP,7996.96,56,-140.7,-154.0
+2026-10-09,gap_fade,MAXHEALTH,-1,1,892.65,908.46,873.4,gap +1.2 ATR,09:20,CLOSED,886.0,72,74.5,61.2
+2026-10-09,gap_fade,NCC,-1,1,125.3,127.33,119.93,gap +1.1 ATR,09:20,CLOSED,125.09,72,16.8,3.5
+2026-10-09,vol_breakout,CYIENT,1,12,1171.9,1152.99,1207.35,⭐ high-conviction new session high on 15.0x volume,10:15,STOP,1152.99,23,-161.4,-174.7
+2026-10-09,vol_breakout,TCS,1,12,2190.8,2169.54,2230.66,⭐ high-conviction new session high on 6.3x volume,10:15,STOP,2169.54,30,-97.0,-110.3
+2026-10-09,vol_breakout,THERMAX,1,13,3314.8,3273.98,3391.33,⭐ high-conviction new session high on 8.3x volume,10:20,STOP,3273.98,16,-123.1,-136.4
+2026-10-09,vol_breakout,TVSMOTOR,1,14,3876.5,3836.83,3950.88,⭐ high-conviction new session high on 3.4x volume,10:25,CLOSED,3866.8,72,-25.0,-38.3
+2026-10-09,vol_breakout,TATATECH,1,15,735.5,726.55,752.28,⭐ high-conviction new session high on 5.0x volume,10:30,STOP,726.55,21,-121.7,-135.0
+2026-10-09,vol_breakout,TATAELXSI,1,15,3139.7,3106.32,3202.28,new session high on 2.8x volume,10:30,STOP,3106.32,27,-106.3,-119.6
+2026-10-09,vol_breakout,GRAVITA,-1,16,1491.7,1511.2,1455.13,new session low on 1.8x volume,10:35,TARGET,1455.13,38,245.2,231.9
+2026-10-09,vol_breakout,WIPRO,1,17,164.24,162.83,166.88,new session high on 2.9x volume,10:40,STOP,162.83,29,-85.8,-99.1
+2026-10-09,vol_breakout,NMDC,1,17,72.02,71.22,73.52,new session high on 1.6x volume,10:40,CLOSED,71.78,72,-33.3,-46.6
+2026-10-09,vol_breakout,INFY,1,18,1029.3,1019.12,1048.38,new session high on 2.1x volume,10:45,STOP,1019.12,30,-98.9,-112.2
+2026-10-09,vol_breakout,MAZDOCK,-1,19,1988.7,2009.72,1949.29,new session low on 2.0x volume,10:50,STOP,2009.72,24,-105.7,-119.0
+2026-10-09,vol_breakout,INOXWIND,1,21,65.45,64.34,67.52,new session high on 2.3x volume,11:00,CLOSED,66.7,72,191.0,177.7
+2026-10-09,vol_breakout,ABB,1,21,6768.0,6691.87,6910.74,new session high on 1.9x volume,11:00,CLOSED,6769.0,72,1.5,-11.8
+2026-10-09,vol_breakout,INTELLECT,1,22,587.45,578.53,604.18,⭐ high-conviction new session high on 6.3x volume,11:05,CLOSED,582.85,72,-78.3,-91.6
+2026-10-09,vol_breakout,NCC,-1,23,123.04,124.66,120.0,⭐ high-conviction new session low on 4.7x volume,11:10,STOP,124.66,61,-131.7,-145.0
+2026-10-09,vol_breakout,SHRIRAMFIN,1,24,937.5,927.83,955.63,new session high on 1.8x volume,11:15,CLOSED,940.45,72,31.5,18.2
+2026-10-09,vol_breakout,VEDL,1,24,262.15,259.17,267.75,new session high on 1.7x volume,11:15,CLOSED,262.75,72,22.9,9.6
+2026-10-09,vol_breakout,COCHINSHIP,1,25,1248.0,1231.76,1278.46,new session high on 1.6x volume,11:20,STOP,1231.76,37,-130.1,-143.4
+2026-10-09,vol_breakout,HEXT,-1,26,536.9,542.74,525.96,⭐ high-conviction new session low on 276.5x volume,11:25,STOP,542.74,39,-108.8,-122.1
+2026-10-09,vol_breakout,KEC,-1,26,352.6,357.12,344.12,new session low on 2.0x volume,11:25,STOP,357.12,45,-128.2,-141.5
+2026-10-09,vol_breakout,AMBUJACEM,1,27,347.2,343.13,354.83,new session high on 1.6x volume,11:30,CLOSED,346.85,72,-10.1,-23.4
+2026-10-09,vol_breakout,BHEL,1,28,435.9,430.52,445.98,new session high on 1.9x volume,11:35,CLOSED,433.0,72,-66.5,-79.8
+2026-10-09,vol_breakout,APOLLOHOSP,1,31,7954.5,7865.73,8120.95,new session high on 2.8x volume,11:50,CLOSED,8008.5,72,67.9,54.6
+2026-10-09,vol_breakout,MAXHEALTH,-1,33,885.85,898.5,862.13,new session low on 2.6x volume,12:00,CLOSED,886.0,72,-1.7,-15.0
+2026-10-09,vol_breakout,KARURVYSYA,1,35,342.0,338.18,349.17,new session high on 2.0x volume,12:10,CLOSED,339.5,72,-73.1,-86.4
+2026-10-09,vol_breakout,ADANIGREEN,-1,35,1240.5,1259.73,1204.44,new session low on 1.6x volume,12:10,STOP,1259.73,46,-155.0,-168.3
+2026-10-09,vol_breakout,ANANDRATHI,-1,37,2041.1,2065.44,1995.46,⭐ high-conviction new session low on 4.2x volume,12:20,CLOSED,2045.0,72,-19.1,-32.4
+2026-10-09,vol_breakout,TIINDIA,-1,39,2223.3,2255.35,2163.2,new session low on 2.1x volume,12:30,CLOSED,2225.0,72,-7.6,-20.9
+2026-10-09,vol_breakout,COROMANDEL,1,40,1691.5,1665.23,1740.76,new session high on 1.9x volume,12:35,CLOSED,1706.3,72,87.5,74.2
+2026-10-09,vol_breakout,SJVN,1,40,54.8,54.21,55.9,new session high on 1.6x volume,12:35,CLOSED,55.15,72,63.9,50.6
+2026-10-09,vol_breakout,NESTLEIND,1,44,1335.0,1323.09,1357.34,new session high on 1.6x volume,12:55,CLOSED,1336.5,72,11.2,-2.1
+2026-10-09,vol_breakout,IGL,1,46,146.4,144.89,149.23,new session high on 1.6x volume,13:05,CLOSED,146.2,72,-13.7,-27.0
+2026-10-09,vol_breakout,KPRMILL,1,49,1059.1,1044.95,1085.63,new session high on 1.8x volume,13:20,CLOSED,1056.2,72,-27.4,-40.7
+2026-10-09,vol_breakout,POWERINDIA,1,56,30935.0,30577.0,31606.25,new session high on 1.5x volume,13:55,CLOSED,30750.0,72,-59.8,-73.1
+2026-10-09,vol_breakout,ITC,1,56,266.8,264.41,271.28,new session high on 1.5x volume,13:55,CLOSED,266.4,72,-15.0,-28.3
+2026-10-09,vol_breakout,INDIGO,1,58,4857.0,4811.34,4942.61,new session high on 2.3x volume,14:05,CLOSED,4837.0,72,-41.2,-54.5
+2026-10-09,vol_breakout,CUB,1,59,230.6,227.33,236.74,new session high on 1.5x volume,14:10,CLOSED,231.08,72,20.8,7.5
+2026-10-09,vol_breakout,PERSISTENT,1,65,5704.0,5644.37,5815.8,new session high on 1.5x volume,14:40,CLOSED,5770.0,72,115.7,102.4

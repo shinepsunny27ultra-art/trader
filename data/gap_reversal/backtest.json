@@ -1,0 +1,143 @@
+{
+  "generated_at": "2026-09-28T21:59:14+05:30",
+  "config": {
+    "universe_size": 300,
+    "picks": 8,
+    "stop_atr": 0.75,
+    "min_price": 50.0,
+    "turnover_window": 20,
+    "atr_window": 14,
+    "capital": 1000000.0,
+    "slippage_bps_per_leg": 3.0,
+    "square_off": "15:15",
+    "reserves": 4
+  },
+  "window": {
+    "summary": {
+      "sessions": 14,
+      "first": "2026-09-08",
+      "last": "2026-09-28",
+      "trades": 112,
+      "net_rupees": 106067.78,
+      "net_pct": 10.607,
+      "win_rate_pct": 67.9,
+      "profit_factor": 2.633,
+      "avg_gross_bps": 89.27,
+      "avg_net_bps": 76.0,
+      "costs_rupees": 18483.03,
+      "up_days": 10,
+      "down_days": 4,
+      "max_drawdown_pct": 1.215,
+      "stops_hit": 16,
+      "daily_sharpe_annualised": 9.88
+    },
+    "daily": [
+      {
+        "session": "2026-09-08",
+        "net": 28667.94,
+        "cum_net": 28667.94,
+        "cum_pct": 2.87
+      },
+      {
+        "session": "2026-09-09",
+        "net": 6303.46,
+        "cum_net": 34971.4,
+        "cum_pct": 3.5
+      },
+      {
+        "session": "2026-09-10",
+        "net": -12151.91,
+        "cum_net": 22819.49,
+        "cum_pct": 2.28
+      },
+      {
+        "session": "2026-09-11",
+        "net": 791.21,
+        "cum_net": 23610.7,
+        "cum_pct": 2.36
+      },
+      {
+        "session": "2026-09-15",
+        "net": 27697.76,
+        "cum_net": 51308.46,
+        "cum_pct": 5.13
+      },
+      {
+        "session": "2026-09-16",
+        "net": 20335.66,
+        "cum_net": 71644.12,
+        "cum_pct": 7.16
+      },
+      {
+        "session": "2026-09-17",
+        "net": -4168.62,
+        "cum_net": 67475.5,
+        "cum_pct": 6.75
+      },
+      {
+        "session": "2026-09-18",
+        "net": -4232.47,
+        "cum_net": 63243.03,
+        "cum_pct": 6.32
+      },
+      {
+        "session": "2026-09-21",
+        "net": -1436.9,
+        "cum_net": 61806.13,
+        "cum_pct": 6.18
+      },
+      {
+        "session": "2026-09-22",
+        "net": 4281.24,
+        "cum_net": 66087.37,
+        "cum_pct": 6.61
+      },
+      {
+        "session": "2026-09-23",
+        "net": 9334.13,
+        "cum_net": 75421.5,
+        "cum_pct": 7.54
+      },
+      {
+        "session": "2026-09-24",
+        "net": 7729.53,
+        "cum_net": 83151.03,
+        "cum_pct": 8.32
+      },
+      {
+        "session": "2026-09-25",
+        "net": 5993.54,
+        "cum_net": 89144.57,
+        "cum_pct": 8.91
+      },
+      {
+        "session": "2026-09-28",
+        "net": 16923.21,
+        "cum_net": 106067.78,
+        "cum_pct": 10.61
+      }
+    ]
+  },
+  "decade": {
+    "sessions": 2486,
+    "first": "2016-09-01",
+    "last": "2026-09-28",
+    "net_bps_per_trade": 24.73,
+    "t_stat": 9.18,
+    "up_day_pct": 56.0,
+    "max_drawdown_pct": 14.45,
+    "by_year": {
+      "2016": 37.0,
+      "2017": 25.6,
+      "2018": 27.1,
+      "2019": 15.3,
+      "2020": 35.9,
+      "2021": 32.6,
+      "2022": 6.4,
+      "2023": 17.5,
+      "2024": 30.6,
+      "2025": 20.5,
+      "2026": 33.7
+    }
+  }
+}
