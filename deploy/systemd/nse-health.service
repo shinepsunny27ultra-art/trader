@@ -1,6 +1,7 @@
 [Unit]
 Description=Health check
-After=network-online.target
+After=network-online.target nse-gap-picks.service nse-gap-record.service
+# At boot, check after the catch-up jobs have refreshed the data, not before.
 
 [Service]
 Type=oneshot

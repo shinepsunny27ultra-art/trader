@@ -150,3 +150,73 @@ def test_snapshot_handles_lagging_nan_bars():
     snap = M.snapshot(p, ctx).set_index("symbol")
     assert "S0" in snap.index
     assert snap.at["S0", "last"] == 102.0
+
+
+def test_breadth_path_and_bar_label():
+    p, ctx = _panel(nbar=3), _ctx()
+    p.c[0, :3] = [101.0, 99.0, np.nan]                    # up, down, then missing -> carried forward (down)
+    p.c[1, :3] = 102.0
+    bp = M.breadth_path(p, ctx)
+    assert bp["time"] == ["09:15", "09:20", "09:25"]
+    assert bp["adv"] == [2, 1, 1] and bp["dec"] == [0, 1, 1]
+    assert M.breadth_path(p, ctx, np.array([False, True, False]))["adv"] == [1, 1, 1]
+    assert M.bar_label(72) == "15:15"
+
+
+def test_sector_rows():
+    snap = pd.DataFrame({"symbol": ["A", "B", "C", "D"], "chg_pct": [2.0, -1.0, 0.5, 3.0],
+                         "rel_volume": [1.0, 2.0, np.nan, 1.5]})
+    rows = M.sector_rows(snap, {"A": "IT", "B": "IT", "C": "Banks", "D": "Banks"})
+    assert [r["sector"] for r in rows] == ["Banks", "IT"]          # sorted by median move
+    it = rows[1]
+    assert it["median_chg_pct"] == 0.5 and (it["advancing"], it["declining"]) == (1, 1)
+    assert it["leader"] == "A +2.0%" and it["laggard"] == "B -1.0%"
+    assert M.sector_rows(snap.iloc[:0], {"A": "IT"}) == []
+
+
+def test_index_context_from_cache(tmp_path):
+    import sqlite3
+    db = tmp_path / "c.sqlite3"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE candles (symbol TEXT, interval TEXT, ts TEXT, open REAL, high REAL, low REAL, "
+                "close REAL, volume REAL)")
+    rows = [("^NSEI", "1d", "2026-10-02T10:00:00+00:00", 0, 0, 0, 25000.0, 0)]
+    for b, px in enumerate([25100.0, 25200.0, 25300.0]):          # 09:15, 09:20, 09:25 IST
+        ts = (pd.Timestamp("2026-10-05 09:15", tz=M.IST) + pd.Timedelta(minutes=5 * b)).tz_convert("UTC")
+        rows.append(("^NSEI", "5m", ts.isoformat(), px, px, px, px, 0))
+    con.executemany("INSERT INTO candles VALUES (?,?,?,?,?,?,?,?)", rows)
+    con.commit()
+    con.close()
+    out = M.index_context(DAY, nbar=2, db_path=db)                # third bar not complete yet
+    assert len(out) == 1 and out[0]["name"] == "NIFTY 50"
+    assert out[0]["last"] == 25200.0 and out[0]["chg_pct"] == 0.8 and out[0]["time"] == ["09:15", "09:20"]
+
+
+def _load_scan_script():
+    import importlib.util
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[1] / "scripts" / "intraday_monitor.py"
+    spec = importlib.util.spec_from_file_location("intraday_scan_script", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_catch_up_grades_missed_sessions_once_per_day(tmp_path, monkeypatch):
+    S = _load_scan_script()
+    monkeypatch.setattr(M, "BOOK_PATH", tmp_path / "book.csv")
+    monkeypatch.setattr(M, "GRADED_PATH", tmp_path / "graded.json")
+    monkeypatch.setattr(M, "BOARD_START", date(2026, 10, 5))
+    monkeypatch.setattr(M, "universe", lambda: ["S0", "S1", "S2"])
+    import nse_intraday_ai.nse_calendar as cal
+    monkeypatch.setattr(cal, "is_trading_day", lambda d: d.weekday() < 5)
+    full = {date(2026, 10, 5)}                                        # only Oct 5 has bars in the cache
+    monkeypatch.setattr(M, "load_day", lambda s, syms, n: _panel(nbar=M.NBARS) if s in full
+                        else M.DayPanel(s, syms, *(np.full((3, M.NBARS), np.nan),) * 5, 0))
+    monkeypatch.setattr(S, "context", lambda s, syms, fetch_bands: _ctx())
+    assert [d.day for d in S.missing_board_sessions(date(2026, 10, 8))] == [5, 6, 7]
+    assert S.catch_up(date(2026, 10, 8), fetch=False) == 1            # Oct 5 graded (0 signals is fine)
+    assert [d.day for d in S.missing_board_sessions(date(2026, 10, 8))] == [6, 7]
+    assert S.catch_up(date(2026, 10, 8), fetch=False) == 0            # 6, 7 already tried today
+    full.add(date(2026, 10, 6))
+    assert S.catch_up(date(2026, 10, 9), fetch=False) == 1            # retried the next day

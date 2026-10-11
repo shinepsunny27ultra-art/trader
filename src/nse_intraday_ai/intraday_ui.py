@@ -1,7 +1,7 @@
 """Intraday monitor page: live NSE-500 snapshot and the paper shadow board.
 
-Reads data/intraday/live.json (written every 5 minutes by the nse-intraday-scan
-timer) and data/intraday/shadow_book.csv.  Auto-refreshes every 60 s.
+Reads data/intraday/live.json (written every minute by the nse-intraday-scan
+timer) and data/intraday/shadow_book.csv.  Auto-refreshes every 15 s.
 """
 from __future__ import annotations
 
@@ -36,6 +36,66 @@ def _frame(rows: list[dict]) -> pd.DataFrame:
     return df.rename(columns=COLS) if not df.empty else df
 
 
+def _market_context(live: dict) -> None:
+    """Indices + breadth through the day (shared time axis) and the sector board."""
+    idx = {r["ticker"]: r for r in live.get("indices") or []}
+    bp = live.get("breadth_path") or {}
+    sectors = pd.DataFrame(live.get("sectors") or [])
+    if not idx and not bp.get("time") and sectors.empty:
+        return
+    st.subheader("🧭 Market context")
+    if idx:
+        c = st.columns(len(idx))
+        for col, r in zip(c, idx.values()):
+            col.metric(r["name"], f"{r['last']:,.2f}",
+                       f"{r['chg_pct']:+.2f}%" if r.get("chg_pct") is not None else None,
+                       delta_color="inverse" if r["ticker"] == "^INDIAVIX" else "normal",
+                       help="India VIX = expected 30-day NIFTY volatility; rising VIX = fear." if
+                       r["ticker"] == "^INDIAVIX" else "Change vs the previous close (5-minute bars, Yahoo).")
+    left, right = st.columns([3, 2])
+    with left:
+        from plotly.subplots import make_subplots
+        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.6, 0.4], vertical_spacing=0.06)
+        export = pd.DataFrame({"time": bp.get("time", [])})
+        for i, t in enumerate(("^NSEI", "^NSEBANK")):
+            r = idx.get(t)
+            if not r or not r.get("prev_close"):
+                continue
+            pct = [(x / r["prev_close"] - 1) * 100 for x in r["close"]]
+            fig.add_trace(go.Scatter(x=r["time"], y=pct, name=r["name"], mode="lines",
+                                     line=dict(width=2, color=PALETTE[1 + i]), hovertemplate="%{y:+.2f}%"),
+                          row=1, col=1)
+            export = export.merge(pd.DataFrame({"time": r["time"], f"{r['name']} %": pct}), on="time", how="outer")
+        if bp.get("time"):
+            net = [a - d for a, d in zip(bp["adv"], bp["dec"])]
+            fig.add_trace(go.Bar(x=bp["time"], y=net, name="Advancers − decliners",
+                                 marker_color=[UP if v >= 0 else DOWN for v in net],
+                                 hovertemplate="%{y:+d} stocks"), row=2, col=1)
+            export = export.merge(pd.DataFrame({"time": bp["time"], "advancing": bp["adv"], "declining": bp["dec"]}),
+                                  on="time", how="outer")
+        fig.add_hline(y=0, line=dict(color="#8A92A6", width=1, dash="dot"), row=1, col=1)
+        fig.update_yaxes(title_text="Index vs prev close (%)", ticksuffix="%", row=1, col=1)
+        fig.update_yaxes(title_text="Breadth (stocks)", row=2, col=1)
+        fig.update_xaxes(title_text="Time (IST, 5-minute bar start)", row=2, col=1)
+        fig.update_layout(title="Index move and NIFTY 500 breadth through the day")
+        chart(fig, export.sort_values("time") if "time" in export else export, "market_context", height=420)
+    with right:
+        if sectors.empty:
+            st.write("—")
+        else:
+            s = sectors.sort_values("median_chg_pct")
+            fig = go.Figure(go.Bar(
+                x=s["median_chg_pct"], y=s["sector"], orientation="h",
+                marker_color=[UP if v >= 0 else DOWN for v in s["median_chg_pct"]],
+                customdata=s[["advancing", "declining", "leader", "laggard"]].to_numpy(),
+                hovertemplate="%{y}: median %{x:+.2f}%<br>%{customdata[0]} up / %{customdata[1]} down"
+                              "<br>leader %{customdata[2]} · laggard %{customdata[3]}<extra></extra>"))
+            fig.update_layout(title="Sectors — median move today", xaxis_title="Median change vs prev close (%)",
+                              xaxis_ticksuffix="%", yaxis_title="", hovermode="closest", showlegend=False,
+                              margin=dict(l=10, r=10, t=56, b=10))
+            chart(fig, sectors, "sectors", height=420)
+
+
 @st.fragment(run_every=15)
 def _live() -> None:
     live = M.read_live()
@@ -45,6 +105,10 @@ def _live() -> None:
                 "trading days (`python scripts/intraday_monitor.py scan`).")
         return
     stale = live.get("session") != now.date().isoformat()
+    if stale:
+        st.info(f"Showing the last scanned session, **{live.get('session', '?')}** (last bar "
+                f"{live.get('last_bar') or '—'}). The scanner runs on the laptop every minute from 09:20 to "
+                "15:45 IST on trading days; nothing below is live.")
     b = live.get("breadth") or {}
     c = st.columns(5)
     c[0].metric("Session", live.get("session", "—"), "previous session" if stale else None, delta_color="off")
@@ -56,22 +120,11 @@ def _live() -> None:
         c[3].metric("Median move", f"{b['median_chg_pct']:+.2f}%")
     c[4].metric("Paper signals today", len(live.get("signals", [])))
 
-    dmart_row = next((r for r in (live.get("in_play") or []) if r.get("symbol") == "DMART"), None)
-    if dmart_row:
-        last_px = float(dmart_row["last"])
-        entry_px, stop_px, tgt_px = 3642.20, 3610.00, 3550.00
-        gain_pct = (entry_px - last_px) / entry_px * 100
-        st.success(
-            f"🎯 **Active Trade: DMART Short** | Entry: ₹{entry_px:,.2f} | Last: ₹{last_px:,.2f} "
-            f"(**{gain_pct:+.2f}%** / **{gain_pct * 100:+.0f} bps**) | Locked SL: ₹{stop_px:,.2f} | "
-            f"Target: ₹{tgt_px:,.2f} | Reason: *Q2 business update miss + 8.5x rel vol*"
-        )
-
     gb = live.get("gap_book") or []
     if gb:
-        st.subheader("🛡 Gap-book stop watch")
+        st.subheader("🛡 Gap-book stop watch" + (" (at the last scan)" if stale else ""))
         df = pd.DataFrame(gb)
-        for r in df.itertuples():
+        for r in ([] if stale else df.itertuples()):
             to_stop = getattr(r, "to_stop_pct", None)
             if r.stop_hit:
                 st.error(f"**{r.symbol}** reached its stop ₹{r.stop:,.2f} — confirm your SL order filled.")
@@ -82,6 +135,8 @@ def _live() -> None:
                                  "to_stop_pct": "To stop %", "pnl_pct": "Short P&L %"}),
               "gap_watch", column_config={"To stop %": st.column_config.NumberColumn(format="%.2f %%"),
                                           "Short P&L %": PCT})
+
+    _market_context(live)
 
     st.subheader("🔥 Market now")
     tabs = st.tabs(["Stocks in play", "Gainers", "Losers", "New highs", "New lows", "Near circuit", "Announcements"])
@@ -125,7 +180,9 @@ def _live() -> None:
             sig = sig.sort_values(by="bar", ascending=False)
         latest = sig.iloc[0]
         tgt_str = f" | Target: ₹{latest['target']:,.2f}" if pd.notna(latest.get("target")) else ""
-        st.info(f"⚡ **Most recent recommendation**: **{latest['symbol']}** ({latest['Side']}) at **{latest.get('time', '—')}** | Entry: ₹{latest['entry']:,.2f} | Stop: ₹{latest['stop']:,.2f}{tgt_str} | Reason: *{latest.get('reason', '')}*")
+        st.info(f"🧪 **Latest paper signal (NOT VALIDATED — do not trade)**: **{latest['symbol']}** "
+                f"({latest['Side']}) at **{latest.get('time', '—')}** | Entry: ₹{latest['entry']:,.2f} | "
+                f"Stop: ₹{latest['stop']:,.2f}{tgt_str} | Why: *{latest.get('reason', '')}*")
         view = sig[["Strategy", "symbol", "Side", "time", "entry", "stop", "target", "exit", "Status",
                     "net_bps", "reason"]].rename(columns={"symbol": "Symbol", "time": "Entry time", "entry": "Entry ₹",
                                                           "stop": "Stop ₹", "target": "Target ₹", "exit": "Last/exit ₹",
@@ -154,7 +211,8 @@ def _board() -> None:
     st.caption(f"Live forward record since the board started. A strategy becomes *eligible for review* only "
                f"after {M.MIN_SESSIONS} sessions with a positive mean and Holm-adjusted p < 0.05.")
     table(stats.rename(columns={"strategy": "Strategy", "sessions": "Sessions", "trades": "Trades",
-                                "net_bps": "Net bps/trade", "t": "t-stat", "hit_rate": "Hit rate",
+                                "net_bps": "Net bps/trade", "daily_bps": "Net bps/day (mean of daily means)",
+                                "t": "t-stat", "hit_rate": "Hit rate",
                                 "holm_p": "Holm p", "status": "Status", "rule": "Rule", "backtest": "Research result"})
           .drop(columns=["p"]), "shadow_board",
           column_config={"Holm p": st.column_config.NumberColumn(format="%.3f"),
@@ -174,7 +232,7 @@ def _board() -> None:
 
 
 def page_intraday() -> None:
-    st.caption("Information, not advice: a live view of the NIFTY 500 refreshed every 5 minutes, plus paper "
+    st.caption("Information, not advice: a live view of the NIFTY 500 (scanned every minute on completed 5-minute bars; Yahoo data lags NSE by 1–2 minutes), plus paper "
                "tracking of unvalidated intraday strategies. The tradeable strategy is the gap-reversal book.")
     _live()
     with st.expander("📊 Shadow-board record (all sessions)", expanded=False):

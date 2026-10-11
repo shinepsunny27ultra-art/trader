@@ -1,6 +1,7 @@
 [Unit]
 Description=Gap-reversal book: daily live-vs-expected monitor, pushed to the phone
-After=network-online.target
+After=network-online.target nse-gap-record.service
+# At boot every missed timer fires at once; report on the session record just wrote.
 
 [Service]
 Type=oneshot

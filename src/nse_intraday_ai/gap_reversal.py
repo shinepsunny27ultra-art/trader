@@ -49,6 +49,7 @@ Three things that matter more than they look:
 from __future__ import annotations
 
 import math
+import os
 import sqlite3
 from dataclasses import asdict, dataclass, field
 from datetime import date
@@ -488,7 +489,8 @@ def live_short_path(bars: pd.DataFrame, entry: float, stop: float,
 
 
 def simulate_pick(pick: Pick, bars: pd.DataFrame, session: date,
-                  config: GapReversalConfig = GapReversalConfig()) -> Trade | None:
+                  config: GapReversalConfig = GapReversalConfig(),
+                  entry: float | None = None) -> Trade | None:
     """Short at the 09:15 open, buy-stop at entry + stop_atr*ATR, cover at 15:15.
 
     Stop is checked on every bar including the first; if a later bar opens
@@ -496,10 +498,12 @@ def simulate_pick(pick: Pick, bars: pd.DataFrame, session: date,
     never better).  Exit at the open of the 15:15 bar, or — if that bar is
     missing — at the last close before it.  With an entry limit, a pick that
     opens below it is a NO_FILL row (zero P&L): the auction order never traded.
+    `entry` is the official open from the archived pre-open auction, the price
+    a pre-open order actually fills at; without it, the first bar's open.
     """
     if bars.empty or 0 not in bars.index:
         return None
-    entry = float(bars.at[0, "open"])
+    entry = float(bars.at[0, "open"]) if entry is None else float(entry)
     if not math.isfinite(entry) or entry <= 0:
         return None
     limit = pick.limit_price
@@ -717,16 +721,34 @@ def save_picks(session: date, picks: list[Pick], config: GapReversalConfig = Gap
     payload = {
         "session": session.isoformat(),
         "generated_at": pd.Timestamp.now(tz=IST).isoformat(timespec="seconds"),
+        "publisher": "github-actions" if os.environ.get("GITHUB_ACTIONS") else "laptop",
         "config": asdict(config),
         "picks": [p.to_dict() for p in picks],
         **extra,
     }
     atomic_write_json(path, payload)
+    dated = dated_picks_path(session, path)
+    dated.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_json(dated, payload)
+
+
+def dated_picks_path(session: date, path: Path | None = None) -> Path:
+    """Per-session copy of the list, kept after picks.json moves on to the next session.
+
+    2026-10-06: after a day off, the boot-time catch-up ran `picks` (next
+    session) and `record` (previous one) at the same moment; `record` only
+    found its list because it read picks.json a few seconds before `picks`
+    overwrote it.
+    """
+    path = PICKS_PATH if path is None else path
+    return path.parent / "history" / f"picks_{session:%Y%m%d}.json"
 
 
 def load_picks(session: date, path: Path | None = None) -> list[Pick] | None:
-    """The saved list for `session`, or None if the file is for another day."""
+    """The saved list for `session` (picks.json, else its dated copy), or None."""
     payload = read_picks(path)
+    if payload is None or payload.get("session") != session.isoformat():
+        payload = read_picks(dated_picks_path(session, path))
     if payload is None or payload.get("session") != session.isoformat():
         return None
     fields = set(Pick.__dataclass_fields__)

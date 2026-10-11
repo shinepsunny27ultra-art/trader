@@ -59,9 +59,24 @@ def check_units() -> list[tuple[str, str, str]]:
     return out
 
 
+def _service_age_s(unit: str) -> float | None:
+    """Seconds since `unit` became active (None if unknown)."""
+    raw = _run("systemctl", "--user", "show", unit, "-p", "ActiveEnterTimestampMonotonic", "--value")
+    try:
+        since = int(raw) / 1e6
+        return float(Path("/proc/uptime").read_text().split()[0]) - since if since else None
+    except (ValueError, OSError):
+        return None
+
+
 def check_app() -> tuple[str, str, str]:
     code = _run("curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
                 "--max-time", "20", "http://127.0.0.1:8501/")
+    if code != "200":
+        # At boot this check runs while Streamlit is still starting (2026-10-06 20:30: HTTP 000).
+        age = _service_age_s("nse-signal-lab.service")
+        if age is not None and age < 180:
+            return ("webpage http://127.0.0.1:8501", WARN, f"HTTP {code or 'no response'} (app started {age:.0f}s ago)")
     return ("webpage http://127.0.0.1:8501",
             OK if code == "200" else FAIL,
             f"HTTP {code or 'no response'}")
@@ -92,12 +107,12 @@ def _prev_trading_day(day):
 
 
 def check_data(now: datetime) -> list[tuple[str, str, str]]:
-    """The inputs the 08:45 list is built from must cover the last session."""
+    """The inputs the 08:15 list is built from must cover the last session."""
     out = []
     files = sorted((ROOT / "data" / "nse_bhav").glob("*/bhav_*.parquet"))
     latest = datetime.strptime(files[-1].stem.split("_")[1], "%Y%m%d").date() if files else None
-    # NSE publishes the bhavcopy ~18:00; the morning job fetches it at 08:45.
-    need = _prev_trading_day(now.date()) if now.strftime("%H:%M") >= "08:50" else \
+    # NSE publishes the bhavcopy ~18:00; the morning job fetches it at 08:15.
+    need = _prev_trading_day(now.date()) if now.strftime("%H:%M") >= "08:20" else \
         _prev_trading_day(_prev_trading_day(now.date()))
     status = OK if latest and latest >= need else FAIL
     out.append(("NSE bhavcopy", status, f"latest {latest}, need {need}"))
@@ -108,11 +123,85 @@ def check_data(now: datetime) -> list[tuple[str, str, str]]:
         finally:
             con.close()
         last = datetime.fromisoformat(row[0]).astimezone(IST).date() if row and row[0] else None
-        stale = last is None or (now.date() - last).days > 5
-        out.append(("daily candles (fallback rule)", WARN if stale else OK, f"^NSEI 1d through {last}"))
+        # The Yahoo fallback downloads its own bars when it runs, so a stale cache is not a fault.
+        out.append(("daily candles (fallback rule)", OK, f"^NSEI 1d through {last}; refreshed on use"))
     else:
         out.append(("daily candles (fallback rule)", WARN, "candle cache missing"))
     return out
+
+
+FORWARD_START = "2026-09-29"            # first session of the live paper record
+
+
+def _sessions(since: str, through: str) -> list[str]:
+    """NSE sessions in [since, through], from the bhavcopy files (holidays have none)."""
+    days = (f.stem.split("_")[1] for f in (ROOT / "data" / "nse_bhav").glob("*/bhav_*.parquet"))
+    days = sorted(f"{d[:4]}-{d[4:6]}-{d[6:]}" for d in days)
+    return [d for d in days if since <= d <= through]
+
+
+def check_learning() -> tuple[str, str, str]:
+    """Every session since the live record began is graded in the meta state.
+
+    2026-10-06: after a day off, the catch-up graded only the newest session and
+    2026-10-05 never entered the guard's paired record.
+    """
+    import json
+
+    path = ROOT / "data" / "models" / "meta_state.json"
+    if not path.exists():
+        return ("learning record", WARN, "no meta state yet")
+    st = json.loads(path.read_text())
+    through = st.get("updated_through") or FORWARD_START
+    graded = {r["session"] for r in st.get("track", [])}
+    missing = [d for d in _sessions(FORWARD_START, through) if d not in graded]
+    return ("learning record", WARN if missing else OK,
+            f"sessions never graded: {', '.join(missing)}" if missing else f"complete through {through}")
+
+
+def check_preopen(now: datetime) -> tuple[str, str, str]:
+    """The 09:10 job archives every auction; the archive must grow and match the official opens.
+
+    Until 2026-10-06 a wrong finality test rejected every auction that closed
+    before 09:10, and the archive stayed empty for weeks without a warning.
+    """
+    import pandas as pd
+
+    files = sorted((ROOT / "data" / "nse_preopen").glob("*/preopen_*.parquet"))
+    if not files:
+        return ("pre-open archive", WARN, "empty — the 09:10 job has archived no auction")
+    day = files[-1].stem.split("_")[1]
+    detail = f"{len(files)} sessions, latest {day[:4]}-{day[4:6]}-{day[6:]}"
+    recent = _sessions(FORWARD_START, now.date().isoformat())[-5:]
+    stale = len(recent) == 5 and day < recent[0].replace("-", "")     # none of the last 5 sessions
+    bhav = ROOT / "data" / "nse_bhav" / day[:4] / f"bhav_{day}.parquet"
+    if bhav.exists():
+        auction = pd.read_parquet(files[-1])
+        official = pd.read_parquet(bhav, columns=["symbol", "series", "open"]).query("series == 'EQ'")
+        j = auction.merge(official, on="symbol")
+        if len(j):
+            match = float(((j["iep"] / j["open"] - 1).abs() <= 1e-4).mean())
+            detail += f"; {match:.0%} equal the official open"
+            if match < 0.95:
+                return ("pre-open archive", WARN, detail)
+    return ("pre-open archive", WARN if stale else OK,
+            detail + ("; nothing archived in the last 5 sessions" if stale else ""))
+
+
+def check_published(now: datetime, last_n: int = 5) -> tuple[str, str, str]:
+    """Did each recent session get a list?  (None is published while the laptop is off.)"""
+    import csv
+
+    book = ROOT / "data" / "gap_reversal"
+    recorded = set()
+    if (book / "paper_book.csv").exists():
+        with (book / "paper_book.csv").open() as handle:
+            recorded = {r["session"] for r in csv.DictReader(handle)}
+    recent = _sessions(FORWARD_START, now.date().isoformat())[-last_n:]
+    missed = [d for d in recent if d not in recorded
+              and not (book / "history" / f"picks_{d.replace('-', '')}.json").exists()]
+    return ("lists published", WARN if missed else OK,
+            f"no list for {', '.join(missed)} (laptop off?)" if missed else f"last {len(recent)} sessions covered")
 
 
 def market_is_open(now: datetime) -> bool:
@@ -135,10 +224,16 @@ def check_book(now: datetime) -> list[tuple[str, str, str]]:
         out.append(("gap-reversal picks", FAIL, "data/gap_reversal/picks.json missing"))
     else:
         session = json.loads(picks.read_text()).get("session", "?")
-        # From 08:45 on a trading day the list must be for today.
-        due = is_trading_day(now.date()) and now.strftime("%H:%M") >= "08:50"
+        # From 08:15 on a trading day the list must be for today.
+        due = is_trading_day(now.date()) and now.strftime("%H:%M") >= "08:20"
         stale = due and now.strftime("%H:%M") <= "15:30" and session < now.date().isoformat()
         out.append(("gap-reversal picks", FAIL if stale else OK, f"list for {session}"))
+
+    if picks.exists():
+        blank = json.loads(picks.read_text()).get("missing_inputs") or []
+        out.append(("model inputs", WARN if blank else OK,
+                    f"{len(blank)} blank for every candidate: {', '.join(blank[:6])}" if blank
+                    else "all sources present in the latest list"))
 
     report = ROOT / "data" / "models" / "weekly_report.json"
     if report.exists():
@@ -212,6 +307,9 @@ def main() -> int:
     checks.append(check_disk())
     checks += check_data(now)
     checks += check_book(now)
+    checks.append(check_learning())
+    checks.append(check_published(now))
+    checks.append(check_preopen(now))
     checks.append(check_intraday(now))
 
     problems = [c for c in checks if c[1] != OK]

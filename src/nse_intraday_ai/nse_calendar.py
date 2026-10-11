@@ -1,7 +1,7 @@
 """NSE trading calendar: exchange holidays, cached locally.
 
 `gap_reversal.next_session()` used to treat every weekday as a session, so on
-exchange holidays (e.g. Gandhi Jayanti, 2026-10-02) the 08:45 job still
+exchange holidays (e.g. Gandhi Jayanti, 2026-10-02) the 08:15 job still
 published — and pushed to the phone — a short list for a day with no market.
 
 Sources, in order:

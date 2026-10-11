@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
@@ -41,3 +41,22 @@ def test_auction_cutoff_follows_the_2026_09_07_restructure():
     # After: entry closes at a random moment in 09:08-09:10; 09:09 may be indicative.
     with pytest.raises(PO.PreOpenNotReady, match="too early"):
         PO.final_for(date(2026, 9, 30), PO.parse(_payload("30-Sep-2026 09:09:12")))
+
+
+def test_an_auction_that_closed_before_0910_is_final_once_settled():
+    # 2026-10-06: entry closed at 09:08:38, so every stamp is 09:08:xx — the old
+    # stamp >= 09:10 test never passed and nothing was archived.
+    frame = PO.parse(_payload("06-Oct-2026 09:08:38"))
+    with pytest.raises(PO.PreOpenNotReady):
+        PO.final_for(date(2026, 10, 6), frame, now=datetime(2026, 10, 6, 9, 10, 31))
+    final = PO.final_for(date(2026, 10, 6), frame, now=datetime(2026, 10, 6, 9, 12, 0))
+    assert len(final) == 10 and set(final["series"]) == {"EQ"}
+    with pytest.raises(PO.PreOpenNotReady, match="not 2026-10-07"):     # settled, but yesterday's feed
+        PO.final_for(date(2026, 10, 7), frame, now=datetime(2026, 10, 7, 9, 12, 30))
+
+
+def test_archived_opens_reads_the_days_auction(tmp_path, monkeypatch):
+    monkeypatch.setattr(PO, "ARCHIVE_DIR", tmp_path)
+    assert PO.archived_opens(date(2026, 10, 6)) == {}
+    PO.archive(date(2026, 10, 6), PO.parse(_payload("06-Oct-2026 09:08:38", n=2)))
+    assert PO.archived_opens(date(2026, 10, 6)) == {"S0": 101.0, "S1": 102.0}

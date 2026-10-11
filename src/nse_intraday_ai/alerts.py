@@ -30,8 +30,16 @@ def ntfy_topic() -> str | None:
 
 
 def send_ntfy(message: str, title: str = "NSE Gap-Reversal", priority: str = "high",
-              tags: str = "chart_with_downwards_trend", topic: str | None = None) -> bool:
-    """Push `message` to the configured ntfy topic. Returns True on HTTP 200."""
+              tags: str = "chart_with_downwards_trend", topic: str | None = None,
+              retry_delays: tuple[float, ...] = (5.0, 20.0)) -> bool:
+    """Push `message` to the configured ntfy topic. Returns True on HTTP 200.
+
+    Retries after `retry_delays` seconds: timers that missed their slot fire
+    right at boot, before DNS is up (2026-10-06 20:30: "Temporary failure in
+    name resolution", the day's monitor report never arrived).
+    """
+    import time
+
     topic = topic or ntfy_topic()
     if not topic:
         print("[alerts] no ntfy topic configured (env NTFY_TOPIC or data/notify.json) — not sent")
@@ -39,13 +47,17 @@ def send_ntfy(message: str, title: str = "NSE Gap-Reversal", priority: str = "hi
     payload = json.dumps({"topic": topic, "title": title, "message": message,
                           "priority": 4 if priority == "high" else 3,
                           "tags": tags.split(",")}).encode("utf-8")
-    try:
-        req = urllib.request.Request(NTFY_SERVER, data=payload, headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return resp.status == 200
-    except Exception as exc:                                     # noqa: BLE001 — never break the caller
-        print(f"[alerts] ntfy send failed: {exc}")
-        return False
+    for delay in (*retry_delays, None):
+        try:
+            req = urllib.request.Request(NTFY_SERVER, data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                return resp.status == 200
+        except Exception as exc:                                 # noqa: BLE001 — never break the caller
+            print(f"[alerts] ntfy send failed: {exc}" + (f"; retrying in {delay:.0f}s" if delay else ""))
+            if delay is None:
+                return False
+            time.sleep(delay)
+    return False
 
 
 def _telegram_config() -> dict:

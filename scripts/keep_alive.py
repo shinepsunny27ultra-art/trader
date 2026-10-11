@@ -8,7 +8,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -44,7 +43,7 @@ def ping(url: str, timeout: int = 15) -> tuple[int | None, float]:
     try:
         r = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout)
         return r.status_code, round(time.time() - t0, 3)
-    except Exception as exc:  # noqa: BLE001
+    except Exception:  # noqa: BLE001
         return None, round(time.time() - t0, 3)
 
 

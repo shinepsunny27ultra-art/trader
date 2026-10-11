@@ -125,15 +125,15 @@ def _signed(values) -> list[str]:
 def _phase(now: datetime) -> str:
     m = now.hour * 60 + now.minute
     if now.weekday() >= 5 or now.date() in _holidays():
-        return "🌙 Market closed today — the next list is published at 08:45 IST on the next session."
-    for end, msg in ((540, "🕒 Before the open — list at 08:45; enter in the 09:00–09:07 pre-open auction."),
+        return "🌙 Market closed today — the next list is published at 08:15 IST on the next session."
+    for end, msg in ((540, "🕒 Before the open — list at 08:15; enter in the 09:00–09:07 pre-open auction."),
                      (555, "🟢 Pre-open — place the MIS short orders now (the open is the measured entry)."),
                      (570, "🛑 Market open — place a BUY SL-M at each fill + stop distance."),
                      (915, "⏳ Holding — nothing to do until 15:15 unless a stop fills."),
                      (930, "🔴 15:15 — cover all shorts now (broker auto-squares MIS at ~15:20).")):
         if m < end:
             return msg
-    return "🌙 Market closed — paper result recorded at 15:40; next list at 08:45."
+    return "🌙 Market closed — paper result recorded at 15:40; next list at 08:15."
 
 
 # ── Live panel (Today) ──────────────────────────────────────────────────────
@@ -328,14 +328,14 @@ def page_today() -> None:
     st.caption(_phase(now))
     payload = read_json(str(G.PICKS_PATH))
     if not payload or "picks" not in payload:
-        st.info("No pick list yet. It is written every trading day at 08:45 IST by the "
+        st.info("No pick list yet. It is written every trading day at 08:15 IST by the "
                 "`nse-gap-picks` timer (`python scripts/gap_reversal.py picks`).")
         return
     session, expected = str(payload.get("session", "?")), expected_session(now)
     state = read_json(str(MODELS / "meta_state.json")) or {}
     if session != expected.isoformat():
         st.warning(f"**Stale list.** This list is for **{session}**; the next trading session is "
-                   f"**{expected:%a %d %b %Y}**. Its list is published at 08:45 IST that morning — "
+                   f"**{expected:%a %d %b %Y}**. Its list is published at 08:15 IST that morning — "
                    "do not trade this one.")
     if payload.get("drift_alarm") or state.get("alarm"):
         st.error(f"**Drift alarm.** Live results have run persistently below the backtest "
@@ -345,7 +345,7 @@ def page_today() -> None:
         st.warning("**Cautious mode** — trade at 60% of the listed quantities until the "
                    f"{state.get('recovery_window', 10)}-session recovery check passes.")
     who = payload.get("ranked_by", "rule")
-    label = {"ranker_open": "Open model (09:09)", "ranker": "ML ranker (08:45)"}.get(who, "Gap rule")
+    label = {"ranker_open": "Open model (09:09)", "ranker": "ML ranker (08:15)"}.get(who, "Gap rule")
     gen = str(payload.get("generated_at", ""))
     c = st.columns(4)
     c[0].metric("Session", session)
@@ -475,7 +475,7 @@ def page_model() -> None:
                     f"{' → '.join(ev.get('window', ['?', '?']))}")
     else:
         st.info("No ML champion promoted — the book ranks by the gap rule.")
-    names = {"rule": "Gap rule", "ranker": "ML ranker (08:45)", "ranker_open": "Open model (09:09)",
+    names = {"rule": "Gap rule", "ranker": "ML ranker (08:15)", "ranker_open": "Open model (09:09)",
              "ranker_liquidity_cost": "ML ranker, spread-based costs"}
     rows = [{"Model": lbl, "Net bps/trade": ev[k].get("net_bps_per_trade"), "t-stat": ev[k].get("t_stat"),
              "Sharpe (ann.)": ev[k].get("sharpe"), "Up days %": ev[k].get("up_day_pct"),
@@ -539,7 +539,8 @@ def page_model() -> None:
     st.markdown("**Champion feature importances (top 25)**")
     directory = MODELS / str((champ or {}).get("directory", ""))
     if not champ or not (directory / "meta.json").exists():
-        st.info("No champion model artifacts to inspect.")
+        st.info("No champion model artifacts to inspect." if not champ else
+                "Model files stay on the trading laptop (this cloud copy shows the summaries only).")
         return
     imp, method = feature_importance(str(directory), (directory / "meta.json").stat().st_mtime)
     if imp.empty:

@@ -27,11 +27,11 @@ Textiles meeting comes back as ABREL).  `symbolchange.csv` maps them back to
 the symbol in use on the event date, which is what the bhavcopies carry.
 
 Point in time: every event carries the time it became public (IST, naive).
-Feature rows for session t only see events before 08:45 on t (the morning
+Feature rows for session t only see events before 08:10 on t (the 08:15 morning
 list); board meetings count from `bm_timestamp`.  Session windows:
 
     gap1 window of t   after 15:30 on t-2, before 09:15 on t-1
-    last k sessions    after 15:30 on t-(k+1), before 08:45 on t
+    last k sessions    after 15:30 on t-(k+1), before 08:10 on t
 
 A feature whose window the cache does not cover is NaN, never 0.
 """
@@ -82,7 +82,7 @@ _BM_CANCEL_RX = re.compile(r"adjourn|cancel|postpone|defer", re.I)
 RESULT_CLUSTER_DAYS = 3        # filings within 3 days of a results event are the same news
 SESSION_OPEN = pd.Timedelta(hours=9, minutes=15)
 SESSION_CLOSE = pd.Timedelta(hours=15, minutes=30)
-LIST_CUTOFF = pd.Timedelta(hours=8, minutes=45)
+LIST_CUTOFF = pd.Timedelta(hours=8, minutes=10)   # the list job runs at 08:15
 DAYS_TO_BM_CAP = 30
 DAYS_SINCE_RESULTS_CAP = 120
 

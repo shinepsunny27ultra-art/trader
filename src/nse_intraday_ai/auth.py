@@ -41,30 +41,35 @@ def set_password(password: str, path: Path | None = None) -> None:
     os.chmod(path, 0o600)
 
 
-DEFAULT_PASSWORD = "0480336699"
+def _secret_password() -> str | None:
+    """DASHBOARD_PASSWORD from the environment or Streamlit secrets (cloud deploys)."""
+    if os.environ.get("DASHBOARD_PASSWORD"):
+        return os.environ["DASHBOARD_PASSWORD"]
+    try:
+        import streamlit as st
+        if "DASHBOARD_PASSWORD" in st.secrets:
+            return str(st.secrets["DASHBOARD_PASSWORD"])
+    except Exception:                                    # noqa: BLE001 — no secrets file is normal
+        pass
+    return None
 
 
 def is_configured(path: Path | None = None) -> bool:
-    return True
+    if _secret_password():
+        return True
+    rec = atomic_read_json(path or auth_file(), default={}) or {}
+    return bool(rec.get("hash") and rec.get("salt"))
 
 
 def verify(password: str, path: Path | None = None) -> bool:
-    env_pw = os.environ.get("DASHBOARD_PASSWORD")
-    if env_pw and hmac.compare_digest(password, env_pw):
+    secret = _secret_password()
+    if secret and hmac.compare_digest(password.encode(), secret.encode()):
         return True
-    try:
-        import streamlit as st
-        if hasattr(st, "secrets") and "DASHBOARD_PASSWORD" in st.secrets:
-            if hmac.compare_digest(password, str(st.secrets["DASHBOARD_PASSWORD"])):
-                return True
-    except Exception:
-        pass
     rec = atomic_read_json(path or auth_file(), default={}) or {}
-    if rec.get("hash") and rec.get("salt"):
-        got = _digest(password, bytes.fromhex(rec["salt"]), int(rec.get("iterations", ITERATIONS)))
-        if hmac.compare_digest(got, rec["hash"]):
-            return True
-    return hmac.compare_digest(password, DEFAULT_PASSWORD)
+    if not rec.get("hash") or not rec.get("salt"):
+        return False
+    got = _digest(password, bytes.fromhex(rec["salt"]), int(rec.get("iterations", ITERATIONS)))
+    return hmac.compare_digest(got, rec["hash"])
 
 
 def main() -> None:

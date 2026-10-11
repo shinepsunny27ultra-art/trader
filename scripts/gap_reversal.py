@@ -1,6 +1,6 @@
 """Run the gap-reversal book: pre-open picks, opening stops, paper record, backtest.
 
-    python scripts/gap_reversal.py picks            # 08:45: the session's short list
+    python scripts/gap_reversal.py picks            # 08:15: the session's short list
     python scripts/gap_reversal.py final            # 09:09: re-rank on today's opening prices
     python scripts/gap_reversal.py levels           # after 09:15: exact stop prices
     python scripts/gap_reversal.py record           # after the close: paper result
@@ -13,6 +13,7 @@ and evidence: src/nse_intraday_ai/gap_reversal.py.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from dataclasses import asdict
 from datetime import date, datetime, timedelta
@@ -31,6 +32,7 @@ OUT = G.OUT_DIR
 PAPER = OUT / "paper_book.csv"
 BACKTEST = OUT / "backtest.json"
 CONFIG = G.GapReversalConfig()
+HISTORY_DAYS_DEFAULT = 20          # calendar days of NSE files the morning refresh looks back
 # The first session of the forward (never-backtested) paper record.
 FORWARD_START = date(2026, 9, 29)
 
@@ -88,13 +90,14 @@ def _band_filter(session: date, picks: list[G.Pick], info: dict, *, fetch: bool)
     return picks
 
 
-def _publish(session: date | None, *, fetch: bool) -> tuple[date, date, list[G.Pick], dict]:
+def _publish(session: date | None, *, fetch: bool,
+             history_days: int = 20) -> tuple[date, date, list[G.Pick], dict]:
     """The NSE-data pipeline (experts + Hedge blend); the Yahoo gap rule if it fails."""
     from nse_intraday_ai import pipeline as P
 
     target = session or G.next_session()
     try:
-        prev, picks, info = P.morning(target, CONFIG, fetch=fetch)
+        prev, picks, info = P.morning(target, CONFIG, fetch=fetch, history_days=history_days)
         picks = _band_filter(target, picks, info, fetch=fetch)
         G.with_entry_limits(picks, CONFIG)
         G.save_picks(target, picks, CONFIG, based_on=prev.isoformat(), source="nse", **info)
@@ -112,17 +115,45 @@ def _publish(session: date | None, *, fetch: bool) -> tuple[date, date, list[G.P
         return target, last, picks, info
 
 
+def laptop_already_published(payload: dict | None, today: date) -> bool:
+    """True if `payload` is the laptop's final list for today (built this morning).
+
+    An evening PRELIMINARY list (built before the overnight global closes) does
+    not count: on a morning the laptop is off, the cloud's fresh list replaces it.
+    """
+    if not payload or payload.get("session") != today.isoformat():
+        return False
+    if not str(payload.get("generated_at", "")).startswith(today.isoformat()):
+        return False
+    if payload.get("publisher"):
+        return payload["publisher"] == "laptop"
+    return bool(payload.get("model"))              # lists written before the publisher field
+
+
 def cmd_picks(args) -> None:
     wait_for_clock()
     session = date.fromisoformat(args.date) if args.date else None
+    in_actions = bool(os.environ.get("GITHUB_ACTIONS"))
     if session is None:
         from nse_intraday_ai.nse_calendar import is_trading_day
         today = datetime.now(IST).date()
         if today.weekday() < 5 and not is_trading_day(today):
             print(f"{today}: NSE holiday — no list published")
             return
+        # The cloud runner has no model or archive: it only stands in for a laptop
+        # that has not published today's list (the checkout holds main's copy).
+        if in_actions and laptop_already_published(G.read_picks(), today):
+            print(f"{today}: the laptop already published today's list — the cloud fallback stands aside")
+            return
+    history_days = args.history_days
+    if in_actions and history_days == HISTORY_DAYS_DEFAULT:
+        # A fresh runner starts with an empty data/: the 20-session liquidity rank
+        # and the 14-session ATR need a full window (2026-10-06: 12 sessions let
+        # FEDDERSHOL and SEDEMAC into the "top 300").
+        history_days = 45
     try:
-        session, last, picks, info = _publish(session, fetch=not args.no_fetch)
+        session, last, picks, info = _publish(session, fetch=not args.no_fetch,
+                                              history_days=history_days)
     except G.StaleDataError as exc:
         push("⚠ Gap-reversal: NO LIST", f"{exc}.\nNo picks published — do not trade a list "
              "from an earlier message. Retry: python scripts/gap_reversal.py picks",
@@ -140,6 +171,13 @@ def cmd_picks(args) -> None:
     if late:
         lines.insert(0, "⚠ LATE: the open has passed. The tested entry is the open itself — "
                         "entering now is a different, untested trade. Skip today.")
+    # A list built before its session's day (2026-10-06 20:31: the boot-time
+    # catch-up after a day off) lacks the overnight global closes the model is
+    # trained on; the 08:15 run rebuilds it.
+    preliminary = session > now.date()
+    if preliminary:
+        lines.insert(0, f"PRELIMINARY (built {now:%a %H:%M}, before the overnight global closes). "
+                        "The 08:15 list replaces it — trade that one.")
     if info.get("drift_alarm") or info.get("cautious_mode"):
         mult = info.get("size_multiplier", 0.6)
         lines.insert(0, f"⚠ DRIFT ALARM / CAUTIOUS MODE: the live book has been running persistently "
@@ -155,6 +193,10 @@ def cmd_picks(args) -> None:
         ranked = f"\nRanked by the gap rule ({info.get('fallback', 'fallback')})."
     if info.get("band_excluded"):
         ranked += f"\nSkipped (can't be shorted/protected today): {'; '.join(info['band_excluded'])}."
+    if info.get("missing_inputs"):
+        blank = info["missing_inputs"]
+        ranked += (f"\n⚠ {len(blank)} model inputs are blank today ({', '.join(blank[:4])}"
+                   f"{', …' if len(blank) > 4 else ''}): a data source is missing, so the ranking is degraded.")
     body = "\n".join(lines) + (
         f"\nIf a name can't be shorted (ASM/T2T), use the next: {reserves}"
         + ("\nEnter in pre-open 09:00-09:08: MIS SELL LIMIT at the price shown. It fills at the "
@@ -166,16 +208,16 @@ def cmd_picks(args) -> None:
         + f"\nThen: BUY SL-M at your fill + the stop shown. Cover all at {CONFIG.square_off}."
         f"\n~₹{CONFIG.capital / CONFIG.picks:,.0f} each, based on {last} closes." + ranked
     )
-    push(f"📉 Gap-reversal shorts for {session:%a %d %b}", body, enabled=args.push)
-    try:
-        import subprocess
-        subprocess.run(["git", "add", "-f", str(OUT / "picks.json"), str(ROOT / "data" / "intraday" / "live.json")],
-                       check=False, cwd=str(ROOT), capture_output=True)
-        subprocess.run(["git", "commit", "-m", f"chore(data): publish morning picks for {session} [skip ci]"],
-                       check=False, cwd=str(ROOT), capture_output=True)
-        subprocess.run(["git", "push", "origin", "main"], check=False, cwd=str(ROOT), timeout=30, capture_output=True)
-    except Exception:
-        pass
+    push(f"{'🕗 Preliminary' if preliminary else '📉'} gap-reversal shorts for {session:%a %d %b}", body,
+         enabled=args.push, priority="default" if preliminary else "high")
+    _sync(f"chore(data): publish picks for {session} [skip ci]")
+
+
+def _sync(message: str) -> None:
+    """Mirror the list and the dashboard state onto GitHub `main` for Streamlit Cloud."""
+    from nse_intraday_ai import cloud_sync
+
+    cloud_sync.publish(cloud_sync.state_files(), message)
 
 
 def cmd_final(args) -> None:
@@ -186,20 +228,20 @@ def cmd_final(args) -> None:
     session = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
     payload = G.read_picks()
     if payload is None or payload.get("session") != session.isoformat():
-        print(f"no 08:45 list for {session}; nothing to re-rank")
+        print(f"no 08:15 list for {session}; nothing to re-rank")
         return
     try:
         result = P.open_rerank(session, CONFIG)
     except Exception as exc:                                  # noqa: BLE001
-        print(f"09:09 re-rank failed ({type(exc).__name__}: {exc}); the 08:45 list stands")
-        push(f"Gap-reversal {session:%d %b}: 08:45 list stands",
-             f"The 09:09 re-rank could not run ({type(exc).__name__}). Trade the 08:45 list.",
+        print(f"09:09 re-rank failed ({type(exc).__name__}: {exc}); the 08:15 list stands")
+        push(f"Gap-reversal {session:%d %b}: 08:15 list stands",
+             f"The 09:09 re-rank could not run ({type(exc).__name__}). Trade the 08:15 list.",
              enabled=args.push, priority="default")
         return
     if result is None:
-        # No open model promoted, or its guard is off: the 08:45 list already is
+        # No open model promoted, or its guard is off: the 08:15 list already is
         # the final one, and a second message saying so would only be noise.
-        print("the 08:45 list stands (no promoted open model, or its guard is off)")
+        print("the 08:15 list stands (no promoted open model, or its guard is off)")
         return
     picks, info = result
     picks = _band_filter(session, picks, info, fetch=True)
@@ -217,9 +259,10 @@ def cmd_final(args) -> None:
         f"\nReserves: {reserves}"
         f"\nEnter: MIS market SELL at 09:15:00 sharp (this list uses today's opening prices)."
         f"\nThen: BUY SL-M at your fill + the stop shown. Cover all at {CONFIG.square_off}."
-        f"\n{changed} of 8 names differ from the 08:45 list. If you already entered the 08:45 "
+        f"\n{changed} of 8 names differ from the 08:15 list. If you already entered the 08:15 "
         f"list in the pre-open, keep it — do not double up.")
     push(f"🎯 FINAL gap-reversal shorts {session:%a %d %b}", body, enabled=args.push)
+    _sync(f"chore(data): final picks for {session} [skip ci]")
 
 
 def cmd_levels(args) -> None:
@@ -239,10 +282,14 @@ def cmd_levels(args) -> None:
     except Exception:                                         # noqa: BLE001 — optional input
         bands = nse_bands.parse("Symbol,Series,Security Name,Band,Remarks\n")
     capped: dict[str, float] = {}
+    from nse_intraday_ai.nse_preopen import archived_opens
+
+    official = archived_opens(session)          # archived by the 09:10 job: the official opens
     for p in picks:
         bars = G.load_session_bars(p.symbol, session)
-        if not bars.empty and 0 in bars.index:
-            p.entry = round(float(bars.at[0, "open"]), 2)
+        auction = official.get(p.symbol.removesuffix(".NS"))
+        if auction or (not bars.empty and 0 in bars.index):
+            p.entry = round(float(auction or bars.at[0, "open"]), 2)
             p.stop_price = round(p.entry + p.stop_distance, 2)
             cap = G.circuit_capped_stop(p, bands)
             if cap is not None:
@@ -263,8 +310,10 @@ def cmd_levels(args) -> None:
         f"{p.symbol.removesuffix('.NS'):<11} open ₹{p.entry:,.2f} → BUY SL-M ₹{p.stop_price:,.2f}"
         + (f"  ⚠ capped below the ₹{capped[p.symbol]:,.2f} upper circuit" if p.symbol in capped else "")
         for p in main)
-    body += f"\nCover everything at {CONFIG.square_off}. (Stops use the 09:15 open; use your own fill if different.)"
+    body += (f"\nCover everything at {CONFIG.square_off}. (Stops use the "
+             f"{'official auction open' if official else 'first 5-minute bar'}; use your own fill if different.)")
     push(f"🛑 Stop-loss levels {session:%d %b}", body, enabled=args.push)
+    _sync(f"chore(data): stop levels for {session} [skip ci]")
 
 
 def last_completed_session(now: datetime) -> date:
@@ -281,25 +330,23 @@ def record_session(session: date, *, fetch: bool) -> list[G.Trade]:
     """Paper-trade one session exactly as the backtest does; [] if no bars."""
     picks = G.load_picks(session)
     if picks is None:
-        # The list is a pure function of the daily bars before the session, so
-        # a session the timers missed is reconstructed rather than skipped —
-        # but only from complete data, or it would record a list nobody got.
-        universe = G.nifty500_symbols()
-        try:
-            G.check_fresh(universe, session)
-        except G.StaleDataError as exc:
-            print(f"{session}: cannot reconstruct the pick list ({exc})")
-            return []
-        daily = G.load_daily(universe, since=(session - timedelta(days=120)).isoformat())
-        picks = G.select(daily, session, CONFIG)
+        # Nothing was published for this session (the laptop was off).  The
+        # paper book records published lists only: rebuilding one with the
+        # Yahoo gap rule would book a list the ranker-led system never traded.
+        # The experts' grades for the day are in the meta state's track.
+        return []
     symbols = [p.symbol for p in picks]
     if fetch and G.missing_intraday(symbols, session, bar=G.SQUARE_OFF_BAR):
         G.refresh(symbols, interval="5m", period="1mo")
+    from nse_intraday_ai.nse_preopen import archived_opens
+
+    official = archived_opens(session)          # the auction price a pre-open order fills at
     trades = []
     for p in picks:
         if len(trades) >= CONFIG.picks:
             break
-        trade = G.simulate_pick(p, G.load_session_bars(p.symbol, session), session, CONFIG)
+        trade = G.simulate_pick(p, G.load_session_bars(p.symbol, session), session, CONFIG,
+                                entry=official.get(p.symbol.removesuffix(".NS")))
         if trade is not None:
             trades.append(trade)
     return trades
@@ -326,6 +373,9 @@ def cmd_record(args) -> None:
     for session in sessions:
         if newest and session < newest and coverage.get(session, 0) == 0:
             continue                     # a holiday: no real bars, later days have them
+        if G.load_picks(session) is None:
+            print(f"{session}: no list was published — not recorded")
+            continue
         trades = record_session(session, fetch=not args.no_fetch)
         if not trades:
             print(f"{session}: no bars for any pick — holiday or data outage, nothing recorded")
@@ -352,6 +402,7 @@ def cmd_record(args) -> None:
                  f"({per_day.sum() / CONFIG.capital * 100:+.2f}%), {(per_day > 0).sum()} up days")
         push(f"📒 Gap-reversal result {session:%d %b}", body,
              enabled=args.push and session == recorded[-1][0], priority="default")
+    _sync(f"chore(data): paper result for {recorded[-1][0]} [skip ci]")
 
 
 def _window_summary(result: G.BacktestResult) -> dict:
@@ -422,6 +473,9 @@ def main() -> None:
         p.add_argument("--date", help="ISO session date (default: the relevant session)")
         p.add_argument("--push", action="store_true", help="send to the phone via ntfy")
         p.add_argument("--no-fetch", action="store_true", help="use the candle cache as-is")
+        if name == "picks":
+            p.add_argument("--history-days", type=int, default=HISTORY_DAYS_DEFAULT,
+                           help="calendar days of NSE files to refresh (45 on a fresh machine)")
     b = sub.add_parser("backtest")
     b.add_argument("--sessions", type=int, default=14, help="replay the last N sessions")
     b.add_argument("--since", help="replay every session from this ISO date instead")

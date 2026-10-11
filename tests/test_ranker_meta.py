@@ -73,7 +73,7 @@ def test_save_and_load_reproduce_scores(tmp_path):
 
 def test_load_tolerates_retired_config_fields(tmp_path):
     # The live champion was saved with a field (seeds_multi) later removed from
-    # RankerConfig; loading must not break the 08:45 list.
+    # RankerConfig; loading must not break the 08:15 list.
     import json
     p = _panel(n_days=300)
     directory = R.Ranker.fit(p, FAST).save(tmp_path / "m")
@@ -145,3 +145,26 @@ def test_guard_keeps_the_ranker_until_it_is_significantly_worse():
                          "rule": 30 + rng.normal(0, 30)})
     expert, t = st.guard()
     assert expert == "rule" and t < -2
+
+
+def test_missing_inputs_flags_a_source_that_went_blank():
+    model = R.Ranker(config=R.RankerConfig(), features=["fo_oi", "adr_excess", "gap1"],
+                     meta={"nan_rates": {"fo_oi": 0.4, "adr_excess": 0.98, "gap1": 0.0}})
+    rows = pd.DataFrame({"fo_oi": [np.nan] * 100, "adr_excess": [np.nan] * 100,
+                         "gap1": np.linspace(0, 1, 100)})
+    assert R.missing_inputs(model, rows) == ["fo_oi"]           # adr_excess is always sparse
+    rows["fo_oi"] = 1.0
+    assert R.missing_inputs(model, rows) == []
+    legacy = R.Ranker(config=R.RankerConfig(), features=["fo_oi"])   # saved before nan_rates
+    assert R.missing_inputs(legacy, rows.assign(fo_oi=np.nan)) == ["fo_oi"]
+
+
+def test_fit_records_the_usual_blank_rate_of_each_feature():
+    rng = np.random.default_rng(0)
+    idx = pd.MultiIndex.from_product([pd.bdate_range("2026-01-01", periods=80).date, range(50)],
+                                     names=["session", "symbol"])
+    panel = pd.DataFrame({"a": rng.normal(size=len(idx)), "b": rng.normal(size=len(idx)),
+                          "short_bps": rng.normal(0, 100, len(idx))}, index=idx)
+    panel.loc[panel.index.get_level_values("symbol") < 10, "b"] = np.nan
+    m = R.Ranker.fit(panel, R.RankerConfig(max_iter=5, min_samples_leaf=20, exclude=()))
+    assert m.meta["nan_rates"] == {"a": 0.0, "b": 0.2}

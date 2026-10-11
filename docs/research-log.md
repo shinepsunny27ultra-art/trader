@@ -14,6 +14,133 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-10-11 — cross-sectional ML ranker on hourly bars (rejected)
+
+**Question.** Rule-based intraday strategies failed on 2026-10-05. Can a learned
+cross-sectional ranker pick "the one stock to buy or short right now" across
+NIFTY-500 and still make money after the 13.3 bps MIS round trip?
+
+**Setup** (`research/intraday_ml_2026_10/`). 1-hour Yahoo bars, 717 sessions
+(2023-10-30 → 2026-10-01), 478 symbols. Decisions are taken at the close of the
+09:15…13:15 bars and filled at the next bar's open. Exits are the 15:15 price
+(MIS) or one hour later. There are 37 point-in-time features: returns since the
+open, since the previous close and over the last 1–2 bars; ATR-scaled versions of
+those; range position; VWAP/TWAP distance; relative volume against the stock's own
+20-session profile at the same time of day; market median, breadth and dispersion;
+sector-relative return; cross-sectional ranks; time of day; and prior-day bhavcopy
+features (return, 5d/20d, delivery %, turnover rank, close position). The target is
+the forward return minus the cross-sectional mean. Models are
+HistGradientBoosting and ridge, refit monthly on an expanding window with a
+1-session embargo. Only names with turnover rank ≤ 300 are trained on or traded.
+The out-of-sample period is 2024-06-03 → 2026-10-01: **574 sessions**.
+
+**Look-ahead audit** (`audit_lab.py`): hourly bars match the 5-minute bars exactly
+(ts = bar start; 156/156 closes within 1 bp). I recomputed features and targets
+for 60 random rows straight from `candles.sqlite3` and the t−1 bhavcopy, and all
+matched. Pooled univariate ICs are 0.01–0.04, with no leaked feature. Caveat: the
+universe is today's NIFTY-500 list (mild survivorship), and it contains no ETFs.
+
+**The signal is real but too small.** The OOS rank IC is 0.048 for the EOD target
+(t 14.6) and 0.034 for 1h (t 16.7). The shuffled-label control gives an IC of
+−0.001 and about 0 bps gross. But the HGB top-minus-bottom decile spread is only
+13 bps gross (−8.6 → +4.8) over the whole day. That is about 6–7 bps a leg,
+against a 13.3 bps round-trip cost. Calibration shows the model is overconfident:
+names with a predicted ±60+ bps realised only −6 / +14 bps.
+
+| Best variants (828 tested, Holm over all) | net bps/trade | t | sessions | Holm p |
+|---|---|---|---|---|
+| HGB EOD, best-1 by score, only when score ≥ 60 bps, 0.5-ATR stop | +15.5 | 2.90 | 354 | 1.00 |
+| HGB EOD, same rule, no stop | +20.8 | 2.78 | 354 | 1.00 |
+| HGB EOD, up to 5 shorts with score ≤ −60, 1-ATR stop | +17.0 | 2.44 | 290 | 1.00 |
+| Ridge EOD, top-1 short, every decision | +9.5 | 1.63 | 574 | 1.00 |
+| HGB EOD, best-1 by score, every decision ("the one best stock") | +5.9 | 1.05 | 574 | 1.00 |
+| HGB EOD, 10 long + 10 short | −3.9 | −3.58 | 574 | 1.00 |
+| HGB 1h, 10 long + 10 short | −10.0 | −22.1 | 574 | 1.00 |
+
+No variant reached t ≥ 3, and none survives Holm (0 of 828). The deflated Sharpe
+of the best variant is 0.007, charged for 928 trials including the ~100 rule
+variants. The best variant also fails on its own terms. It lost money in 2024
+(−6.8 bps), it is only +14 bps in the most recent quarter, and its edge sits in
+the 10:15/11:15 decisions only. The ungated top-1 books depend on a few days (the
+top 10 days are ≥ 96% of the P&L; without them, −0.3 to +0.4 bps). Wide books lose
+reliably (t −3.6 for EOD, −22 for 1h) because the edge per name is smaller than
+the cost. Because no variant
+passed, the 5-minute confirmation and a live scoring function were **not built**.
+
+**Verdict: not deployable.** Hourly price, volume and prior-day features carry a
+statistically real but economically small cross-sectional signal (~5–15 bps
+gross per pick). After 13.3 bps of MIS costs, nothing is left that survives
+correcting for the search. This matches 2026-10-05. Intraday edges in NSE cash
+equities are about the size of the costs. If anything is followed up, the only
+candidate is the strict best-1 gate at 10:15/11:15 (score ≥ 60 bps). That would
+be a paper-only shadow track, with the threshold fixed now, before any forward
+data. Scripts: `panel.py` (panel), `model_lab.py` (walk-forward),
+`eval_lab.py` (720 book × stop × leg × decision-time variants),
+`gate_lab.py` (108 cost-gated variants plus calibration) and `audit_lab.py`.
+Results are in the matching `*.json` files.
+
+## 2026-10-06 — a day off, ETFs out of the universe, and four plumbing bugs
+
+**The session.** The laptop was off from Oct 5 14:35 to Oct 6 20:30, so nothing
+ran locally. The GitHub Action published a gap-rule list at 09:00:36 (scheduled
+08:45). Graded on NSE bars, it was a bad day for shorts: the median universe
+name rose +48 bps open→close and 30% of names would have hit a 0.75-ATR stop.
+
+| List for 2026-10-06 | net bps/slot | ₹ on ₹10 L |
+|---|---|---|
+| Ranker, as the laptop would have published it (AUGMONT band-dropped) | −63 | −6,300 |
+| Ranker without the band filter (how `learn_from` grades it) | −6.7 | −670 |
+| Gap rule, validated universe (`learn_from`) | −145 | −14,500 |
+| Gap rule as the cloud published it (pre-open limit) | −239 | −23,900 |
+
+The cloud list was worse than the rule because the runner starts with an empty
+`data/`. It downloaded ~12 sessions, and on that window FEDDERSHOL (turnover rank
+362 → 257, stopped at +18% intraday) and SEDEMAC (346 → 268) entered the
+"top 300". The workflow now refreshes 45 days and stands aside when `main`
+already has the laptop's model-ranked list for the day.
+
+**ETFs were in the universe.** They trade in the EQ series and many have large
+traded value, so the 20-session liquidity rank admitted them. Walk-forward
+2024-10 → 2026-10 (494 sessions, quarterly refits, production config):
+
+| Ranker top-8 trades by kind | trades | net bps | t |
+|---|---|---|---|
+| stocks | 3,542 | +46.3 | 9.1 |
+| gold ETFs | 139 | +63.2 | 3.5 |
+| liquid ETFs | 79 | +72.5 | 4.7 |
+| silver ETFs | 190 | +26.3 | 0.8 |
+
+A liquid ETF's NAV moves ~2 bps a day; its +72.5 bps comes from stray opening
+prints above NAV (LIQUID1: open 1147.32 / 1134.70 / 1133.66 on Oct 1/5/6 against a
+~1125 NAV, closing at NAV each time). No sell order could fill against those
+prints. The ranker had learned to chase them: LIQUID1 was #4 on the Oct 7 list.
+Dropping ETF rows from the panel (`nse_bands.etf_symbols()` from NSE security
+names, plus symbol shapes; the universe ranks are unchanged):
+ranker **47.6 vs 46.5 bps/trade, paired +1.2 bps/day, t 0.25**. That is neutral on
+paper, so removing fills that could never have happened costs nothing. Adopted.
+The rule loses 3.2 bps on paper (30.0 → 26.8) for the same reason. A first,
+rougher run (name regex also caught FIRSTCRY = Brainbees) gave +5.5 (t 1.2), which
+shows how noisy a 2-year paired difference is.
+
+**Bugs fixed.**
+- `morning()` learned only the previous session. After a day off, the evening
+  catch-up learned Oct 6 and skipped Oct 5 forever. Oct 5 was a day the rule beat
+  the ranker by 126 bps (rule +98.1, ranker −27.7). `learn_through()` now grades
+  every unlearned session from one panel build. Oct 5 was spliced into
+  `meta_state.json` (backup `.bak-20261006`): guard t 0.65 → 0.46, CUSUM 82.6 → 150.4.
+- `picks.json` is overwritten by the next list. At boot, `record` (previous
+  session) and `picks` (next) started in the same second, and the record found its
+  list only by seconds. Every list now has a dated copy in `gap_reversal/history/`.
+  `record` no longer rebuilds missing days with the Yahoo rule, which the
+  ranker-led book never traded.
+- GitHub sync committed onto the checked-out branch (`devel` collected 7 data
+  commits) and then pushed the unrelated local `main`, so nothing reached the cloud.
+  The picks test ran that block against the real repo. Now `cloud_sync.publish()`
+  uses git plumbing (throwaway index on top of `origin/main`), and the test stubs it.
+- The boot-time monitor push died on DNS ("Temporary failure in name resolution").
+  `send_ntfy` now retries (5 s, 20 s). The monitor and health units are ordered after
+  record/picks, so they report on fresh data at boot.
+
 ## 2026-10-05 — search for a continuous intraday strategy (all rejected)
 
 **Question.** Is there a published intraday strategy that a scanner could

@@ -31,6 +31,7 @@ BOOK = DATA / "gap_reversal" / "paper_book.csv"
 MODELS = DATA / "models"
 REPORT = DATA / "daily_monitor_report.json"
 STALE_MODEL_DAYS = 10          # the weekly retrain should never be older than this
+LIVE_FROM = "2026-09-29"       # first live session; earlier track rows are walk-forward seeds
 
 
 def load_book() -> pd.DataFrame:
@@ -74,13 +75,19 @@ def live_vs_expected(df: pd.DataFrame, expected_bps: float) -> dict:
 
 
 def experts(state: dict, last_n: int = 20) -> dict:
-    track = state.get("track", [])[-last_n:]
+    """Each expert's own top-8, graded on official bars.  The weekly job seeds the
+    track with walk-forward sessions, so live sessions are reported on their own."""
+    track = state.get("track", [])
     if not track:
         return {}
     frame = pd.DataFrame(track).set_index("session")
-    return {"window": f"last {len(frame)} sessions",
-            "mean_bps": {k: round(float(v), 1) for k, v in frame.mean().items()},
-            "last": {k: round(float(v), 1) for k, v in frame.iloc[-1].items()}}
+    live = frame[frame.index >= LIVE_FROM]
+    recent = frame.tail(last_n)
+    return {"window": f"{len(live)} live sessions since {LIVE_FROM}",
+            "mean_bps": {k: round(float(v), 1) for k, v in live.mean().dropna().items()},
+            "recent_window": f"last {len(recent)} sessions (walk-forward seeds + live)",
+            "recent_mean_bps": {k: round(float(v), 1) for k, v in recent.mean().dropna().items()},
+            "last": {k: round(float(v), 1) for k, v in frame.iloc[-1].dropna().items()}}
 
 
 def model_info() -> dict:
