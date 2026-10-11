@@ -1,16 +1,30 @@
 name: NSE morning gap list (cloud fallback)
 
-# The laptop publishes the model-ranked list at 08:15 IST (scripts/gap_reversal.py
-# picks -> cloud_sync).  This runner has no model and no archive: inside Actions
-# the script stands aside when the laptop already built today's list, and
-# otherwise ranks by the gap rule so the cloud app still has a list.
+# All times IST (cron below is UTC = IST - 5:30).
+#
+# The laptop publishes the model-ranked list at 08:15 IST.  This workflow only
+# stands in when it does not: `gap_reversal.py cloud-fallback` builds the
+# gap-rule list at 08:00, gives the laptop until 08:20, then publishes to main
+# and pushes to the phone - by ~08:21 IST.
+#
+# GitHub starts scheduled runs late (15 min is normal here, more under load) and
+# can drop them, so the main run is scheduled at 03:00 IST and simply waits
+# until 08:00; two later runs are back-ups in case it is dropped.  Only one run
+# executes at a time (concurrency group); a run that finds today's list already
+# on main stands aside.  Runner minutes are free for public repositories.
 
 on:
   schedule:
-    # 02:45 UTC = 08:15 IST, Mon-Fri.  GitHub usually starts scheduled runs 5-20
-    # minutes late; the pre-open limit window closes at 09:08.
-    - cron: '45 2 * * 1-5'
-  workflow_dispatch: # manual run from the Actions tab
+    - cron: '30 21 * * 0-4'   # 03:00 IST Mon-Fri: main run, waits until 08:00 IST
+    - cron: '17 2 * * 1-5'    # 07:47 IST Mon-Fri: back-up
+    - cron: '37 2 * * 1-5'    # 08:07 IST Mon-Fri: back-up
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run: build now and print the list (publishes nothing). publish: real fallback run."
+        type: choice
+        options: [dry-run, publish]
+        default: dry-run
 
 concurrency:
   group: gap-picks
@@ -19,7 +33,7 @@ concurrency:
 jobs:
   morning_picks:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 345          # the 03:00 IST run ends by ~08:21 IST (5 h 21 min)
     permissions:
       contents: write
 
@@ -38,28 +52,20 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build the list (stands aside if the laptop already published)
+      - name: Cloud fallback (stands aside if the laptop publishes by 08:20 IST)
         env:
           PYTHONPATH: src
+          PYTHONUNBUFFERED: "1"
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}   # optional: phone push on days the laptop is off
+          EVENT: ${{ github.event_name }}
+          MODE: ${{ inputs.mode }}
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
         run: |
-          python scripts/gap_reversal.py picks --push --history-days 45
-
-      - name: Commit and push the list
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f data/gap_reversal/picks.json 2>/dev/null || true
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-            exit 0
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$MODE" != "publish" ]; then
+            python scripts/gap_reversal.py cloud-fallback --dry-run --any-day --build-at 00:00 --deadline 00:00
+          else
+            python scripts/gap_reversal.py cloud-fallback --push
           fi
-          git fetch --quiet origin main
-          # The laptop may have published while this job ran: its list wins.
-          if ! git diff --quiet HEAD origin/main -- data/gap_reversal/picks.json; then
-            echo "main got a newer list meanwhile; keeping it"
-            exit 0
-          fi
-          git commit -m "chore(data): publish morning gap picks (cloud fallback) [skip ci]"
-          git rebase origin/main
-          git push origin HEAD:main
