@@ -1,0 +1,31 @@
+{
+ "alignment_1h_vs_5m": {
+  "pairs": 156,
+  "close_vs_5m_last_bar_bps_median": 0.0,
+  "close_match_lt1bp": 1.0,
+  "open_vs_5m_first_bar_bps_median": 0.0,
+  "open_match_lt1bp": 0.981
+ },
+ "recompute": {
+  "rows": 60,
+  "max_abs_err": {
+   "r_open": 1.8446941751903978e-09,
+   "entry": 0.0,
+   "y_eod": 2.276801819789398e-05,
+   "y_1h": 6.9619416933619505e-06,
+   "range_pos": 2.9313759752902513e-08,
+   "prev_ret": 3.1889493268266733e-09
+  },
+  "all_match": true
+ },
+ "pooled_spearman_vs_y_eod": {
+  "r_open": 0.0262,
+  "r_last1": 0.0164,
+  "range_pos": 0.0392,
+  "dist_vwap": 0.0318,
+  "relvol_cum": 0.0065,
+  "gap": -0.0107,
+  "prev_ret": -0.0153,
+  "ret5": -0.013
+ }
+}

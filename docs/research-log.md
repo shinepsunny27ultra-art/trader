@@ -14,6 +14,71 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-10-11 — cross-sectional ML ranker on hourly bars (rejected)
+
+**Question.** Rule-based intraday strategies failed on 2026-10-05. Can a learned
+cross-sectional ranker pick "the one stock to buy or short right now" across
+NIFTY-500 and still make money after the 13.3 bps MIS round trip?
+
+**Setup** (`research/intraday_ml_2026_10/`). 1-hour Yahoo bars, 717 sessions
+(2023-10-30 → 2026-10-01), 478 symbols. Decisions are taken at the close of the
+09:15…13:15 bars and filled at the next bar's open. Exits are the 15:15 price
+(MIS) or one hour later. There are 37 point-in-time features: returns since the
+open, since the previous close and over the last 1–2 bars; ATR-scaled versions of
+those; range position; VWAP/TWAP distance; relative volume against the stock's own
+20-session profile at the same time of day; market median, breadth and dispersion;
+sector-relative return; cross-sectional ranks; time of day; and prior-day bhavcopy
+features (return, 5d/20d, delivery %, turnover rank, close position). The target is
+the forward return minus the cross-sectional mean. Models are
+HistGradientBoosting and ridge, refit monthly on an expanding window with a
+1-session embargo. Only names with turnover rank ≤ 300 are trained on or traded.
+The out-of-sample period is 2024-06-03 → 2026-10-01: **574 sessions**.
+
+**Look-ahead audit** (`audit_lab.py`): hourly bars match the 5-minute bars exactly
+(ts = bar start; 156/156 closes within 1 bp). I recomputed features and targets
+for 60 random rows straight from `candles.sqlite3` and the t−1 bhavcopy, and all
+matched. Pooled univariate ICs are 0.01–0.04, with no leaked feature. Caveat: the
+universe is today's NIFTY-500 list (mild survivorship), and it contains no ETFs.
+
+**The signal is real but too small.** The OOS rank IC is 0.048 for the EOD target
+(t 14.6) and 0.034 for 1h (t 16.7). The shuffled-label control gives an IC of
+−0.001 and about 0 bps gross. But the HGB top-minus-bottom decile spread is only
+13 bps gross (−8.6 → +4.8) over the whole day. That is about 6–7 bps a leg,
+against a 13.3 bps round-trip cost. Calibration shows the model is overconfident:
+names with a predicted ±60+ bps realised only −6 / +14 bps.
+
+| Best variants (828 tested, Holm over all) | net bps/trade | t | sessions | Holm p |
+|---|---|---|---|---|
+| HGB EOD, best-1 by score, only when score ≥ 60 bps, 0.5-ATR stop | +15.5 | 2.90 | 354 | 1.00 |
+| HGB EOD, same rule, no stop | +20.8 | 2.78 | 354 | 1.00 |
+| HGB EOD, up to 5 shorts with score ≤ −60, 1-ATR stop | +17.0 | 2.44 | 290 | 1.00 |
+| Ridge EOD, top-1 short, every decision | +9.5 | 1.63 | 574 | 1.00 |
+| HGB EOD, best-1 by score, every decision ("the one best stock") | +5.9 | 1.05 | 574 | 1.00 |
+| HGB EOD, 10 long + 10 short | −3.9 | −3.58 | 574 | 1.00 |
+| HGB 1h, 10 long + 10 short | −10.0 | −22.1 | 574 | 1.00 |
+
+No variant reached t ≥ 3, and none survives Holm (0 of 828). The deflated Sharpe
+of the best variant is 0.007, charged for 928 trials including the ~100 rule
+variants. The best variant also fails on its own terms. It lost money in 2024
+(−6.8 bps), it is only +14 bps in the most recent quarter, and its edge sits in
+the 10:15/11:15 decisions only. The ungated top-1 books depend on a few days (the
+top 10 days are ≥ 96% of the P&L; without them, −0.3 to +0.4 bps). Wide books lose
+reliably (t −3.6 for EOD, −22 for 1h) because the edge per name is smaller than
+the cost. Because no variant
+passed, the 5-minute confirmation and a live scoring function were **not built**.
+
+**Verdict: not deployable.** Hourly price, volume and prior-day features carry a
+statistically real but economically small cross-sectional signal (~5–15 bps
+gross per pick). After 13.3 bps of MIS costs, nothing is left that survives
+correcting for the search. This matches 2026-10-05. Intraday edges in NSE cash
+equities are about the size of the costs. If anything is followed up, the only
+candidate is the strict best-1 gate at 10:15/11:15 (score ≥ 60 bps). That would
+be a paper-only shadow track, with the threshold fixed now, before any forward
+data. Scripts: `panel.py` (panel), `model_lab.py` (walk-forward),
+`eval_lab.py` (720 book × stop × leg × decision-time variants),
+`gate_lab.py` (108 cost-gated variants plus calibration) and `audit_lab.py`.
+Results are in the matching `*.json` files.
+
 ## 2026-10-06 — a day off, ETFs out of the universe, and four plumbing bugs
 
 **The session.** The laptop was off from Oct 5 14:35 to Oct 6 20:30, so nothing
