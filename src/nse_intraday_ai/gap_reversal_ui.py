@@ -539,7 +539,8 @@ def page_model() -> None:
     st.markdown("**Champion feature importances (top 25)**")
     directory = MODELS / str((champ or {}).get("directory", ""))
     if not champ or not (directory / "meta.json").exists():
-        st.info("No champion model artifacts to inspect.")
+        st.info("No champion model artifacts to inspect." if not champ else
+                "Model files stay on the trading laptop (this cloud copy shows the summaries only).")
         return
     imp, method = feature_importance(str(directory), (directory / "meta.json").stat().st_mtime)
     if imp.empty:

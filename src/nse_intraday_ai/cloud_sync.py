@@ -18,6 +18,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def state_files(root: Path = ROOT) -> list[Path]:
+    """Small files the cloud dashboard reads besides the live scan: the list, the
+    paper record, the backtest summary and the model/monitoring summaries.  Model
+    binaries and raw market data stay on the laptop (the repo is public)."""
+    data = root / "data"
+    return [data / "gap_reversal" / "picks.json", data / "gap_reversal" / "paper_book.csv",
+            data / "gap_reversal" / "backtest.json", data / "models" / "champion.json",
+            data / "models" / "weekly_report.json", data / "models" / "meta_state.json"]
+
+
 def publish(paths: list[Path], message: str, *, branch: str = "main", remote: str = "origin",
             root: Path = ROOT, timeout: float = 30, attempts: int = 2, log=print) -> bool:
     """Commit `paths` (as they are on disk) onto `remote/branch` and push. True on success."""

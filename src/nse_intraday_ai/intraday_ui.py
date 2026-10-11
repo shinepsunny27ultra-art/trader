@@ -105,6 +105,10 @@ def _live() -> None:
                 "trading days (`python scripts/intraday_monitor.py scan`).")
         return
     stale = live.get("session") != now.date().isoformat()
+    if stale:
+        st.info(f"Showing the last scanned session, **{live.get('session', '?')}** (last bar "
+                f"{live.get('last_bar') or '—'}). The scanner runs on the laptop every minute from 09:20 to "
+                "15:45 IST on trading days; nothing below is live.")
     b = live.get("breadth") or {}
     c = st.columns(5)
     c[0].metric("Session", live.get("session", "—"), "previous session" if stale else None, delta_color="off")
@@ -118,9 +122,9 @@ def _live() -> None:
 
     gb = live.get("gap_book") or []
     if gb:
-        st.subheader("🛡 Gap-book stop watch")
+        st.subheader("🛡 Gap-book stop watch" + (" (at the last scan)" if stale else ""))
         df = pd.DataFrame(gb)
-        for r in df.itertuples():
+        for r in ([] if stale else df.itertuples()):
             to_stop = getattr(r, "to_stop_pct", None)
             if r.stop_hit:
                 st.error(f"**{r.symbol}** reached its stop ₹{r.stop:,.2f} — confirm your SL order filled.")

@@ -63,6 +63,9 @@ def main() -> None:
             f"ranker - rule {v['mean_diff_bps']:+.1f}/day (t {v['t_stat']}): {verdict('ranker')}\n"
             f"open - ranker {vo['mean_diff_bps']:+.1f}/day (t {vo['t_stat']}): {verdict('ranker_open')}")
     print(body)
+    from nse_intraday_ai import cloud_sync
+
+    cloud_sync.publish(cloud_sync.state_files(), f"chore(data): weekly model review {date.today()} [skip ci]")
     if args.push:
         from nse_intraday_ai.alerts import send_ntfy
         send_ntfy(body, title="🧠 Weekly model review", priority="default", tags="brain")

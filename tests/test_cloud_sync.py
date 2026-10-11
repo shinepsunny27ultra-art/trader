@@ -43,3 +43,13 @@ def test_publish_is_a_no_op_inside_github_actions(tmp_path, monkeypatch):
     monkeypatch.setenv("GITHUB_ACTIONS", "true")
     (tmp_path / "f").write_text("x")
     assert cloud_sync.publish([tmp_path / "f"], "m", root=tmp_path) is False
+
+
+def test_state_files_are_small_dashboard_inputs_only(tmp_path):
+    files = cloud_sync.state_files(tmp_path)
+    rel = {f.relative_to(tmp_path).as_posix() for f in files}
+    assert "data/gap_reversal/picks.json" in rel and "data/gap_reversal/paper_book.csv" in rel
+    assert "data/models/meta_state.json" in rel
+    # The repo is public: no model binaries, credentials or raw market data.
+    assert all(f.suffix in {".json", ".csv"} for f in files)
+    assert not any("auth" in r or r.endswith(".pkl") or "candles" in r for r in rel)

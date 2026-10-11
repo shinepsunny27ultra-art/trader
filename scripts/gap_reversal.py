@@ -210,9 +210,14 @@ def cmd_picks(args) -> None:
     )
     push(f"{'🕗 Preliminary' if preliminary else '📉'} gap-reversal shorts for {session:%a %d %b}", body,
          enabled=args.push, priority="default" if preliminary else "high")
+    _sync(f"chore(data): publish picks for {session} [skip ci]")
+
+
+def _sync(message: str) -> None:
+    """Mirror the list and the dashboard state onto GitHub `main` for Streamlit Cloud."""
     from nse_intraday_ai import cloud_sync
 
-    cloud_sync.publish([G.PICKS_PATH], f"chore(data): publish picks for {session} [skip ci]")
+    cloud_sync.publish(cloud_sync.state_files(), message)
 
 
 def cmd_final(args) -> None:
@@ -257,6 +262,7 @@ def cmd_final(args) -> None:
         f"\n{changed} of 8 names differ from the 08:15 list. If you already entered the 08:15 "
         f"list in the pre-open, keep it — do not double up.")
     push(f"🎯 FINAL gap-reversal shorts {session:%a %d %b}", body, enabled=args.push)
+    _sync(f"chore(data): final picks for {session} [skip ci]")
 
 
 def cmd_levels(args) -> None:
@@ -307,6 +313,7 @@ def cmd_levels(args) -> None:
     body += (f"\nCover everything at {CONFIG.square_off}. (Stops use the "
              f"{'official auction open' if official else 'first 5-minute bar'}; use your own fill if different.)")
     push(f"🛑 Stop-loss levels {session:%d %b}", body, enabled=args.push)
+    _sync(f"chore(data): stop levels for {session} [skip ci]")
 
 
 def last_completed_session(now: datetime) -> date:
@@ -395,6 +402,7 @@ def cmd_record(args) -> None:
                  f"({per_day.sum() / CONFIG.capital * 100:+.2f}%), {(per_day > 0).sum()} up days")
         push(f"📒 Gap-reversal result {session:%d %b}", body,
              enabled=args.push and session == recorded[-1][0], priority="default")
+    _sync(f"chore(data): paper result for {recorded[-1][0]} [skip ci]")
 
 
 def _window_summary(result: G.BacktestResult) -> dict:

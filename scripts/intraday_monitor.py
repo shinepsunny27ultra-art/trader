@@ -81,7 +81,7 @@ def run(session: date, nbar: int, *, fetch: bool, push: bool, record: bool, now:
     if record and now.minute % 5 == 0:
         from nse_intraday_ai import cloud_sync
 
-        cloud_sync.publish([M.LIVE_PATH], f"chore(data): live sync bar {payload.get('last_bar')} [skip ci]",
+        cloud_sync.publish([M.LIVE_PATH, M.BOOK_PATH], f"chore(data): live sync bar {payload.get('last_bar')} [skip ci]",
                            timeout=25)
     return payload
 
