@@ -186,6 +186,9 @@ def cmd_picks(args) -> None:
         t = info.get("guard_t")
         ranked = ("\nRanked by the trained model"
                   + (f" (60-session edge over the gap rule: t={t:+.1f})." if t is not None else "."))
+    elif os.environ.get("GITHUB_ACTIONS"):
+        ranked = ("\nCLOUD FALLBACK: the laptop has not published today's list, so this one is ranked by "
+                  "the gap rule (no model in the cloud).")
     elif info.get("ranked_by") == "rule" and "fallback" not in info:
         ranked = ("\nRanked by the gap rule — the model's guard has switched it off "
                   f"(t={info.get('guard_t')}) or no model is promoted yet.")

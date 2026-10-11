@@ -346,6 +346,10 @@ def page_today() -> None:
                    f"{state.get('recovery_window', 10)}-session recovery check passes.")
     who = payload.get("ranked_by", "rule")
     label = {"ranker_open": "Open model (09:09)", "ranker": "ML ranker (08:15)"}.get(who, "Gap rule")
+    if payload.get("publisher") == "github-actions":
+        label = "Gap rule (cloud fallback)"
+        st.warning("**Cloud fallback list.** The laptop did not publish this morning, so GitHub Actions ranked "
+                   "this list by the gap rule (no model, no pre-open re-rank, no stop-level update).")
     gen = str(payload.get("generated_at", ""))
     c = st.columns(4)
     c[0].metric("Session", session)
