@@ -131,9 +131,12 @@ class Ranker:
                     early_stopping=False, random_state=seed)
                 m.fit(X, y, sample_weight=sample_weight)
             models.append(m)
-        last = max(panel.index.get_level_values("session"))
+        sess = panel.index.get_level_values("session")
+        last = max(sess)
+        recent = sess >= sorted(set(sess))[-min(60, len(set(sess)))]
+        nan_rates = panel.loc[recent, feats].isna().mean().round(3)
         return cls(config=config, features=feats, models=models, trained_through=str(last),
-                   n_train=len(panel))
+                   n_train=len(panel), meta={"nan_rates": nan_rates.to_dict()})
 
     def score(self, frame: pd.DataFrame) -> np.ndarray:
         missing = [c for c in self.features if c not in frame.columns]
@@ -190,6 +193,24 @@ class Ranker:
                    models=pickle.loads((directory / "models.pkl").read_bytes()),
                    trained_through=meta.pop("trained_through"), n_train=meta.pop("n_train"),
                    meta=meta)
+
+
+def missing_inputs(model: Ranker, rows: pd.DataFrame, *, threshold: float = 0.99,
+                   usual: float = 0.5) -> list[str]:
+    """Model features blank on (nearly) every candidate today that are normally filled.
+
+    A whole source missing (the F&O or delivery file, Yahoo's global closes)
+    blanks dozens of features at once; the trees then send every row down
+    their missing-value branches, which they rarely saw in training.  Normal
+    rates come from the model's last 60 training sessions (`meta["nan_rates"]`;
+    a model saved before 2026-10-06 lacks them and counts every feature as
+    usually filled — the sparse ones, e.g. adr_excess at 98%, stay below 99%).
+    """
+    if rows.empty:
+        return []
+    ref = model.meta.get("nan_rates") or {}
+    today = rows[model.features].isna().mean()
+    return [f for f, v in today.items() if v >= threshold and ref.get(f, 0.0) < usual]
 
 
 def champion_path(name: str = "ranker") -> Path:

@@ -14,6 +14,68 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-10-06 — a day off, ETFs out of the universe, and four plumbing bugs
+
+**The session.** The laptop was off from Oct 5 14:35 to Oct 6 20:30, so nothing
+ran locally. The GitHub Action published a gap-rule list at 09:00:36 (scheduled
+08:45). Graded on NSE bars, it was a bad day for shorts: the median universe
+name rose +48 bps open→close and 30% of names would have hit a 0.75-ATR stop.
+
+| List for 2026-10-06 | net bps/slot | ₹ on ₹10 L |
+|---|---|---|
+| Ranker, as the laptop would have published it (AUGMONT band-dropped) | −63 | −6,300 |
+| Ranker without the band filter (how `learn_from` grades it) | −6.7 | −670 |
+| Gap rule, validated universe (`learn_from`) | −145 | −14,500 |
+| Gap rule as the cloud published it (pre-open limit) | −239 | −23,900 |
+
+The cloud list was worse than the rule because the runner starts with an empty
+`data/`. It downloaded ~12 sessions, and on that window FEDDERSHOL (turnover rank
+362 → 257, stopped at +18% intraday) and SEDEMAC (346 → 268) entered the
+"top 300". The workflow now refreshes 45 days and stands aside when `main`
+already has the laptop's model-ranked list for the day.
+
+**ETFs were in the universe.** They trade in the EQ series and many have large
+traded value, so the 20-session liquidity rank admitted them. Walk-forward
+2024-10 → 2026-10 (494 sessions, quarterly refits, production config):
+
+| Ranker top-8 trades by kind | trades | net bps | t |
+|---|---|---|---|
+| stocks | 3,542 | +46.3 | 9.1 |
+| gold ETFs | 139 | +63.2 | 3.5 |
+| liquid ETFs | 79 | +72.5 | 4.7 |
+| silver ETFs | 190 | +26.3 | 0.8 |
+
+A liquid ETF's NAV moves ~2 bps a day; its +72.5 bps comes from stray opening
+prints above NAV (LIQUID1: open 1147.32 / 1134.70 / 1133.66 on Oct 1/5/6 against a
+~1125 NAV, closing at NAV each time). No sell order could fill against those
+prints. The ranker had learned to chase them: LIQUID1 was #4 on the Oct 7 list.
+Dropping ETF rows from the panel (`nse_bands.etf_symbols()` from NSE security
+names, plus symbol shapes; the universe ranks are unchanged):
+ranker **47.6 vs 46.5 bps/trade, paired +1.2 bps/day, t 0.25**. That is neutral on
+paper, so removing fills that could never have happened costs nothing. Adopted.
+The rule loses 3.2 bps on paper (30.0 → 26.8) for the same reason. A first,
+rougher run (name regex also caught FIRSTCRY = Brainbees) gave +5.5 (t 1.2), which
+shows how noisy a 2-year paired difference is.
+
+**Bugs fixed.**
+- `morning()` learned only the previous session. After a day off, the evening
+  catch-up learned Oct 6 and skipped Oct 5 forever. Oct 5 was a day the rule beat
+  the ranker by 126 bps (rule +98.1, ranker −27.7). `learn_through()` now grades
+  every unlearned session from one panel build. Oct 5 was spliced into
+  `meta_state.json` (backup `.bak-20261006`): guard t 0.65 → 0.46, CUSUM 82.6 → 150.4.
+- `picks.json` is overwritten by the next list. At boot, `record` (previous
+  session) and `picks` (next) started in the same second, and the record found its
+  list only by seconds. Every list now has a dated copy in `gap_reversal/history/`.
+  `record` no longer rebuilds missing days with the Yahoo rule, which the
+  ranker-led book never traded.
+- GitHub sync committed onto the checked-out branch (`devel` collected 7 data
+  commits) and then pushed the unrelated local `main`, so nothing reached the cloud.
+  The picks test ran that block against the real repo. Now `cloud_sync.publish()`
+  uses git plumbing (throwaway index on top of `origin/main`), and the test stubs it.
+- The boot-time monitor push died on DNS ("Temporary failure in name resolution").
+  `send_ntfy` now retries (5 s, 20 s). The monitor and health units are ordered after
+  record/picks, so they report on fresh data at boot.
+
 ## 2026-10-05 — search for a continuous intraday strategy (all rejected)
 
 **Question.** Is there a published intraday strategy that a scanner could

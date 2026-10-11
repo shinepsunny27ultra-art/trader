@@ -46,13 +46,13 @@ def parse(payload: dict) -> pd.DataFrame:
         m, d = item.get("metadata", {}), item.get("detail", {}).get("preOpenMarket", {})
         rows.append({
             "symbol": str(m.get("symbol", "")).strip(), "series": str(m.get("series", "")).strip(),
-            "iep": d.get("IEP"), "prev_close": m.get("previousClose"),
+            "iep": d.get("IEP"), "final_price": d.get("finalPrice"), "prev_close": m.get("previousClose"),
             "final_qty": d.get("finalQuantity"), "buy_qty": d.get("totalBuyQuantity"),
             "sell_qty": d.get("totalSellQuantity"), "ato_buy": d.get("atoBuyQty"),
             "ato_sell": d.get("atoSellQty"), "updated": d.get("lastUpdateTime"),
         })
     frame = pd.DataFrame(rows)
-    for col in ("iep", "prev_close", "final_qty", "buy_qty", "sell_qty", "ato_buy", "ato_sell"):
+    for col in ("iep", "final_price", "prev_close", "final_qty", "buy_qty", "sell_qty", "ato_buy", "ato_sell"):
         frame[col] = pd.to_numeric(frame[col], errors="coerce")
     frame["updated"] = pd.to_datetime(frame["updated"], format="%d-%b-%Y %H:%M:%S", errors="coerce")
     return frame
@@ -83,17 +83,35 @@ def _final_cutoff(day: date) -> str:
     return "09:10" if day >= NEW_AUCTION_FROM else "09:08"
 
 
-def final_for(day: date, frame: pd.DataFrame) -> pd.DataFrame:
-    """Keep EQ rows whose auction for `day` has finished (updated after order entry closed)."""
+def _settled(day: date) -> str:
+    """When every auction of `day` has closed and matched, whatever its stamps say."""
+    return "09:12" if day >= NEW_AUCTION_FROM else "09:09"
+
+
+def final_for(day: date, frame: pd.DataFrame, now: datetime | None = None) -> pd.DataFrame:
+    """EQ rows of `day`'s finished auction (raises PreOpenNotReady before it has finished).
+
+    After order entry closes, each stock's `lastUpdateTime` is the moment entry
+    closed — random in 09:08-09:10 since 2026-09-07 (2026-10-06: 09:08:38 for all
+    2,207 rows).  So a stamp before 09:10 does not mean "still open", and the
+    old test (stamp >= 09:10) rejected every day whose auction closed early: the
+    archive stayed empty.  Past the settle time (`now`, naive IST) the snapshot
+    is final; before it, only stamps at/after the latest possible close prove it.
+    """
     eq = frame[(frame["series"] == "EQ") & (frame["iep"] > 0) & (frame["prev_close"] > 0)]
     stamp = eq["updated"].dropna()
     if stamp.empty or stamp.max().date() != day:
         raise PreOpenNotReady(f"pre-open feed is for {stamp.max().date() if not stamp.empty else '?'}, "
                               f"not {day}")
+    today = eq[eq["updated"].dt.date == day]
+    settled = pd.Timestamp.combine(day, datetime.strptime(_settled(day), "%H:%M").time())
+    if now is not None and pd.Timestamp(now) >= settled:
+        return today
     cutoff = pd.Timestamp.combine(day, datetime.strptime(_final_cutoff(day), "%H:%M").time())
     done = eq[eq["updated"] >= cutoff]
     if len(done) < 0.8 * len(eq):
-        raise PreOpenNotReady(f"only {len(done)}/{len(eq)} auctions final — too early")
+        raise PreOpenNotReady(f"only {len(done)}/{len(eq)} auctions final — too early "
+                              f"(final for all at {_settled(day)})")
     return done
 
 
@@ -114,7 +132,7 @@ def wait_and_fetch(day: date, *, deadline: str = "09:14", poll_seconds: int = 10
     stop = pd.Timestamp.combine(day, datetime.strptime(deadline, "%H:%M").time()).tz_localize(IST)
     while True:
         try:
-            return final_for(day, fetch())
+            return final_for(day, fetch(), now=datetime.now(IST).replace(tzinfo=None))
         except PreOpenNotReady as exc:
             if pd.Timestamp.now(tz=IST) >= stop:
                 raise
@@ -133,6 +151,19 @@ def load_archive(start: date, end: date) -> pd.DataFrame:
                 f.insert(0, "session", d)
                 parts.append(f)
     return pd.concat(parts, ignore_index=True) if parts else pd.DataFrame()
+
+
+def archived_opens(day: date) -> dict[str, float]:
+    """symbol -> `day`'s official open from the archived auction (empty if not archived).
+
+    The price a pre-open order fills at.  The first 5-minute bar's open differs
+    from it by up to ~1.3% (2026-09-29..10-05 paper trades: mean +8.7 bps).
+    """
+    frame = load_archive(day, day)
+    if frame.empty:
+        return {}
+    eq = frame[(frame["series"] == "EQ") & (frame["iep"] > 0)]
+    return dict(zip(eq["symbol"], eq["iep"].astype(float)))
 
 
 def archived_sessions() -> int:

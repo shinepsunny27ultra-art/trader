@@ -12,7 +12,7 @@ Experiments and decisions: [docs/research-log.md](docs/research-log.md)
 
 | | |
 |---|---|
-| Universe | The 300 most liquid NSE EQ stocks by 20-session traded value, point-in-time. Price ≥ ₹50; names that were trade-for-trade in the last 20 sessions are excluded. |
+| Universe | The 300 most liquid NSE EQ-series names by 20-session traded value, point-in-time, less ETFs (they trade in EQ too). Price ≥ ₹50; names that were trade-for-trade in the last 20 sessions are excluded. |
 | Ranking | HistGradientBoosting ranker over ~190 point-in-time features. It falls back to the gap rule (yesterday's overnight gap) whenever its live paired record says so. |
 | Size | Top 8, equal weight (₹1.25 L each on ₹10 L), MIS, no leverage. |
 | Entry | Ranker lists: market SELL in the pre-open (09:00–09:05) at the open. Rule-ranked lists: **pre-open SELL LIMIT at prev close × (1 − 0.75%)**, rounded up to the tick, placed 09:00–09:08; **cancel anything unfilled at 09:15**. The push message always states which applies. |

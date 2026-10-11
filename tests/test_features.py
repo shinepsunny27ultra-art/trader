@@ -218,3 +218,35 @@ def test_auction_features_come_from_the_snapshot_and_are_missing_without_one():
     np.testing.assert_allclose(a["po_imbalance"], row.sort_index()["po_imbalance"])
     other = full.xs(sessions[60], level="session")
     assert other["po_imbalance"].isna().all()                  # no snapshot that day
+
+
+def test_etfs_leave_the_panel_and_nothing_else_changes():
+    bhav = _bhav()
+    names = {"S03": "LIQUIDX", "S05": "GOLDBEES"}           # shaped like ETF symbols
+    renamed = bhav.assign(symbol=bhav["symbol"].replace(names))
+    base = FT.build(_inputs(bhav), universe=10, min_price=1.0)
+    inputs = _inputs(renamed)
+    inputs.etfs = frozenset({"S07"})                          # named an ETF by sec_list
+    got = FT.build(inputs, universe=10, min_price=1.0)
+    syms = set(got.index.get_level_values("symbol"))
+    assert not syms & {"LIQUIDX", "GOLDBEES", "S07"}
+    kept = base[~base.index.get_level_values("symbol").isin(["S03", "S05", "S07"])]
+    assert len(got) == len(kept)
+    cols = [c for c in got.columns if c != "sector"]
+    np.testing.assert_allclose(got[cols].to_numpy(float), kept[cols].to_numpy(float), rtol=1e-6,
+                               equal_nan=True)
+
+
+def test_etf_symbols_reads_nse_security_names(tmp_path):
+    from nse_intraday_ai import nse_bands
+
+    (tmp_path / "sec_list_20261006.csv").write_text(
+        "Symbol,Series,Security Name,Band,Remarks\n"
+        "LIQUID1,EQ,KOTAK MAHINDRA MUTUAL FUND - KOTAK NIFTY 1D RATE LIQUID ETF,5,-\n"
+        "NETF,EQ,TATA NIFTY 50 EXCHANGE TRADED FUND,No Band,-\n"
+        "FIRSTCRY,EQ,BRAINBEES SOLUTIONS LIMITED,No Band,-\n"
+        "ITBEES,EQ,NIPPON LIFE INDIA ASSET MANAGEMENT LIMITED,No Band,-\n")
+    etfs = nse_bands.etf_symbols(tmp_path)
+    assert etfs == {"LIQUID1", "NETF"}
+    assert nse_bands.is_etf("ITBEES.NS", etfs)                # by symbol shape
+    assert not nse_bands.is_etf("FIRSTCRY", etfs)             # "BRAINBEES" is a company

@@ -16,6 +16,7 @@ which also builds a point-in-time history for future research.
 from __future__ import annotations
 
 import io
+import re
 from datetime import date
 from pathlib import Path
 
@@ -76,6 +77,32 @@ def load(day: date | None = None, *, fetch: bool = True, cache: Path = CACHE, lo
     if files[-1].stem[-8:] != f"{today:%Y%m%d}":
         log(f"  price bands: using {files[-1].name}")
     return parse(files[-1].read_bytes())
+
+
+# ETFs trade in the EQ series, so the liquidity ranking lets them into a book
+# meant for stocks.  NSE names them plainly; a few carry only the fund house's
+# name (ITBEES: "NIPPON LIFE INDIA ASSET MANAGEMENT LIMITED"), hence the symbol
+# shapes, which also cover ETFs delisted before the archive began.
+ETF_NAME = re.compile(r"\bETF\b|\bBEES\b|\bMUTUAL FUND\b|\bEXCHANGE TRADED FUND\b", re.IGNORECASE)
+ETF_SYMBOL = re.compile(r"(?:BEES|IETF|ETF)$|^LIQUID")
+
+
+def etf_symbols(cache: Path = CACHE) -> frozenset[str]:
+    """Every symbol an archived sec_list.csv names as an ETF (empty without an archive)."""
+    out: set[str] = set()
+    for path in sorted(cache.glob("sec_list_*.csv")):
+        try:
+            df = pd.read_csv(path, dtype=str, usecols=["Symbol", "Security Name"])
+        except (ValueError, OSError):
+            continue
+        names = df["Security Name"].fillna("")
+        out |= set(df.loc[names.str.contains(ETF_NAME), "Symbol"].str.strip())
+    return frozenset(out)
+
+
+def is_etf(symbol: str, etfs: frozenset[str] | set[str] = frozenset()) -> bool:
+    sym = symbol.removesuffix(".NS")
+    return sym in etfs or bool(ETF_SYMBOL.search(sym))
 
 
 def circuit_risk(symbol: str, stop_pct: float, table: pd.DataFrame,

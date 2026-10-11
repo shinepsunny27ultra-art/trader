@@ -278,3 +278,23 @@ def test_ranker_lists_enter_at_the_open_without_a_limit():
     t = G.simulate_pick(pick, bars, date(2026, 10, 5))
     assert t.exit_reason != "NO_FILL" and t.quantity > 0
     assert G.limit_applies("rule") and not G.limit_applies("ranker")
+
+
+def test_load_picks_finds_a_session_after_picks_json_moved_on(tmp_path):
+    path = tmp_path / "picks.json"
+    G.save_picks(date(2026, 10, 5), [_pick()], path=path)
+    G.save_picks(date(2026, 10, 7), [], path=path)          # the next list overwrites picks.json
+    assert G.read_picks(path)["session"] == "2026-10-07"
+    assert G.load_picks(date(2026, 10, 5), path=path) == [_pick()]
+    assert G.load_picks(date(2026, 10, 6), path=path) is None
+
+
+def test_the_official_auction_open_is_the_entry_when_known():
+    # 2026-10-05 MOLBIO: first 5-minute bar opened 1486.80, the auction 1501.80.
+    rows = {k: (100.0, 101.0, 98.0, 99.0) for k in range(75)}
+    rows[G.SQUARE_OFF_BAR] = (95.0, 96.0, 94.0, 95.0)
+    trade = G.simulate_pick(_pick(), _bars(rows), date(2026, 9, 1), CFG, entry=101.0)
+    assert trade.entry == 101.0 and trade.gross == pytest.approx((101.0 - 95.0) * trade.quantity)
+    rows[3] = (100.0, 103.5, 99.0, 100.0)                      # stop = 101 + 3 = 104: not hit
+    assert G.simulate_pick(_pick(), _bars(rows), date(2026, 9, 1), CFG, entry=101.0).exit_reason == "SQUARE_OFF"
+    assert G.simulate_pick(_pick(), _bars(rows), date(2026, 9, 1), CFG).exit_reason == "STOP"   # bar open 100

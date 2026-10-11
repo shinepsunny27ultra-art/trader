@@ -29,7 +29,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from nse_intraday_ai import nse_bhav, nse_corp, nse_extra, nse_fo, nse_preopen
+from nse_intraday_ai import nse_bands, nse_bhav, nse_corp, nse_extra, nse_fo, nse_preopen
 
 ROOT = Path(__file__).resolve().parents[2]
 DB_PATH = ROOT / "data" / "candles.sqlite3"
@@ -73,6 +73,7 @@ class Inputs:
     extra: pd.DataFrame | None = None               # MWPL crowding, bans, short sales
     preopen: pd.DataFrame | None = None             # archived pre-open auction snapshots
     corp: nse_corp.CorpEvents | None = None         # board meetings, results, announcements
+    etfs: frozenset[str] = frozenset()              # ETF symbols (nse_bands.etf_symbols)
 
 
 # ── loading ─────────────────────────────────────────────────────────────────
@@ -141,6 +142,7 @@ def load_inputs(start: date, end: date) -> Inputs:
         extra=nse_extra.load(start, end),
         preopen=nse_preopen.load_archive(start, end),
         corp=load_corp(start, end),
+        etfs=nse_bands.etf_symbols(),
     )
 
 
@@ -473,6 +475,16 @@ def build(inputs: Inputs, *, universe: int = 400, live_session: date | None = No
 
     mask = in_univ.stack()
     rows = mask[mask].index
+    # ETFs out, after the universe ranks are set: their rows are dropped and
+    # nothing else changes.  They were 11% of the ranker's walk-forward trades
+    # (2024-10..2026-10: gold/silver and liquid ETFs).  A liquid ETF's "gap" is
+    # a stray opening print above NAV (LIQUID1 opened 1147 against a 1125 NAV
+    # on 2026-10-01 and closed at NAV) that no order could sell into, yet its
+    # 79 trades booked +72.5 bps each on paper.  Walk-forward without ETFs:
+    # +1.2 bps/day vs the ranker with them (t 0.25) — neutral on paper, so the
+    # book loses nothing real by dropping fills it could never have had.
+    names = rows.get_level_values("symbol")
+    rows = rows[~names.isin([s for s in names.unique() if nse_bands.is_etf(s, inputs.etfs)])]
     out = pd.DataFrame({k: v.stack().reindex(rows).astype("float32").to_numpy() for k, v in f.items()},
                        index=rows)
     out.index.names = ["session", "symbol"]

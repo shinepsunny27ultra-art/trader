@@ -56,19 +56,20 @@ flowchart LR
 |---|---|
 | `nse_bhav`, `nse_fo`, `nse_extra`, `nse_flows` | Download and cache NSE daily files: equity bhavcopy (incl. delivery %), F&O bhavcopy, MWPL/ban/short-sale files, and participant-wise OI. Holidays are cached as `.holiday` markers. |
 | `nse_corp` | NSE corporate APIs (board meetings, financial results, Integrated Filing, announcements) with monthly parquet caches and manifests. Provides point-in-time catalyst features (`corp_features`). |
-| `nse_preopen` | Fetches and archives the pre-open call-auction snapshot. Encodes the auction timing regimes (09:08 before 2026-09-07, then 09:10 with random closure). |
+| `nse_preopen` | Fetches and archives the pre-open call-auction snapshot. Encodes the auction timing regimes (09:08 before 2026-09-07, then a random close in 09:08–09:10). A snapshot is final once the clock passes 09:12. Per-stock stamps show the moment entry closed, so they can't prove finality on their own (the old stamp ≥ 09:10 test kept the archive empty until 2026-10-06). `archived_opens(day)` gives the official opens: 1,980 of 1,980 equal the bhavcopy open on 2026-10-06. |
 | `nse_calendar` | NSE trading holidays: the holiday-master API (7-day cache) plus bhav markers. |
-| `nse_bands` | Daily price bands (circuit limits) and series from NSE `sec_list.csv`, archived by download date under `data/nse_bands/`. `untradeable_reason()` flags shorts whose stop is not at least 0.5 pt inside the band or whose series is no longer EQ (not MIS-shortable); `gap_reversal.drop_untradeable()` removes them and promotes reserves (free in walk-forward: −0.2 bps/slot, t −0.5). |
+| `nse_bands` | Daily price bands (circuit limits) and series from NSE `sec_list.csv`, archived by download date under `data/nse_bands/`. `etf_symbols()` names the ETFs (which trade in EQ) that `features.build` drops from the universe. `untradeable_reason()` flags shorts whose stop is not at least 0.5 pt inside the band or whose series is no longer EQ (not MIS-shortable); `gap_reversal.drop_untradeable()` removes them and promotes reserves (free in walk-forward: −0.2 bps/slot, t −0.5). |
 | `auth` | Dashboard password: salted PBKDF2-SHA256 hash in the git-ignored `data/auth.json` (mode 600). Set with `python -m nse_intraday_ai.auth --set-password`. |
 | `candle_cache` | SQLite (WAL) cache of Yahoo daily/5-minute candles: global series, the fallback path, and replay. |
 | `features` | `load_inputs()` → `build()`: one row per (session, symbol), every feature dated strictly before the decision time, ±inf → NaN. It defines the feature groups `OPEN_FEATURES`, `PREOPEN_FEATURES`, `CORP_FEATURES` and the gate `UNVALIDATED_FEATURES`. |
-| `ranker` | `Ranker` (sklearn HistGB by default; LightGBM regression/LambdaRank optional) with `walk_forward()`, `book()`, `summarize()`, `paired()`. Also the selection-bias controls `deflated_sharpe()` and `holm()`, plus champion persistence. |
+| `ranker` | `Ranker` (sklearn HistGB by default; LightGBM regression/LambdaRank optional) with `walk_forward()`, `book()`, `summarize()`, `paired()`. Also the selection-bias controls `deflated_sharpe()` and `holm()`, plus champion persistence. `fit` records each feature's usual blank rate; `missing_inputs()` flags features that are blank for every candidate today (a data source is down). The flag is shown in the 08:45 push and in the health check. |
 | `meta` | `MetaState`: a paired per-expert daily record (*guard*: trade the ranker unless it is worse than the rule at t < −2 over 60 sessions), a CUSUM drift alarm with cautious mode, and diagnostic Hedge weights. |
-| `pipeline` | `morning()` (08:45 list), `open_rerank()` (09:10:30, archives the auction and re-ranks if an open model is promoted), `learn_from()` (grades yesterday) and `weekly()` (retrain, walk-forward, promote on evidence). |
+| `pipeline` | `morning()` (08:45 list), `open_rerank()` (09:10:30, archives the auction and re-ranks if an open model is promoted), `learn_through()`/`learn_from()` (grade every unlearned session) and `weekly()` (retrain, walk-forward, promote on evidence). |
 | `gap_reversal` | The book itself: `GapReversalConfig`, `Pick`, tick-size and entry-limit rules, the rule ranker, daily and 5-minute simulators, the picks file, and the paper record. It also holds the Yahoo fallback path. |
 | `costs` | Groww/NSE MIS round-trip cost model (brokerage, STT, exchange, SEBI, stamp, GST, slippage). |
 | `alerts` | ntfy push (topic from `NTFY_TOPIC` or the git-ignored `data/notify.json`); Telegram is optional. |
 | `atomic_io` | Atomic JSON writes and retrying reads, shared by every state file. |
+| `cloud_sync` | Pushes `picks.json` / `live.json` to GitHub `main` for the Streamlit Cloud copy, via git plumbing in a throwaway index: the checked-out branch, its index and the working tree are never touched. A no-op inside GitHub Actions. |
 | `intraday_monitor` | Live NIFTY-500 monitor (information only). `load_day` keeps completed 5-minute bars only; `snapshot` gives move, gap, relative volume vs a 20-session cumulative profile, breadth, highs/lows and near-circuit names. Paper strategies `orb60`, `gap_fade`, `vol_breakout` are pure functions graded at 13.3 bps (`grade`, `record_day`, `board_stats` with Holm). `gap_book_watch`/`gap_alerts` watch today's gap shorts against their stops. Writes `data/intraday/live.json`. |
 | `app`, `gap_reversal_ui`, `intraday_ui` | Streamlit dashboard "NSE Trading Desk": Gap book — Today, Intraday monitor, Performance, Model, About. Plotly charts with zoom, a unified-hover data cursor, units and CSV export. |
 
@@ -78,8 +79,8 @@ Scripts (`scripts/`):
 |---|---|
 | `gap_reversal.py` | Subcommands `picks`, `final`, `levels`, `record`, `backtest`. |
 | `learn.py` | The weekly or conditional retrain. |
-| `health_check.py` | Checks units, app, memory, disk, data freshness and the book. |
-| `daily_monitor.py` | Live-versus-expected report and phone summary. |
+| `health_check.py` | Checks units, app, memory, disk, data freshness, the book, sessions the learner never graded, sessions with no published list, blank model inputs, and the pre-open archive (growing, and equal to the official opens). |
+| `daily_monitor.py` | Live-versus-expected report and phone summary. Expert means cover live sessions only; the guard's walk-forward seeds are reported separately. |
 | `compare_rankers.py` | Production-faithful walk-forward A/B with Holm and DSR. |
 | `backfill_nse.py`, `backfill_corp.py` | History backfills. |
 | `ticket_api.py` | JSON API for the Android app. |
@@ -89,16 +90,18 @@ Scripts (`scripts/`):
 
 | Time | Unit | What happens |
 |---|---|---|
-| 08:45 Mon–Fri | `nse-gap-picks` | Holiday check, then `refresh()` the NSE files, corporate events and global closes. `learn_from(previous session)` updates the guard and CUSUM. Features are built for today and ranked by the guarded expert. Shorts whose stop lies beyond the price band are dropped (reserves move up). Limits are attached and `picks.json` is written. Push. |
+| 08:45 Mon–Fri | `nse-gap-picks` | Holiday check, then `refresh()` the NSE files, corporate events and global closes. `learn_through(previous session)` grades every session not yet learned (a day the laptop was off included) and updates the guard and CUSUM. Features are built for today and ranked by the guarded expert. Shorts whose stop lies beyond the price band are dropped (reserves move up). Limits are attached and `picks.json` is written, with a dated copy in `gap_reversal/history/` (what `record` grades). Push, and `cloud_sync` it to GitHub. |
 | 09:10:30 | `nse-gap-final` | Fetch and archive the pre-open auction. If a promoted open model passes its guard, re-rank and push the final list. Otherwise the 08:45 list stands. |
-| 09:18 | `nse-gap-levels` | Push stop prices from the official opens; names that opened below their limit are marked NOT FILLED. |
-| every 5 min 09:20–15:45 | `nse-intraday-scan` | `intraday_monitor.py scan --push`: Yahoo 5-minute bars for NIFTY-500 + today's gap shorts → `data/intraday/live.json`. Phone alert (deduplicated per day in `alerts_YYYYMMDD.json`) only when a gap-book short hits or comes within 1% of its stop. After 15:15 the day's paper shadow-board trades are appended to `shadow_book.csv`. |
-| 15:40 | `nse-gap-record` | Record the session in `paper_book.csv` (5-minute path; `NO_FILL` rows for unfilled limits). |
+| 09:18 | `nse-gap-levels` | Push stop prices from the official opens (the archived auction; the first 5-minute bar only if no archive exists). Names that opened below their limit are marked NOT FILLED. |
+| every minute 09:20–15:45 (completed 5-minute bars) | `nse-intraday-scan` | `intraday_monitor.py scan --push`: Yahoo 5-minute bars for NIFTY-500 + today's gap shorts → `data/intraday/live.json`. Phone alert (deduplicated per day in `alerts_YYYYMMDD.json`) only when a gap-book short hits or comes within 1% of its stop. After 15:15 the day's paper shadow-board trades are appended to `shadow_book.csv`. |
+| 15:40 | `nse-gap-record` | Record the session's *published* list in `paper_book.csv`: entry at the archived official open, then the 5-minute path (`NO_FILL` rows for unfilled limits). `nse-gap-monitor` (16:05) and `nse-health` are ordered after it, so a boot-time catch-up reports on fresh data. |
 | 19:00 daily | `nse-gap-learn` | `learn.py --if-needed` retrains on Saturdays, on a drift alarm, or when no review exists. It runs `weekly()`: walk-forward over the last 2 years with quarterly refits, and promotes each model only if it beats its reference with paired t ≥ 2 and a positive edge. |
 | every 30 min | `nse-health` | `health_check.py`: failures exit 1, warnings exit 0. |
 | always | `nse-signal-lab` | Streamlit on :8501. |
 
-All timers use `Persistent=true`, so a job missed while the laptop was asleep runs at wake-up. The 08:45 list prints a LATE banner after 09:08.
+Timers use `Persistent=true` (except the time-bound 09:10 final, 09:18 levels and the intraday scan), so a job missed while the laptop was asleep runs at wake-up. The 08:45 list prints a LATE banner after 09:08.
+
+**Laptop off.** `.github/workflows/gap_picks.yml` (08:20 IST, often started late by GitHub) is the cloud fallback: unless `main` already has today's model-ranked list, it ranks by the gap rule on 45 days of NSE files (it has no model and no archive) and commits `picks.json`. With an `NTFY_TOPIC` repository secret it also pushes the list to the phone.
 
 **Intraday shadow board.** The 2026-10 search (≈100 published intraday variants, `docs/research-log.md`) found none that survives costs. The three closest are run as a paper board only, labelled NOT VALIDATED, and never pushed as trades. A strategy becomes "eligible for review" only after ≥ 60 live sessions with a positive mean net of costs and Holm-adjusted p < 0.05; any promotion still needs a walk-forward study.
 

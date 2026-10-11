@@ -3,9 +3,10 @@
 08:45 (before the pre-open auction):
   1. refresh   NSE equity + F&O bhavcopies, crowding files, participant OI,
                overnight global closes
-  2. learn     grade the *previous* session for every expert (gap rule, morning
-               ranker, open ranker) on official NSE bars; extend their paired
-               record (the guard) and the drift alarm
+  2. learn     grade every session not yet learned (normally just the previous
+               one) for every expert (gap rule, morning ranker, open ranker) on
+               official NSE bars; extend their paired record (the guard) and
+               the drift alarm
   3. rank      build today's features through the live path (the same code that
                built the training data) and publish the preliminary list
 
@@ -74,6 +75,10 @@ def refresh(through: date, *, days: int = 20, log=print) -> None:
         log(f"  NSE corporate events: {stats}")
     except Exception as exc:                                  # noqa: BLE001
         log(f"  corporate events refresh failed: {exc}")
+    # Today's security list: price bands, and the names that mark ETFs out of
+    # the universe (a fresh machine has no archive of it yet).
+    from nse_intraday_ai import nse_bands
+    nse_bands.load(date.today(), fetch=True, log=lambda m: log(f"  {m}"))
 
 
 def previous_session(session: date) -> date:
@@ -121,13 +126,47 @@ def top_book(outcome: pd.Series, score: pd.Series, mask: pd.Series, k: int = 8,
     return float(net.mean())
 
 
+def sessions_to_learn(state: M.MetaState, through: date, max_sessions: int = 10) -> list[date]:
+    """Sessions after `state.updated_through`, up to and including `through`, oldest first.
+
+    2026-10-06: the laptop was off for a whole session, and the evening catch-up
+    learned only the newest one — 2026-10-05 was skipped forever, because the
+    state's high-water mark had already moved past it.
+    """
+    pending = [through]
+    while state.updated_through is not None and len(pending) < max_sessions:
+        try:
+            day = previous_session(pending[-1])
+        except DataNotReady:
+            break
+        if str(day) <= state.updated_through:
+            break
+        pending.append(day)
+    return sorted(pending)
+
+
+def learn_through(through: date, state: M.MetaState, model: R.Ranker | None, *,
+                  open_model: R.Ranker | None = None, log=print) -> int:
+    """Grade every session not yet learned, through `through`; one panel build for all."""
+    pending = [s for s in sessions_to_learn(state, through)
+               if state.updated_through is None or str(s) > state.updated_through]
+    if not pending:
+        return 0
+    if len(pending) > 1:
+        log(f"  catching up {len(pending)} unlearned sessions: {pending[0]} .. {pending[-1]}")
+    panel = FT.build(FT.load_inputs(pending[0] - timedelta(days=420), through), with_open=True)
+    return sum(learn_from(s, state, model, open_model=open_model, panel=panel, log=log) for s in pending)
+
+
 def learn_from(session: date, state: M.MetaState, model: R.Ranker | None, *,
-               open_model: R.Ranker | None = None, log=print) -> bool:
+               open_model: R.Ranker | None = None, panel: pd.DataFrame | None = None,
+               log=print) -> bool:
     """Grade every expert on `session`'s real outcome and fold it in (idempotent)."""
     if state.updated_through is not None and str(session) <= state.updated_through:
         return False
-    inputs = FT.load_inputs(session - timedelta(days=420), session)
-    panel = FT.build(inputs, with_open=True)
+    if panel is None:
+        inputs = FT.load_inputs(session - timedelta(days=420), session)
+        panel = FT.build(inputs, with_open=True)
     if session not in set(panel.index.get_level_values("session")):
         log(f"  no labelled rows for {session}; weights unchanged")
         return False
@@ -172,14 +211,20 @@ def traded_expert(state: M.MetaState, available: set[str]) -> str:
 # ── the morning run ─────────────────────────────────────────────────────────
 
 def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), *,
-            fetch: bool = True, log=print) -> tuple[date, list[G.Pick], dict]:
-    """Refresh, learn from the previous session, rank `session`; returns (based_on, picks, info)."""
+            fetch: bool = True, history_days: int = 20, log=print) -> tuple[date, list[G.Pick], dict]:
+    """Refresh, learn from the previous session, rank `session`; returns (based_on, picks, info).
+
+    `history_days` is how far back the refresh looks.  A machine with the full
+    archive only needs the last few files; a fresh one (the GitHub runner) needs
+    ~45 calendar days, or the 20-session turnover rank and 14-session ATR are
+    computed on a shorter window than the one the book was validated on.
+    """
     if fetch:
-        refresh(session - timedelta(days=1), log=log)
+        refresh(session - timedelta(days=1), days=history_days, log=log)
     prev = previous_session(session)
     model = R.load_champion()
     state = M.MetaState.load()
-    learn_from(prev, state, model, open_model=R.load_champion("ranker_open"), log=log)
+    learn_through(prev, state, model, open_model=R.load_champion("ranker_open"), log=log)
     state.save()
 
     inputs = FT.load_inputs(session - timedelta(days=420), session - timedelta(days=1))
@@ -198,6 +243,9 @@ def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), 
     rows = rows[rows["was_be_20"].fillna(0) == 0]
     scores = expert_scores(rows, model)
     expert, guard_t = state.guard() if "ranker" in scores else ("rule", None)
+    blank = [] if model is None else R.missing_inputs(model, rows[rows["turn_rank"] <= BOOK_UNIVERSE])
+    if blank:
+        log(f"  WARNING: {len(blank)} model inputs are blank for every candidate: {', '.join(blank[:8])}")
     picks = G.picks_from_rows(rows.droplevel("session"), scores[expert].droplevel("session"), config,
                               universe=BOOK_UNIVERSE, ranked_by=expert)
     info = {
@@ -211,6 +259,7 @@ def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), 
         "cautious_mode": state.cautious_mode, "size_multiplier": state.position_size_multiplier,
         "learned_through": state.updated_through,
         "candidates": int((rows["turn_rank"] <= BOOK_UNIVERSE).sum()),
+        "missing_inputs": blank,
     }
     return prev, picks, info
 

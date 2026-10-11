@@ -4,7 +4,10 @@
 Every variant goes through the same expanding-window, quarterly-refit
 walk-forward as `pipeline.weekly()`, and is booked exactly as the live list is
 traded: top-8 of the 300 most liquid names, trade-for-trade names removed,
-pre-open SELL LIMIT entry (unfilled picks earn 0), 13 bps costs.
+13 bps costs; ranker lists enter at the open, the gap rule's through the
+pre-open SELL LIMIT (unfilled picks earn 0) — `GapReversalConfig.entry_limit_for`.
+(Until 2026-10-06 the variants were judged on the limit book, which the live
+ranker list has not used since 2026-10-04.)
 
 A variant replaces the baseline only if its paired daily edge has t >= 3 after
 a Holm correction across the variants in the run (Harvey, Liu & Zhu 2016); the
@@ -47,7 +50,7 @@ PANEL = OUT / "panel_v2.parquet"          # v2: built with the corp features
 REPORT = ROOT / "data" / "ranker_comparison.json"
 START = "2019-01-01"
 # Variants already tried in docs/research-log.md; the DSR charges for them.
-TRIALS_SO_FAR = 33
+TRIALS_SO_FAR = 35
 
 MORNING = DEFAULT_EXCLUDE + FT.OPEN_FEATURES          # what the 08:45 model may not see
 VARIANTS: dict[str, RankerConfig] = {
@@ -58,6 +61,9 @@ VARIANTS: dict[str, RankerConfig] = {
     # optional, not in the default run (already found neutral on the open panel)
     "morning_lgbm_reg": RankerConfig(ranker_type="lgbm_reg", exclude=MORNING + FT.CORP_FEATURES),
     "morning_3seed": RankerConfig(seeds=(0, 42, 137), exclude=MORNING + FT.CORP_FEATURES),
+    # 2026-10-06: target shape (stops cap the loss at -0.75 ATR; gains run to the clip)
+    "morning_clip400": RankerConfig(clip_bps=400.0, exclude=MORNING + FT.CORP_FEATURES),
+    "morning_rank": RankerConfig(target_kind="rank", exclude=MORNING + FT.CORP_FEATURES),
 }
 DEFAULT_RUN = ("morning", "morning_corp")
 BASELINE = "morning"
@@ -121,11 +127,12 @@ def main() -> None:
     log(f"panel {len(panel):,} rows, {panel.index.get_level_values('session').nunique()} sessions, "
         f"{len(panel.columns)} columns")
     rule_limit, rule_open = books(panel, panel["gap1"])
+    # `daily` is each list booked as it is traded live; `other` the other entry.
     daily = {"gap_rule": rule_limit}
-    at_open = {"gap_rule": rule_open}
+    other = {"gap_rule": rule_open}
     for n in names:
         d = run_variant(n, panel, args.start)
-        daily[n], at_open[n] = d["net_bps"], d["net_bps_at_open"]
+        daily[n], other[n] = d["net_bps_at_open"], d["net_bps"]
 
     stats = {n: summarize(d, args.start) for n, d in daily.items()}
     tested = [n for n in names if n != BASELINE]
@@ -136,7 +143,8 @@ def main() -> None:
     sharpes = [s["sharpe"] / 250 ** 0.5 for s in stats.values() if "sharpe" in s]
     dsr = {n: deflated_sharpe(d[d.index.astype(str) >= args.start], TRIALS_SO_FAR + len(names), sharpes)
            for n, d in daily.items()}
-    limit_effect = {n: paired(daily[n], at_open[n], args.start) for n in daily}
+    limit_effect = {n: paired(*((daily[n], other[n]) if n == "gap_rule" else (other[n], daily[n])),
+                              args.start) for n in daily}
 
     print("\n" + "=" * 92)
     print(f"{'variant':18s} {'bps/slot':>9s} {'t':>7s} {'Sharpe':>7s} {'maxDD%':>7s} {'DSR':>6s} "
@@ -148,8 +156,9 @@ def main() -> None:
               f"{p.get('mean_diff_bps', 0):+8.2f} {p.get('t_stat', 0):+6.2f} {p.get('holm_p', float('nan')):7.3f} "
               f"{le['mean_diff_bps']:+8.2f} {le['t_stat']:+6.2f}")
     print("=" * 92)
-    print("bps/slot = net bps per book slot per session (unfilled limit orders count as 0).")
-    print("limit Δ  = live limit entry minus the same picks entered at the open.\n")
+    print("bps/slot = net bps per book slot per session, booked as traded live (ranker lists at the")
+    print("           open, the gap rule through the pre-open limit; unfilled limits count as 0).")
+    print("limit Δ  = the same picks through the pre-open limit minus at the open.\n")
 
     winners = [n for n in tested if pairs[n]["t_stat"] >= 3 and pairs[n]["holm_p"] < 0.05
                and pairs[n]["mean_diff_bps"] > 0]

@@ -81,3 +81,39 @@ def test_open_rerank_keeps_the_morning_list_without_an_open_model(monkeypatch, t
     snap = pd.DataFrame({"symbol": ["A"], "series": ["EQ"], "iep": [101.0], "prev_close": [100.0]})
     assert P.open_rerank(date(2026, 9, 30), preopen=snap, log=lambda *a: None) is None
     assert (tmp_path / "preopen" / "2026" / "preopen_20260930.parquet").exists()   # archived anyway
+
+
+def test_sessions_to_learn_catches_up_a_missed_day(cache):
+    # 2026-10-06: the laptop was off for the 10-05 session; the evening run learned
+    # only 10-06 and 10-05 was lost once the high-water mark had passed it.
+    cache(date(2026, 10, 1))
+    cache(date(2026, 10, 2), holiday=True)
+    cache(date(2026, 10, 5))
+    cache(date(2026, 10, 6))
+    st = M.MetaState(updated_through="2026-10-01")
+    assert P.sessions_to_learn(st, date(2026, 10, 6)) == [date(2026, 10, 5), date(2026, 10, 6)]
+    st.updated_through = "2026-10-05"
+    assert P.sessions_to_learn(st, date(2026, 10, 6)) == [date(2026, 10, 6)]
+    assert P.sessions_to_learn(M.MetaState(), date(2026, 10, 6)) == [date(2026, 10, 6)]   # fresh state
+    st.updated_through = "2026-01-01"                                  # a long gap is bounded
+    assert len(P.sessions_to_learn(st, date(2026, 10, 6), max_sessions=3)) == 3
+
+
+def test_learn_through_grades_each_pending_session_once(cache, monkeypatch):
+    cache(date(2026, 10, 1))
+    cache(date(2026, 10, 5))
+    cache(date(2026, 10, 6))
+    builds, graded = [], []
+    monkeypatch.setattr(P.FT, "load_inputs", lambda start, end: (start, end))
+    monkeypatch.setattr(P.FT, "build", lambda inputs, **kw: builds.append(inputs) or "panel")
+
+    def fake_learn(session, state, model, *, open_model=None, panel=None, log=print):
+        assert panel == "panel"
+        graded.append(session)
+        state.updated_through = str(session)
+        return True
+    monkeypatch.setattr(P, "learn_from", fake_learn)
+    st = M.MetaState(updated_through="2026-10-01")
+    assert P.learn_through(date(2026, 10, 6), st, None, log=lambda *a: None) == 2
+    assert graded == [date(2026, 10, 5), date(2026, 10, 6)] and len(builds) == 1
+    assert P.learn_through(date(2026, 10, 6), st, None, log=lambda *a: None) == 0    # idempotent
