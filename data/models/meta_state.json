@@ -1,11 +1,11 @@
 {
   "weights": {
-    "ranker": 0.5444248293098495,
-    "rule": 0.4555751706901505
+    "ranker": 0.4609265346117823,
+    "rule": 0.5390734653882178
   },
   "eta": 0.5,
   "floor": 0.05,
-  "updated_through": "2026-10-13",
+  "updated_through": "2026-10-14",
   "history": [
     {
       "session": "2026-09-30",
@@ -122,18 +122,33 @@
       },
       "book": 86.3727798461914,
       "cusum": 188.19
+    },
+    {
+      "session": "2026-10-14",
+      "weights": {
+        "ranker": 0.4609265346117823,
+        "rule": 0.5390734653882178
+      },
+      "returns": {
+        "rule": -104.6300048828125,
+        "ranker": -173.24232482910156
+      },
+      "book": -173.24232482910156,
+      "cusum": 401.55
     }
   ],
   "expected_bps": 50.12,
   "slack_bps": 10.0,
   "threshold_bps": 400.0,
-  "cusum": 188.18514953613283,
-  "alarm": false,
-  "alarm_session": null,
-  "alarm_sessions_elapsed": 0,
-  "cautious_mode": false,
+  "cusum": 401.5474743652344,
+  "alarm": true,
+  "alarm_session": "2026-10-14",
+  "alarm_sessions_elapsed": 1,
+  "cautious_mode": true,
   "recovery_window": 10,
-  "cautious_returns": [],
+  "cautious_returns": [
+    -173.24232482910156
+  ],
   "track": [
     {
       "session": "2025-09-26",
@@ -1669,6 +1684,11 @@
       "session": "2026-10-13",
       "rule": 141.0771484375,
       "ranker": 86.3727798461914
+    },
+    {
+      "session": "2026-10-14",
+      "rule": -104.6300048828125,
+      "ranker": -173.24232482910156
     }
   ],
   "guard_window": 60,
