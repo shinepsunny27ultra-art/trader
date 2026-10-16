@@ -1,82 +1,82 @@
 {
-  "directory": "ranker_2026-10-01",
-  "promoted_at": "2026-10-04T11:29:23",
+  "directory": "ranker_2026-10-15",
+  "promoted_at": "2026-10-16T10:08:26",
   "evidence": {
     "window": [
-      "2024-10-01",
-      "2026-10-01"
+      "2024-10-15",
+      "2026-10-15"
     ],
-    "preopen_archive_sessions": 0,
+    "preopen_archive_sessions": 1,
     "rule": {
       "sessions": 495,
-      "first": "2024-10-01",
-      "last": "2026-10-01",
-      "net_bps_per_trade": 30.01,
-      "t_stat": 4.59,
-      "sharpe": 3.26,
-      "up_day_pct": 55.2,
-      "max_drawdown_pct": 9.32,
+      "first": "2024-10-15",
+      "last": "2026-10-15",
+      "net_bps_per_trade": 28.88,
+      "t_stat": 5.13,
+      "sharpe": 3.65,
+      "up_day_pct": 56.6,
+      "max_drawdown_pct": 6.8,
       "by_year": {
-        "2024": 18.1,
-        "2025": 27.6,
-        "2026": 37.3
+        "2024": 12.7,
+        "2025": 31.4,
+        "2026": 30.1
       }
     },
     "ranker": {
       "sessions": 495,
-      "first": "2024-10-01",
-      "last": "2026-10-01",
-      "net_bps_per_trade": 50.12,
-      "t_stat": 6.75,
-      "sharpe": 4.8,
-      "up_day_pct": 60.4,
-      "max_drawdown_pct": 7.21,
+      "first": "2024-10-15",
+      "last": "2026-10-15",
+      "net_bps_per_trade": 47.52,
+      "t_stat": 6.98,
+      "sharpe": 4.96,
+      "up_day_pct": 61.4,
+      "max_drawdown_pct": 11.08,
       "by_year": {
-        "2024": 63.0,
-        "2025": 42.7,
-        "2026": 55.7
+        "2024": 58.7,
+        "2025": 45.5,
+        "2026": 47.0
       }
     },
     "ranker_open": {
       "sessions": 495,
-      "first": "2024-10-01",
-      "last": "2026-10-01",
-      "net_bps_per_trade": 52.25,
-      "t_stat": 8.39,
-      "sharpe": 5.96,
-      "up_day_pct": 64.6,
-      "max_drawdown_pct": 8.23,
+      "first": "2024-10-15",
+      "last": "2026-10-15",
+      "net_bps_per_trade": 47.34,
+      "t_stat": 7.39,
+      "sharpe": 5.25,
+      "up_day_pct": 60.4,
+      "max_drawdown_pct": 7.55,
       "by_year": {
-        "2024": 72.1,
-        "2025": 56.4,
-        "2026": 40.0
+        "2024": 77.6,
+        "2025": 47.1,
+        "2026": 39.4
       }
     },
     "vs_rule": {
-      "mean_diff_bps": 20.1,
-      "t_stat": 3.74,
+      "mean_diff_bps": 18.65,
+      "t_stat": 3.41,
       "sessions": 495,
-      "a_better_pct": 57.6
+      "a_better_pct": 57.4
     },
     "open_vs_ranker": {
-      "mean_diff_bps": 2.14,
-      "t_stat": 0.41,
+      "mean_diff_bps": -0.18,
+      "t_stat": -0.05,
       "sessions": 495,
-      "a_better_pct": 52.3
+      "a_better_pct": 48.5
     },
     "ranker_liquidity_cost": {
       "sessions": 495,
-      "first": "2024-10-01",
-      "last": "2026-10-01",
-      "net_bps_per_trade": 17.96,
-      "t_stat": 2.41,
-      "sharpe": 1.71,
-      "up_day_pct": 51.1,
-      "max_drawdown_pct": 11.15,
+      "first": "2024-10-15",
+      "last": "2026-10-15",
+      "net_bps_per_trade": 15.17,
+      "t_stat": 2.21,
+      "sharpe": 1.57,
+      "up_day_pct": 50.3,
+      "max_drawdown_pct": 12.52,
       "by_year": {
-        "2024": 21.2,
-        "2025": 11.1,
-        "2026": 26.1
+        "2024": 19.6,
+        "2025": 14.2,
+        "2026": 15.2
       }
     }
   }
