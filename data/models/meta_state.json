@@ -163,7 +163,7 @@
       "cusum": 225.48
     }
   ],
-  "expected_bps": 47.52,
+  "expected_bps": 48.22,
   "slack_bps": 10.0,
   "threshold_bps": 400.0,
   "cusum": 225.47654449462894,
