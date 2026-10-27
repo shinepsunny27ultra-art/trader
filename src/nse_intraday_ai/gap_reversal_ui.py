@@ -337,13 +337,18 @@ def page_today() -> None:
         st.warning(f"**Stale list.** This list is for **{session}**; the next trading session is "
                    f"**{expected:%a %d %b %Y}**. Its list is published at 08:15 IST that morning — "
                    "do not trade this one.")
+    if session == now.date().isoformat() and G.published_late(payload):
+        sent = str(payload.get("published_at") or payload.get("generated_at", ""))[11:16]
+        st.error(f"**Late list — skip today.** It went out at {sent}, after the {G.ENTRY_CUTOFF} pre-open "
+                 "cutoff. The tested trade enters at the open; entering now is a different, untested "
+                 "trade, and the paper book does not record it.")
     if payload.get("drift_alarm") or state.get("alarm"):
         st.error(f"**Drift alarm.** Live results have run persistently below the backtest "
                  f"(CUSUM {state.get('cusum', payload.get('cusum', 0)):.0f} / "
                  f"{state.get('threshold_bps', 400):.0f} bps).")
     if state.get("cautious_mode"):
-        st.warning("**Cautious mode** — trade at 60% of the listed quantities until the "
-                   f"{state.get('recovery_window', 10)}-session recovery check passes.")
+        st.warning("**Cautious mode** — trade at 60% of the listed quantities until the shortfall is "
+                   f"made up or the {state.get('recovery_window', 10)}-session recovery check passes.")
     who = payload.get("ranked_by", "rule")
     label = {"ranker_open": "Open model (09:09)", "ranker": "ML ranker (08:15)"}.get(who, "Gap rule")
     if payload.get("publisher") == "github-actions":

@@ -14,6 +14,51 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-10-27 — a −1.1% day, four weeks of live record, and what the record had wrong
+
+**The day.** The ranker's list lost ₹10,772 (−108 bps/slot): OMNI (+5.6% open→close) and
+ATHERENERG (+4.2%) were stopped, and the reserves rallied too (PFOCUS +9%, MRPL +5%). It was a
+broad intraday rally: the median top-300 stock rose +96 bps from the open and 70% closed above
+it. The gap rule's list would have lost more (−147 bps/trade graded, ranker −93). A short book
+loses on such days. Over 247 walk-forward sessions, 13% of days were this bad or worse (worst
+−353), so this is roughly a 1-in-8 day.
+
+**The record, cleaned.** The paper book is 14 tradable sessions, +₹72,676 (+7.3%), mean
++51.9 bps/slot/day. The walk-forward expectation is +52.8 (z −0.3), so the book is on track.
+Graded side by side on all 18 live sessions, the ranker made +81 bps/trade and the rule +29;
+the ranker was better on 61% of days. The book correlates with the market's open→close move at
+−0.46. Hedging with NIFTY (index or NIFTYBEES) does not help. Its correlation with the book is
+only −0.19/−0.25, because the losses come from mid-sized names. A 0.5× index hedge took the
+Sharpe from 5.0 to 4.8 and a 1× hedge to 4.4. **Rejected.** NIFTYBEES's own open→close averaged −33 bps against
+−3 for the index: its opening prints are as unreliable as other ETFs'.
+
+**What the record had wrong (fixed):**
+- **Late lists booked as trades.** On 10-14 (pushed 11:08) and 10-16 (09:55) the laptop came up
+  after the open and pushed the list with "LATE … skip today". `record` still booked both from the
+  open (−₹11,764, −₹1,423). Lists now carry `published_at`/`late`. `record` skips late lists and
+  removed those two.
+- **A day booked on truncated bars.** The laptop resumed from sleep at 19:15 with no Wi-Fi. All
+  12 Yahoo downloads failed, and the day was booked on cached bars that ended at 14:15
+  (−₹12,970). A finished session with most picks ending early is now retried, not booked.
+  Every job waits for DNS after NTP (`wait_for_network`). With full bars and NSE's official
+  opens (bhavcopy fallback when no auction is archived) the day is −₹10,772.
+- **The retrain missed for 11 days.** It ran only on Saturdays at 19:00, and the laptop was off
+  then. It now also runs when the last review is 7+ days old. Before retraining, `learn.py` grades
+  finished sessions with the outgoing model, so an evening retrain cannot drop the day's ranker
+  grade (10-27 nearly lost its −93). The retrain promoted `ranker_2026-10-27`: 2024-10-27 →
+  2026-10-27, ranker +46.8 vs rule +28.9 bps/trade, paired +17.8/day, t 3.26.
+- **The drift alarm was miscalibrated.** k=10/h=400 fired about 12 times a year on the healthy
+  walk-forward days. It kept the book at 60% size about 110 days a year. It fired on 10-14 and held
+  through +434/+159/+334 bps days. It is now k=40/h=1000: about 0.5 false alarms a year
+  (bootstrap of the real days; 1.7 under Gaussian noise), and a vanished edge is caught in a median
+  34 sessions. Cautious mode also ends once the CUSUM is back at 0. Recomputed on the live record,
+  the new alarm never came close (peak 268).
+
+**How the laptop is used.** 5 of the last 11 lists came from the cloud fallback (gap rule, no
+model). The 09:10 auction has not been archived since 10-06, because the laptop is rarely on at
+09:10. So the model trades about half the days, and the 09:10 re-rank, the 09:18 stop push and
+the intraday stop alerts mostly do not run.
+
 ## 2026-10-11 — cross-sectional ML ranker on hourly bars (rejected)
 
 **Question.** Rule-based intraday strategies failed on 2026-10-05. Can a learned

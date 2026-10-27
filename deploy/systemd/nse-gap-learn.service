@@ -1,6 +1,8 @@
 [Unit]
 Description=Gap-reversal book: weekly retrain, walk-forward review, promote on evidence
-After=network-online.target
+After=network-online.target nse-gap-picks.service nse-gap-record.service
+# When the laptop is switched on in the morning, a due retrain (10 GB, ~25 min) must not
+# compete with the 08:15 list: it starts after the list (and the catch-up record) are out.
 
 [Service]
 Type=oneshot

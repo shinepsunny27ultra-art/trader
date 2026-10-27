@@ -42,8 +42,13 @@ class MetaState:
     history: list[dict] = field(default_factory=list)
     # CUSUM drift monitor on the live book's net bps/trade
     expected_bps: float = 20.0       # what the backtest says a session should average
-    slack_bps: float = 10.0          # tolerated shortfall before evidence accumulates
-    threshold_bps: float = 400.0     # alarm when the accumulated shortfall exceeds this
+    # Calibrated 2026-10-27 on the 247 walk-forward days (mean +52.8, sd 172 bps):
+    # the old k=10/h=400 fired ~12x a year on a healthy book and kept it at 60%
+    # size ~110 days a year (it fired on 2026-10-14 and held through +434/+159/
+    # +334 days).  k=40/h=1000: ~0.5 false alarms a year; a vanished edge is
+    # caught in a median 34 sessions.
+    slack_bps: float = 40.0          # tolerated shortfall before evidence accumulates
+    threshold_bps: float = 1000.0    # alarm when the accumulated shortfall exceeds this
     cusum: float = 0.0
     alarm: bool = False
     alarm_session: str | None = None
@@ -107,11 +112,13 @@ class MetaState:
             if self.cautious_mode:
                 self.alarm_sessions_elapsed += 1
                 self.cautious_returns.append(book_return_bps)
-                if self.alarm_sessions_elapsed >= self.recovery_window:
-                    if sum(self.cautious_returns) > 0:
-                        self.cusum = 0.0
-                        self.alarm = False
-                        self.cautious_mode = False
+                # Out once the shortfall is fully made up (CUSUM back at 0), or
+                # after the recovery window if the cautious stretch made money.
+                if self.cusum == 0.0 or (self.alarm_sessions_elapsed >= self.recovery_window
+                                         and sum(self.cautious_returns) > 0):
+                    self.cusum = 0.0
+                    self.alarm = False
+                    self.cautious_mode = False
         self.updated_through = session
         self.history.append({"session": session, "weights": dict(self.weights),
                              "returns": expert_returns_bps, "book": book_return_bps,
