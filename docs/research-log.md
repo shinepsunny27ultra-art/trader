@@ -72,6 +72,16 @@ build of the next list (`nse-gap-evening.timer`). The cloud fallback keeps the l
 list instead of replacing it with the gap rule (`laptop_evening_list`). With one input source
 missing, the model still beats the rule, so `missing_inputs()` warns and does not fall back.
 
+**Two more tests, both "keep what we have".**
+- *Model target* (`compare_rankers.py`, 2019-01 → 2026-10, booked at the open as traded): production
+  +62.3 bps/slot; target clipped at ±400 bps +60.0 (−2.4, t −1.3); cross-sectional rank target +57.8
+  (−4.5, t −2.3). Holm keeps production. The trial tally is now 37. The pre-open limit would cost the
+  ranker −2.2 bps (t −1.9), which confirms that ranker lists enter at the open.
+- *Exit time* (`research/gap_book_2026_10/exit_timing.py`, hourly bars 2023-11 → 2026-10, 3,618 of
+  the walk-forward picks, 714 sessions). Net bps by cover time: 10:15 +37.3 · 11:15 +37.9 · 12:15
+  +42.1 · 13:15 +45.4 · 14:15 +47.3 · **15:15 +53.1** · 15:30 +51.0. Every other time is worse than
+  15:15 (t −2.4 to −4.6). The reversal keeps paying into the afternoon, so the 15:15 square-off stays.
+
 **How the laptop is used.** 5 of the last 11 lists came from the cloud fallback (gap rule, no
 model). The 09:10 auction has not been archived since 10-06, because the laptop is rarely on at
 09:10. So the model trades about half the days, and the 09:10 re-rank, the 09:18 stop push and

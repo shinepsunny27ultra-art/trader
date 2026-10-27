@@ -1,8 +1,10 @@
 [Unit]
-Description=Trading days: no sleep 07:55-16:15 (list, auction, stops, alerts, record) on mains power
+Description=Trading days: no sleep from 06:00 (or from switch-on: persistent) to 16:15 (list, auction, stops, alerts, record) on mains power
 
 [Timer]
-OnCalendar=Mon..Fri *-*-* 07:55:00
+# Persistent: switched on at 07:30, the missed 06:00 start fires at boot, so the lock
+# is taken at once (closing the lid at 07:31 must not put it to sleep before 08:15).
+OnCalendar=Mon..Fri *-*-* 06:00:00
 Persistent=true
 
 [Install]

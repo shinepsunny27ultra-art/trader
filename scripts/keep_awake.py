@@ -8,7 +8,7 @@
 2026-10-27: the laptop slept through the session (lid closed after the 08:15 list),
 woke at 19:15 with no network, and the day was booked on truncated data; at 20:43
 it went to sleep again and the 21:00 evening list ran at 21:14.  Run by
-nse-keep-awake-morning.timer (trading days 07:55 → 16:15: list, auction, stops,
+nse-keep-awake-morning.timer (trading days 06:00, or switch-on, → 16:15: list, auction, stops,
 intraday alerts, record) and nse-keep-awake-evening.timer (20:50 → the evening
 list, then on through the night to 16:15 when tomorrow is a session: a laptop
 asleep at 08:15 cannot wake itself for the list).  The lock ("NSE gap book" in
