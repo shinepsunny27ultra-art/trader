@@ -123,10 +123,36 @@ def test_backup_that_github_started_late_still_publishes_before_0830(env):
     assert env.published[0][0] < env.clock.at("08:30")
 
 
-def test_last_evenings_preliminary_list_does_not_count(env):
+def test_an_evening_list_without_the_model_does_not_count(env):
     sunday = datetime(2026, 10, 11, 21, 0, tzinfo=IST)
-    env.remote = lambda now: _list("laptop", sunday)                # session Mon, built Sun
+    env.remote = lambda now: _list("laptop", sunday)                # session Mon, built Sun, no model
     assert env.run("03:00") == "published"
+
+
+def _evening(at: datetime) -> dict:
+    pick = {"rank": 1, "symbol": "E1.NS", "side": "SHORT", "gap_prev_pct": 2.0, "prev_close": 100.0,
+            "atr": 2.0, "stop_distance": 1.5, "quantity": 1250, "position_value": 1.25e5,
+            "turnover_cr": 50.0, "reserve": False}
+    return {**_list("laptop", at), "model": {"trained_through": "2026-10-09"}, "source": "nse",
+            "ranked_by": "ranker", "based_on": "2026-10-09", "picks": [pick]}
+
+
+def test_last_evenings_model_list_stands_when_the_laptop_is_off(env):
+    # Walk-forward: an evening list is as good as the 08:15 one (+0.4 bps, t 0.2) and
+    # +18 bps/day better than the cloud's gap rule — so the cloud keeps it.
+    sunday = datetime(2026, 10, 11, 21, 0, tzinfo=IST)
+    env.remote = lambda now: _evening(sunday)
+    assert env.run("03:00") == "evening list stands"
+    assert env.built == [] and env.published == []
+    t, title, enabled = env.pushed[0]
+    assert t >= env.clock.at("08:20") and enabled and "E1" not in title
+
+
+def test_the_laptops_0815_refresh_beats_its_evening_list(env):
+    sunday = datetime(2026, 10, 11, 21, 0, tzinfo=IST)
+    env.remote = lambda now: _list("laptop", now) if now >= now.replace(hour=8, minute=16) else _evening(sunday)
+    assert env.run("03:00") == "stood aside: laptop"
+    assert env.built == [] and env.pushed == []
 
 
 def test_exchange_holiday_and_weekend_do_nothing(env):
