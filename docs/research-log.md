@@ -54,6 +54,24 @@ Sharpe from 5.0 to 4.8 and a 1× hedge to 4.4. **Rejected.** NIFTYBEES's own ope
   34 sessions. Cautious mode also ends once the CUSUM is back at 0. Recomputed on the live record,
   the new alarm never came close (peak 268).
 
+**Evening list and missing inputs** (`research/gap_book_2026_10/robustness.py`). This uses
+the weekly job's folds (2024-10 → 2026-10, 494 sessions) and books lists as traded live.
+
+| 08:15 ranker scored with … | bps/trade | vs 08:15 | vs gap rule |
+|---|---|---|---|
+| everything (production) | +46.8 | — | +17.8 (t 3.3) |
+| US/EU/commodity/FX/ADR closes one session old (evening build) | +47.2 | +0.4 (t 0.2) | +18.3 (t 3.4) |
+| global closes blank | +38.7 | −8.0 (t −2.5) | +9.8 (t 1.8) |
+| F&O blank | +42.6 | −4.2 (t −1.9) | +13.7 (t 2.5) |
+| delivery blank | +43.0 | −3.7 (t −1.4) | +14.1 (t 2.6) |
+| participant OI blank | +46.4 | −0.4 (t −0.2) | +17.5 (t 3.2) |
+
+The evening list matches the 08:15 list (80% of the names are the same), and the overnight
+closes carry ~15% of the model's split gain but no measurable P&L. **Adopted:** a 21:00 Sun–Fri
+build of the next list (`nse-gap-evening.timer`). The cloud fallback keeps the laptop's evening
+list instead of replacing it with the gap rule (`laptop_evening_list`). With one input source
+missing, the model still beats the rule, so `missing_inputs()` warns and does not fall back.
+
 **How the laptop is used.** 5 of the last 11 lists came from the cloud fallback (gap rule, no
 model). The 09:10 auction has not been archived since 10-06, because the laptop is rarely on at
 09:10. So the model trades about half the days, and the 09:10 re-rank, the 09:18 stop push and

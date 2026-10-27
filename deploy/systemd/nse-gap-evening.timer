@@ -1,0 +1,13 @@
+[Unit]
+Description=Gap-reversal picks for the next session, built the evening before (a full backup of the 08:15 list)
+
+[Timer]
+# NSE's day files (equity, F&O, participant OI) are out by 21:00.  Walk-forward:
+# this list is as good as the 08:15 one (+0.4 bps/trade, t 0.2), so if the
+# laptop is off in the morning, the cloud keeps it instead of its gap-rule list.
+OnCalendar=Sun,Mon..Fri *-*-* 21:00:00
+Persistent=false
+Unit=nse-gap-picks.service
+
+[Install]
+WantedBy=timers.target

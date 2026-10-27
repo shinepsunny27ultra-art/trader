@@ -145,8 +145,8 @@ def _publish(session: date | None, *, fetch: bool,
 def published_today(payload: dict | None, today: date) -> str | None:
     """Who built `payload` as today's list this morning: "laptop", "github-actions" or None.
 
-    An evening PRELIMINARY list (built the day before) does not count: on a
-    morning the laptop is off, the cloud's fresh list replaces it.
+    An evening list (built the day before) is not "this morning's": see
+    `laptop_evening_list`, which the cloud fallback checks next.
     """
     if not payload or payload.get("session") != today.isoformat():
         return None
@@ -156,6 +156,25 @@ def published_today(payload: dict | None, today: date) -> str | None:
         return payload["publisher"]
     # Lists written before the publisher field: only the laptop has a model.
     return "laptop" if payload.get("model") else "github-actions"
+
+
+def laptop_evening_list(payload: dict | None, today: date) -> dict | None:
+    """The laptop's model-ranked list for `today` built before today (evening/weekend), or None.
+
+    Walk-forward 2024-10..2026-10 (research/gap_book_2026_10/robustness.py): a list
+    built the evening before, with US/European closes one session old, made
+    +47.2 bps/trade against +46.8 for the 08:15 list (paired +0.4, t 0.2) and
+    beat the cloud's gap rule by +18.3/day (t 3.4).  So on a morning the laptop
+    is off, last evening's list stands; the cloud does not replace it.
+    """
+    if not payload or payload.get("session") != today.isoformat():
+        return None
+    if str(payload.get("generated_at", "")).startswith(today.isoformat()):
+        return None                                   # built this morning: published_today
+    if payload.get("publisher", "laptop") != "laptop" or not payload.get("model") \
+            or payload.get("source") != "nse":
+        return None                                   # only the laptop's full NSE + model list
+    return payload
 
 
 def laptop_already_published(payload: dict | None, today: date) -> bool:
@@ -222,8 +241,8 @@ def _list_message(session: date, last, picks: list[G.Pick], info: dict,
     # trained on; the 08:15 run rebuilds it.
     preliminary = session > now.date()
     if preliminary:
-        lines.insert(0, f"PRELIMINARY (built {now:%a %H:%M}, before the overnight global closes). "
-                        "The 08:15 list replaces it — trade that one.")
+        lines.insert(0, f"Built {now:%a %H:%M}, before the overnight global closes. The 08:15 run "
+                        "refreshes it; if no 08:15 list arrives, trade this one (tested: as good).")
     if info.get("drift_alarm") or info.get("cautious_mode"):
         mult = info.get("size_multiplier", 0.6)
         lines.insert(0, f"⚠ DRIFT ALARM / CAUTIOUS MODE: the live book has been running persistently "
@@ -357,6 +376,9 @@ def cmd_cloud_fallback(args, *, clock=None, sleep=None, remote=None, publish=Non
     if who:
         print(f"{clock():%H:%M:%S} IST: today's list is already on main ({who}) — standing aside")
         return f"stood aside: {who}"
+    evening = laptop_evening_list(remote(), today)
+    if evening:
+        return _evening_list_stands(evening, today, deadline, args, clock, sleep, remote)
     target = G.next_session() if args.any_day else today
     try:
         session, last, picks, info = _publish(target, fetch=not args.no_fetch, history_days=args.history_days)
@@ -388,6 +410,35 @@ def cmd_cloud_fallback(args, *, clock=None, sleep=None, remote=None, publish=Non
     print(f"{clock():%H:%M:%S} IST: published to main")
     push(title, body, enabled=args.push, priority=priority)
     return "published"
+
+
+def _evening_list_stands(payload: dict, today: date, deadline: datetime, args, clock, sleep, remote) -> str:
+    """The laptop's evening list is today's list unless its 08:15 refresh arrives by the deadline.
+
+    It is already on `main` (the dashboard shows it); the phone got it last night
+    marked "if no 08:15 list arrives, trade this one" — confirm that it stands.
+    """
+    print(f"{clock():%H:%M:%S} IST: the laptop's list from {str(payload.get('generated_at'))[:16]} "
+          f"is on main; waiting until {deadline:%H:%M} for its 08:15 refresh", flush=True)
+    while clock() < deadline:
+        who = published_today(remote(), today)
+        if who:
+            print(f"{clock():%H:%M:%S} IST: the {who} list arrived — standing aside")
+            return f"stood aside: {who}"
+        sleep(max(1.0, min(FALLBACK_POLL_SECONDS, (deadline - clock()).total_seconds())))
+    who = published_today(remote(), today)
+    if who:
+        return f"stood aside: {who}"
+    fields = set(G.Pick.__dataclass_fields__)
+    picks = [G.Pick(**{k: v for k, v in p.items() if k in fields}) for p in payload.get("picks", [])]
+    title, body, priority = _list_message(today, payload.get("based_on"), picks, payload, clock())
+    body = (f"The laptop's 08:15 refresh did not come; its list from "
+            f"{str(payload.get('generated_at'))[5:16].replace('T', ' ')} stands (model-ranked).\n" + body)
+    if args.dry_run:
+        print(f"{clock():%H:%M:%S} IST: DRY RUN — would push:\n[{title}]\n{body}")
+        return "dry run"
+    push(title, body, enabled=args.push, priority=priority)
+    return "evening list stands"
 
 
 def cmd_final(args) -> None:
