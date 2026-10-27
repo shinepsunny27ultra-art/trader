@@ -42,8 +42,8 @@ def read_remote(path: Path, *, branch: str = "main", remote: str = "origin", roo
 
 
 def publish(paths: list[Path], message: str, *, branch: str = "main", remote: str = "origin",
-            root: Path = ROOT, timeout: float = 30, attempts: int = 2, log=print,
-            force: bool = False, guard=None) -> bool:
+            root: Path = ROOT, timeout: float = 30, attempts: int = 4, log=print,
+            force: bool = False, guard=None, backoff: float = 10.0) -> bool:
     """Commit `paths` (as they are on disk) onto `remote/branch` and push. True on success.
 
     Inside GitHub Actions this is a no-op unless `force` (the cloud fallback).
@@ -89,8 +89,12 @@ def publish(paths: list[Path], message: str, *, branch: str = "main", remote: st
             git("push", "--quiet", remote, f"{commit}:refs/heads/{branch}")
             return True
         except (subprocess.SubprocessError, OSError, ValueError) as exc:
-            # A push can lose a race with the GitHub Action; refetch and retry once.
+            # A push can lose a race with the GitHub Action, or the hotspot can drop
+            # for a moment: refetch and retry after a pause (10 s, 20 s, 30 s).
             detail = getattr(exc, "stderr", "") or exc
             if attempt == attempts - 1:
                 log(f"  cloud sync failed: {str(detail).strip()[:200]}")
+            else:
+                import time
+                time.sleep(backoff * (attempt + 1))
     return False

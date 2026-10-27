@@ -1,5 +1,5 @@
 [Unit]
-Description=No sleep 20:50-21:10 for the evening list, on mains power
+Description=No sleep from 20:50: the evening list, then through the night and the next session (to 16:15) on mains power
 
 [Timer]
 OnCalendar=Sun,Mon..Fri *-*-* 20:50:00

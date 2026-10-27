@@ -1,7 +1,13 @@
 [Unit]
-Description=Keep the laptop awake for the evening list until 2110 (mains power only; released if unplugged)
+Description=Keep the laptop awake for the evening list, and through the night to 16:15 when tomorrow is a session (mains power only; released if unplugged)
+
+# On battery or unplugged the script exits 75 and systemd retries every minute, so the
+# lock comes back when the laptop is plugged in again.
+StartLimitIntervalSec=0
 
 [Service]
+Restart=on-failure
+RestartSec=60
 Type=simple
 WorkingDirectory=%h/trading-workspace
-ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/keep_awake.py 2110
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/keep_awake.py 2110 --next-session 1615
