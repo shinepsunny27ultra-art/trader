@@ -210,3 +210,71 @@ def test_a_morning_retrain_waits_for_the_days_list(monkeypatch):
     assert t[0].strftime("%H:%M") == "08:15"
     # in the evening it does not wait at all
     assert learn.wait_for_todays_list(lambda: datetime(2026, 10, 28, 19, 0), sleep=tick) is False
+
+
+def _load_keep_awake():
+    spec = importlib.util.spec_from_file_location("keep_awake", ROOT / "scripts" / "keep_awake.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_keep_awake_lets_go_when_unplugged_or_when_the_window_ends(tmp_path):
+    from datetime import datetime, timedelta
+
+    ka = _load_keep_awake()
+    t = [datetime(2026, 10, 28, 9, 0)]
+
+    def tick(seconds):
+        t[0] += timedelta(seconds=seconds)
+    end = datetime(2026, 10, 28, 16, 15)
+    plugged = iter([True] * 10 + [False])
+    assert ka.hold(end, clock=lambda: t[0], sleep=tick, mains=lambda: next(plugged)) == "unplugged"
+    assert t[0] < end
+    t[0] = datetime(2026, 10, 28, 16, 0)
+    assert ka.hold(end, clock=lambda: t[0], sleep=tick, mains=lambda: True) == "window over"
+    assert ka.until_today("1615", datetime(2026, 10, 28, 8, 0)) == end
+    (tmp_path / "ACAD").mkdir()
+    (tmp_path / "ACAD" / "online").write_text("0\n")
+    (tmp_path / "BAT0").mkdir()
+    assert ka.on_mains(tmp_path) is False
+    (tmp_path / "ACAD" / "online").write_text("1\n")
+    assert ka.on_mains(tmp_path) is True
+
+
+def test_the_evening_lock_runs_through_the_night_only_before_a_session():
+    from datetime import date, datetime
+
+    ka = _load_keep_awake()
+    trading = lambda d: d.weekday() < 5 and d != date(2026, 11, 9)          # noqa: E731
+    sun = datetime(2026, 11, 1, 20, 50)
+    assert ka.window_end("2110", sun, next_session="1615", is_trading_day=trading) == datetime(2026, 11, 2, 16, 15)
+    fri = datetime(2026, 10, 30, 20, 50)                                     # Saturday is not a session
+    assert ka.window_end("2110", fri, next_session="1615", is_trading_day=trading) == datetime(2026, 10, 30, 21, 10)
+    holiday_eve = datetime(2026, 11, 8, 20, 50)
+    assert ka.window_end("2110", holiday_eve, next_session="1615", is_trading_day=trading).hour == 21
+    assert ka.window_end("1615", datetime(2026, 10, 28, 7, 55)) == datetime(2026, 10, 28, 16, 15)
+
+
+def test_health_repushes_when_the_cloud_copy_is_behind(tmp_path, monkeypatch):
+    import json
+
+    hc = _load_health()
+    monkeypatch.setattr(hc, "ROOT", tmp_path)
+    picks = tmp_path / "data" / "gap_reversal" / "picks.json"
+    picks.parent.mkdir(parents=True)
+    picks.write_text(json.dumps({"session": "2026-10-28", "generated_at": "2026-10-28T08:15:40+05:30"}))
+    from nse_intraday_ai import cloud_sync
+    main = {"session": "2026-10-28", "generated_at": "2026-10-27T21:15:10+05:30"}     # last evening's
+    monkeypatch.setattr(cloud_sync, "read_remote", lambda path, **kw: json.dumps(main))
+    pushed = []
+
+    def publish(paths, message, **kw):
+        pushed.append(message)
+        main.update(json.loads(picks.read_text()))
+        return True
+    monkeypatch.setattr(cloud_sync, "publish", publish)
+    name, status, detail = hc.check_cloud_copy()
+    assert status == hc.OK and pushed and "re-pushed" in detail
+    pushed.clear()
+    assert hc.check_cloud_copy()[1] == hc.OK and not pushed                 # in sync: nothing to do

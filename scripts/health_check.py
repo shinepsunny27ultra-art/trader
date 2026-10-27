@@ -159,6 +159,43 @@ def check_learning() -> tuple[str, str, str]:
             f"sessions never graded: {', '.join(missing)}" if missing else f"complete through {through}")
 
 
+def check_cloud_copy() -> tuple[str, str, str]:
+    """The Streamlit Cloud app shows GitHub `main`: is its list the laptop's list?
+
+    If `main` is behind (a push failed, e.g. the hotspot dropped at 08:15), push
+    the dashboard files again — the app then catches up within a minute or two.
+    """
+    import json
+
+    from nse_intraday_ai import cloud_sync
+
+    local_path = ROOT / "data" / "gap_reversal" / "picks.json"
+    if not local_path.exists():
+        return ("cloud copy (Streamlit)", OK, "no local list yet")
+    local = json.loads(local_path.read_text())
+
+    def key(payload: dict | None) -> tuple[str, str]:
+        return (payload or {}).get("session") or "", (payload or {}).get("generated_at") or ""
+
+    def remote():
+        raw = cloud_sync.read_remote(local_path, timeout=20)
+        try:
+            return json.loads(raw) if raw else None
+        except ValueError:
+            return None
+    main = remote()
+    if key(main) == key(local):
+        return ("cloud copy (Streamlit)", OK, f"main has the list for {local.get('session')}")
+    if main is not None and key(main) > key(local):
+        return ("cloud copy (Streamlit)", OK, f"main has a newer list ({main.get('publisher', '?')})")
+    healed = cloud_sync.publish(cloud_sync.state_files(), "chore(data): re-sync the dashboard files [skip ci]",
+                                attempts=2, log=lambda *a: None)
+    if healed and key(remote()) == key(local):
+        return ("cloud copy (Streamlit)", OK, f"main was behind; re-pushed the list for {local.get('session')}")
+    return ("cloud copy (Streamlit)", WARN,
+            f"main shows {key(main)[0] or 'nothing'}, laptop {local.get('session')}: push failed (network?)")
+
+
 def check_preopen(now: datetime) -> tuple[str, str, str]:
     """The 09:10 job archives every auction; the archive must grow and match the official opens.
 
@@ -349,6 +386,7 @@ def main() -> int:
     checks.append(check_published(now))
     checks.append(check_unrecorded(now))
     checks.append(check_preopen(now))
+    checks.append(check_cloud_copy())
     checks.append(check_intraday(now))
 
     problems = [c for c in checks if c[1] != OK]
