@@ -1,0 +1,7 @@
+[Unit]
+Description=Keep the laptop awake for the evening list until 2110 (mains power only; released if unplugged)
+
+[Service]
+Type=simple
+WorkingDirectory=%h/trading-workspace
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/keep_awake.py 2110

@@ -210,3 +210,33 @@ def test_a_morning_retrain_waits_for_the_days_list(monkeypatch):
     assert t[0].strftime("%H:%M") == "08:15"
     # in the evening it does not wait at all
     assert learn.wait_for_todays_list(lambda: datetime(2026, 10, 28, 19, 0), sleep=tick) is False
+
+
+def _load_keep_awake():
+    spec = importlib.util.spec_from_file_location("keep_awake", ROOT / "scripts" / "keep_awake.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_keep_awake_lets_go_when_unplugged_or_when_the_window_ends(tmp_path):
+    from datetime import datetime, timedelta
+
+    ka = _load_keep_awake()
+    t = [datetime(2026, 10, 28, 9, 0)]
+
+    def tick(seconds):
+        t[0] += timedelta(seconds=seconds)
+    end = datetime(2026, 10, 28, 16, 15)
+    plugged = iter([True] * 10 + [False])
+    assert ka.hold(end, clock=lambda: t[0], sleep=tick, mains=lambda: next(plugged)) == "unplugged"
+    assert t[0] < end
+    t[0] = datetime(2026, 10, 28, 16, 0)
+    assert ka.hold(end, clock=lambda: t[0], sleep=tick, mains=lambda: True) == "window over"
+    assert ka.until_today("1615", datetime(2026, 10, 28, 8, 0)) == end
+    (tmp_path / "ACAD").mkdir()
+    (tmp_path / "ACAD" / "online").write_text("0\n")
+    (tmp_path / "BAT0").mkdir()
+    assert ka.on_mains(tmp_path) is False
+    (tmp_path / "ACAD" / "online").write_text("1\n")
+    assert ka.on_mains(tmp_path) is True

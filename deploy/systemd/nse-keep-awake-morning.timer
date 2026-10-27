@@ -1,0 +1,9 @@
+[Unit]
+Description=Trading days: no sleep 07:55-16:15 (list, auction, stops, alerts, record) on mains power
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 07:55:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
