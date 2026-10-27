@@ -1,6 +1,6 @@
 {
   "session": "2026-10-27",
-  "generated_at": "2026-10-27T06:27:56+05:30",
+  "generated_at": "2026-10-27T08:15:32+05:30",
   "publisher": "laptop",
   "config": {
     "universe_size": 300,
@@ -33,7 +33,7 @@
       "reserve": false,
       "entry": null,
       "stop_price": null,
-      "score": 86.0623,
+      "score": 82.396333,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 5.343
@@ -71,7 +71,7 @@
       "reserve": false,
       "entry": null,
       "stop_price": null,
-      "score": 56.187666,
+      "score": 58.293057,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 2.33
@@ -109,7 +109,7 @@
       "reserve": false,
       "entry": null,
       "stop_price": null,
-      "score": 47.075446,
+      "score": 47.011021,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 4.164
@@ -128,7 +128,7 @@
       "reserve": false,
       "entry": null,
       "stop_price": null,
-      "score": 38.769736,
+      "score": 38.670674,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 4.14
@@ -166,7 +166,7 @@
       "reserve": false,
       "entry": null,
       "stop_price": null,
-      "score": 35.090224,
+      "score": 33.972177,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 7.149
@@ -185,7 +185,7 @@
       "reserve": true,
       "entry": null,
       "stop_price": null,
-      "score": 34.047662,
+      "score": 33.280973,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 4.074
