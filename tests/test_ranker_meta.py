@@ -168,3 +168,30 @@ def test_fit_records_the_usual_blank_rate_of_each_feature():
     panel.loc[panel.index.get_level_values("symbol") < 10, "b"] = np.nan
     m = R.Ranker.fit(panel, R.RankerConfig(max_iter=5, min_samples_leaf=20, exclude=()))
     assert m.meta["nan_rates"] == {"a": 0.0, "b": 0.2}
+
+
+def test_cautious_mode_ends_once_the_shortfall_is_made_up():
+    st = M.MetaState(expected_bps=50, slack_bps=40, threshold_bps=100)
+    st.update("d1", {"ranker": -200.0}, -200.0)                 # cusum 210 > 100: alarm
+    assert st.alarm and st.cautious_mode
+    st.update("d2", {"ranker": 400.0}, 400.0)                   # cusum back to 0
+    assert not st.cautious_mode and not st.alarm and st.cusum == 0.0
+
+
+def test_default_cusum_rarely_fires_on_a_healthy_book():
+    # A book earning its expectation with realistic noise (sd 170 bps/day): the old
+    # k=10/h=400 alarm fired ~12x a year on the real walk-forward days.
+    rng = np.random.default_rng(1)
+    years = [rng.normal(50, 170, 250) for _ in range(40)]
+
+    def alarms_per_year(**kw) -> float:
+        n = 0
+        for x in years:
+            st = M.MetaState(expected_bps=50, **kw)
+            for i, r in enumerate(x):
+                was = st.alarm
+                st.update(f"{i:04d}", {"ranker": float(r)}, float(r))
+                n += st.alarm and not was
+        return n / len(years)
+    new, old = alarms_per_year(), alarms_per_year(slack_bps=10.0, threshold_bps=400.0)
+    assert new < 2.5 and old > 4 * new

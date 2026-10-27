@@ -123,3 +123,90 @@ def test_cloud_fallback_stands_aside_only_for_the_laptops_final_list():
     assert gs.laptop_already_published(legacy, today)
     assert not gs.laptop_already_published({k: v for k, v in legacy.items() if k != "model"}, today)
     assert not gs.laptop_already_published(None, today)
+
+
+def _bars_until(last_bar: int):
+    import pandas as pd
+    return pd.DataFrame({"open": 100.0, "high": 100.5, "low": 99.0, "close": 99.5},
+                        index=range(last_bar + 1))
+
+
+def test_record_refuses_a_finished_day_whose_bars_stop_early(monkeypatch):
+    # 2026-10-27: after a resume with no network the cache held bars to 14:15 only,
+    # and five of eight trades were booked at 14:15 instead of 15:15.
+    from datetime import datetime
+
+    gs = _load_gap_script()
+    G = gs.G
+    picks = [G.Pick(rank=i, symbol=f"S{i}.NS", side="SHORT", gap_prev_pct=1.0, prev_close=100.0, atr=3.0,
+                    stop_distance=2.25, quantity=1250, position_value=1.25e5, turnover_cr=50.0)
+             for i in range(1, 9)]
+    monkeypatch.setattr(G, "load_picks", lambda s: picks)
+    monkeypatch.setattr(gs, "official_opens", lambda s: {})
+    monkeypatch.setattr(G, "load_session_bars", lambda sym, s: _bars_until(60))      # 09:15 + 60*5 = 14:15
+    with pytest.raises(gs.IncompleteSession):
+        gs.record_session(date(2026, 10, 27), fetch=False, now=datetime(2026, 10, 27, 19, 15, tzinfo=gs.IST))
+    # during the session the same bars are simply "so far"
+    assert len(gs.record_session(date(2026, 10, 27), fetch=False,
+                                 now=datetime(2026, 10, 27, 14, 20, tzinfo=gs.IST))) == 8
+    monkeypatch.setattr(G, "load_session_bars", lambda sym, s: _bars_until(74))
+    trades = gs.record_session(date(2026, 10, 27), fetch=False, now=datetime(2026, 10, 27, 19, 15, tzinfo=gs.IST))
+    assert {t.exit_reason for t in trades} == {"SQUARE_OFF"}
+
+
+def test_official_opens_fall_back_to_the_bhavcopy(monkeypatch):
+    import pandas as pd
+
+    gs = _load_gap_script()
+    from nse_intraday_ai import nse_bhav, nse_preopen
+    monkeypatch.setattr(nse_preopen, "archived_opens", lambda d: {})
+    monkeypatch.setattr(nse_bhav, "load", lambda a, b: pd.DataFrame(
+        {"symbol": ["A", "B"], "series": ["EQ", "BE"], "open": [101.5, 50.0]}))
+    assert gs.official_opens(date(2026, 10, 27)) == {"A": 101.5}
+    monkeypatch.setattr(nse_preopen, "archived_opens", lambda d: {"A": 101.0})
+    assert gs.official_opens(date(2026, 10, 27)) == {"A": 101.0}
+
+
+def test_record_takes_late_lists_out_of_the_paper_book(tmp_path, monkeypatch):
+    import json
+
+    import pandas as pd
+
+    gs = _load_gap_script()
+    G = gs.G
+    monkeypatch.setattr(gs, "wait_for_clock", lambda *a, **k: None)
+    monkeypatch.setattr(gs, "_sync", lambda *a, **k: None)
+    paper = tmp_path / "paper_book.csv"
+    monkeypatch.setattr(gs, "PAPER", paper)
+    monkeypatch.setattr(gs, "OUT", tmp_path)
+    monkeypatch.setattr(G, "PICKS_PATH", tmp_path / "picks.json")
+    hist = tmp_path / "history"
+    hist.mkdir()
+    for d, stamp in (("2026-10-14", "2026-10-14T11:08:27+05:30"), ("2026-10-15", "2026-10-15T08:58:31+05:30")):
+        (hist / f"picks_{d.replace('-', '')}.json").write_text(json.dumps({"session": d, "generated_at": stamp, "picks": []}))
+    pd.DataFrame({"session": ["2026-10-14", "2026-10-15"], "symbol": ["A.NS", "B.NS"], "net": [-100.0, 50.0]}
+                 ).to_csv(paper, index=False)
+    gs.cmd_record(SimpleNamespace(date="2026-10-15", no_fetch=True, push=False))
+    assert list(pd.read_csv(paper)["session"]) == ["2026-10-15"]
+
+
+def test_a_morning_retrain_waits_for_the_days_list(monkeypatch):
+    from datetime import datetime
+
+    spec = importlib.util.spec_from_file_location("learn_script", ROOT / "scripts" / "learn.py")
+    learn = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(learn)
+    from nse_intraday_ai import gap_reversal as G
+    from nse_intraday_ai import nse_calendar
+
+    monkeypatch.setattr(nse_calendar, "is_trading_day", lambda d: True)
+    t = [datetime(2026, 10, 28, 8, 5)]
+    payloads = [None, None, {"session": "2026-10-28", "published_at": "2026-10-28T08:16:02"}]
+    monkeypatch.setattr(G, "read_picks", lambda *a: payloads.pop(0))
+
+    def tick(seconds):
+        t[0] = t[0].replace(minute=t[0].minute + 5)
+    assert learn.wait_for_todays_list(lambda: t[0], sleep=tick) is True
+    assert t[0].strftime("%H:%M") == "08:15"
+    # in the evening it does not wait at all
+    assert learn.wait_for_todays_list(lambda: datetime(2026, 10, 28, 19, 0), sleep=tick) is False

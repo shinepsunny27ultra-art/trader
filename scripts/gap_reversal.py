@@ -55,9 +55,36 @@ def wait_for_clock(timeout: int = 300) -> None:
         except (OSError, subprocess.SubprocessError):
             return                       # no timedatectl: nothing to wait for
         if out != "no":
-            return
+            break
         time.sleep(10)
-    print("warning: clock still not NTP-synchronised; continuing")
+    else:
+        print("warning: clock still not NTP-synchronised; continuing")
+    wait_for_network(max(30, int(deadline - time.time())))
+
+
+def wait_for_network(timeout: int = 180, hosts: tuple[str, ...] = ("query1.finance.yahoo.com",
+                                                                   "archives.nseindia.com")) -> bool:
+    """Block until DNS resolves, up to `timeout` seconds.
+
+    2026-10-27 19:15: the laptop resumed from sleep, every missed timer fired at
+    once and the Wi-Fi was not back yet — all 12 Yahoo downloads failed, `record`
+    booked the day on cached bars that stopped at 14:15, and the phone pushes
+    failed ("Temporary failure in name resolution").
+    """
+    import socket
+    import time
+
+    deadline = time.time() + timeout
+    while True:
+        try:
+            for host in hosts:
+                socket.getaddrinfo(host, 443)
+            return True
+        except OSError:
+            if time.time() >= deadline:
+                print("warning: network still unreachable; continuing")
+                return False
+            time.sleep(5)
 
 
 def push(title: str, body: str, *, enabled: bool, priority: str = "high") -> None:
@@ -171,6 +198,9 @@ def cmd_picks(args) -> None:
     if args.push and not in_actions and session == now.date():
         body = _replaces_fallback_note(session) + body
     push(title, body, enabled=args.push, priority=priority)
+    # When the list first went out, and whether that was after the entry cutoff:
+    # `record` books only lists someone could have entered at the open.
+    G.mark_published(session, now, late=session == now.date() and now.strftime("%H:%M") > G.ENTRY_CUTOFF)
     _sync(f"chore(data): publish picks for {session} [skip ci]")
 
 
@@ -183,7 +213,7 @@ def _list_message(session: date, last, picks: list[G.Pick], info: dict,
              + f"gap yday {p.gap_prev_pct:+.1f}%  stop +₹{p.stop_distance:,.1f} ({p.stop_pct:.1f}%)"
              for p in main]
     reserves = ", ".join(p.symbol.removesuffix(".NS") for p in picks if p.reserve)
-    late = session == now.date() and now.strftime("%H:%M") > "09:08"   # auction entry can close from 09:08
+    late = session == now.date() and now.strftime("%H:%M") > G.ENTRY_CUTOFF   # auction entry can close from 09:08
     if late:
         lines.insert(0, "⚠ LATE: the open has passed. The tested entry is the open itself — "
                         "entering now is a different, untested trade. Skip today.")
@@ -304,7 +334,13 @@ def cmd_cloud_fallback(args, *, clock=None, sleep=None, remote=None, publish=Non
                 return True
 
         def publish(msg: str) -> bool:
-            return cloud_sync.publish([G.PICKS_PATH], msg, force=True, attempts=3, guard=nobody_published)
+            # Push both picks.json AND the dated history copy so the laptop's
+            # load_picks() can find cloud-fallback picks via read_remote().
+            dated = G.dated_picks_path(target)
+            files = [G.PICKS_PATH]
+            if dated.exists():
+                files.append(dated)
+            return cloud_sync.publish(files, msg, force=True, attempts=3, guard=nobody_published)
 
     today = clock().date()
     if not args.any_day:
@@ -460,8 +496,36 @@ def last_completed_session(now: datetime) -> date:
     return day
 
 
-def record_session(session: date, *, fetch: bool) -> list[G.Trade]:
-    """Paper-trade one session exactly as the backtest does; [] if no bars."""
+class IncompleteSession(RuntimeError):
+    """The intraday bars stop before the square-off: not recordable yet."""
+
+
+def official_opens(session: date) -> dict[str, float]:
+    """symbol -> the session's official open: the archived pre-open auction, else NSE's
+    bhavcopy (published ~18:00), else {} (the first 5-minute bar's open is used)."""
+    from nse_intraday_ai.nse_preopen import archived_opens
+
+    opens = archived_opens(session)
+    if opens:
+        return opens
+    try:
+        from nse_intraday_ai import nse_bhav
+
+        bhav = nse_bhav.load(session, session)
+    except Exception:                                         # noqa: BLE001 — optional input
+        return {}
+    if bhav.empty:
+        return {}
+    eq = bhav[(bhav["series"] == "EQ") & (bhav["open"] > 0)]
+    return dict(zip(eq["symbol"], eq["open"].astype(float)))
+
+
+def record_session(session: date, *, fetch: bool, now: datetime | None = None) -> list[G.Trade]:
+    """Paper-trade one session exactly as the backtest does; [] if no bars.
+
+    Raises IncompleteSession if most picks' bars end before the 15:15 square-off
+    of a finished session, so the day is retried instead of booked short.
+    """
     picks = G.load_picks(session)
     if picks is None:
         # Nothing was published for this session (the laptop was off).  The
@@ -472,9 +536,7 @@ def record_session(session: date, *, fetch: bool) -> list[G.Trade]:
     symbols = [p.symbol for p in picks]
     if fetch and G.missing_intraday(symbols, session, bar=G.SQUARE_OFF_BAR):
         G.refresh(symbols, interval="5m", period="1mo")
-    from nse_intraday_ai.nse_preopen import archived_opens
-
-    official = archived_opens(session)          # the auction price a pre-open order fills at
+    official = official_opens(session)          # the price a pre-open order fills at
     trades = []
     for p in picks:
         if len(trades) >= CONFIG.picks:
@@ -483,6 +545,12 @@ def record_session(session: date, *, fetch: bool) -> list[G.Trade]:
                                 entry=official.get(p.symbol.removesuffix(".NS")))
         if trade is not None:
             trades.append(trade)
+    now = now or datetime.now(IST)
+    finished = session < now.date() or now.strftime("%H:%M") >= "15:30"
+    short = [t for t in trades if t.exit_reason == "LAST_BAR"]
+    if finished and trades and len(short) * 2 > len(trades):
+        raise IncompleteSession(f"{len(short)}/{len(trades)} picks' bars end before 15:15 "
+                                f"(last {max(t.exit_time for t in short)})")
     return trades
 
 
@@ -501,16 +569,36 @@ def cmd_record(args) -> None:
         sessions = [d.date() for d in pd.bdate_range(start, last)
                     if d.date().isoformat() not in done]
 
+    # Lists that went out after the entry cutoff were never tradable: take any
+    # such session back out of the book (2026-10-14 and 10-16 had been booked).
+    dropped_late = []
+    if not book.empty:
+        for s in sorted(set(book["session"])):
+            payload = G.read_picks(G.dated_picks_path(date.fromisoformat(s)))
+            if payload is not None and payload.get("session") == s and G.published_late(payload):
+                dropped_late.append(s)
+        if dropped_late:
+            book = book[~book["session"].isin(dropped_late)]
+            print(f"removed from the paper book (list published LATE): {', '.join(dropped_late)}")
+
     coverage = G.session_coverage(G.nifty500_symbols(), min(sessions)) if sessions else {}
     newest = max(coverage) if coverage else None
     recorded = []
     for session in sessions:
         if newest and session < newest and coverage.get(session, 0) == 0:
             continue                     # a holiday: no real bars, later days have them
-        if G.load_picks(session) is None:
+        payload = G.picks_payload(session)
+        if payload is None:
             print(f"{session}: no list was published — not recorded")
             continue
-        trades = record_session(session, fetch=not args.no_fetch)
+        if G.published_late(payload):
+            print(f"{session}: the list went out after {G.ENTRY_CUTOFF} (LATE, 'skip today') — not recorded")
+            continue
+        try:
+            trades = record_session(session, fetch=not args.no_fetch)
+        except IncompleteSession as exc:
+            print(f"{session}: intraday data incomplete ({exc}) — not recorded, retried next run")
+            continue
         if not trades:
             print(f"{session}: no bars for any pick — holiday or data outage, nothing recorded")
             continue
@@ -520,10 +608,13 @@ def cmd_record(args) -> None:
             book = book[book["session"] != session.isoformat()]
         book = pd.concat([book, rows], ignore_index=True)
         recorded.append((session, trades))
-    if not recorded:
+    if not recorded and not dropped_late:
         return
     OUT.mkdir(parents=True, exist_ok=True)
     book.sort_values(["session", "symbol"]).to_csv(PAPER, index=False)
+    if not recorded:
+        _sync("chore(data): paper book without LATE lists [skip ci]")
+        return
 
     per_day = book.groupby("session")["net"].sum()
     for session, trades in recorded:

@@ -52,7 +52,7 @@ import math
 import os
 import sqlite3
 from dataclasses import asdict, dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import numpy as np
@@ -744,15 +744,116 @@ def dated_picks_path(session: date, path: Path | None = None) -> Path:
     return path.parent / "history" / f"picks_{session:%Y%m%d}.json"
 
 
-def load_picks(session: date, path: Path | None = None) -> list[Pick] | None:
-    """The saved list for `session` (picks.json, else its dated copy), or None."""
+def picks_payload(session: date, path: Path | None = None) -> dict | None:
+    """The saved payload for `session` (picks.json, else its dated copy, else origin/main).
+
+    When the cloud-fallback generated picks on GitHub Actions, the local laptop
+    has no copy.  As a last resort, read the picks from ``origin/main`` (where
+    cloud_sync published them) and cache a local dated copy so subsequent calls
+    don't need the network.
+    """
     payload = read_picks(path)
     if payload is None or payload.get("session") != session.isoformat():
         payload = read_picks(dated_picks_path(session, path))
     if payload is None or payload.get("session") != session.isoformat():
+        payload = _fetch_picks_from_remote(session, path)
+    if payload is None or payload.get("session") != session.isoformat():
+        return None
+    return payload
+
+
+ENTRY_CUTOFF = "09:08"          # the pre-open auction can close from 09:08
+
+
+def published_late(payload: dict) -> bool:
+    """True if the list first reached the phone after the session's entry cutoff.
+
+    Such a list carries "LATE ... Skip today": the tested trade is the open, so
+    it is not a trade anyone could take.  2026-10-14 (published 11:08) and
+    10-16 (09:55) were nonetheless booked from the open.  Lists from before
+    `published_at` existed fall back to `generated_at` (the 09:10 re-rank
+    rewrites it, but no open model has ever been promoted to run it).
+    """
+    if "late" in payload:
+        return bool(payload["late"])
+    stamp = payload.get("published_at") or payload.get("generated_at")
+    if not stamp:
+        return False
+    t = pd.Timestamp(stamp)
+    return t.date().isoformat() == payload.get("session") and t.strftime("%H:%M") > ENTRY_CUTOFF
+
+
+def mark_published(session: date, published_at: datetime, late: bool, path: Path | None = None) -> None:
+    """Stamp the saved list (and its dated copy) with when it first went out, once."""
+    from nse_intraday_ai.atomic_io import atomic_write_json
+
+    for target in (PICKS_PATH if path is None else path, dated_picks_path(session, path)):
+        payload = read_picks(target)
+        if payload is None or payload.get("session") != session.isoformat() or "published_at" in payload:
+            continue
+        payload.update(published_at=published_at.isoformat(timespec="seconds"), late=late)
+        atomic_write_json(target, payload)
+
+
+def load_picks(session: date, path: Path | None = None) -> list[Pick] | None:
+    """The saved list for `session` (see `picks_payload`), or None."""
+    payload = picks_payload(session, path)
+    if payload is None:
         return None
     fields = set(Pick.__dataclass_fields__)
     return [Pick(**{k: v for k, v in p.items() if k in fields}) for p in payload["picks"]]
+
+
+def _fetch_picks_from_remote(session: date, path: Path | None = None) -> dict | None:
+    """Try to read today's picks from ``origin/main`` and cache them locally.
+
+    Returns the parsed payload dict if the remote has picks for ``session``,
+    otherwise None.  Errors are silently swallowed — network unavailability
+    should never block recording of sessions that have local picks.
+    """
+    import json
+
+    from nse_intraday_ai import cloud_sync
+
+    picks_path = PICKS_PATH if path is None else path
+    try:
+        picks_path.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        # Custom path outside the workspace (e.g. tests in /tmp) — no remote to check.
+        return None
+    try:
+        raw = cloud_sync.read_remote(picks_path)
+        payload = json.loads(raw) if raw else None
+    except Exception:  # noqa: BLE001
+        payload = None
+    if payload is not None and payload.get("session") == session.isoformat():
+        # Cache locally so future calls don't need the network.
+        _cache_remote_picks(session, payload, path)
+        return payload
+
+    # The current picks.json on main may be for a different session; the one we
+    # want may be in an earlier commit.  We can't cheaply walk git history here,
+    # but the dated copy in history/ may have been pushed by cloud-fallback.
+    try:
+        hist_rel = dated_picks_path(session, path).resolve().relative_to(ROOT.resolve()).as_posix()
+        raw = cloud_sync.read_remote(
+            ROOT / hist_rel)  # read_remote resolves relative to ROOT
+        payload = json.loads(raw) if raw else None
+    except Exception:  # noqa: BLE001
+        payload = None
+    if payload is not None and payload.get("session") == session.isoformat():
+        _cache_remote_picks(session, payload, path)
+        return payload
+    return None
+
+
+def _cache_remote_picks(session: date, payload: dict, path: Path | None = None) -> None:
+    """Write a remote payload to the local dated-picks path for caching."""
+    from nse_intraday_ai.atomic_io import atomic_write_json
+
+    dated = dated_picks_path(session, path)
+    dated.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_json(dated, payload)
 
 
 class StaleDataError(RuntimeError):

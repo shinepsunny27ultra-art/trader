@@ -298,3 +298,26 @@ def test_the_official_auction_open_is_the_entry_when_known():
     rows[3] = (100.0, 103.5, 99.0, 100.0)                      # stop = 101 + 3 = 104: not hit
     assert G.simulate_pick(_pick(), _bars(rows), date(2026, 9, 1), CFG, entry=101.0).exit_reason == "SQUARE_OFF"
     assert G.simulate_pick(_pick(), _bars(rows), date(2026, 9, 1), CFG).exit_reason == "STOP"   # bar open 100
+
+
+def test_a_list_published_after_the_cutoff_is_late():
+    # 2026-10-14: the laptop came up at 11:07 and pushed the day's list at 11:08.
+    assert G.published_late({"session": "2026-10-14", "generated_at": "2026-10-14T11:08:27+05:30"})
+    assert not G.published_late({"session": "2026-10-15", "generated_at": "2026-10-15T08:58:31+05:30"})
+    # built the evening before (preliminary) and never replaced: on time
+    assert not G.published_late({"session": "2026-10-19", "generated_at": "2026-10-17T07:55:38+05:30"})
+    # the explicit stamp wins over a later rewrite of generated_at
+    assert not G.published_late({"session": "2026-10-12", "generated_at": "2026-10-12T09:12:00+05:30",
+                                 "published_at": "2026-10-12T08:15:30+05:30", "late": False})
+
+
+def test_mark_published_stamps_once(tmp_path):
+    from datetime import datetime
+
+    path = tmp_path / "picks.json"
+    G.save_picks(date(2026, 10, 28), [_pick()], path=path)
+    G.mark_published(date(2026, 10, 28), datetime(2026, 10, 28, 8, 15), late=False, path=path)
+    G.mark_published(date(2026, 10, 28), datetime(2026, 10, 28, 11, 0), late=True, path=path)   # ignored
+    for p in (path, G.dated_picks_path(date(2026, 10, 28), path)):
+        payload = G.read_picks(p)
+        assert payload["published_at"] == "2026-10-28T08:15:00" and payload["late"] is False

@@ -204,6 +204,44 @@ def check_published(now: datetime, last_n: int = 5) -> tuple[str, str, str]:
             f"no list for {', '.join(missed)} (laptop off?)" if missed else f"last {len(recent)} sessions covered")
 
 
+def check_unrecorded(now: datetime) -> tuple[str, str, str]:
+    """Sessions where picks were published (locally or cloud-fallback) but no paper result exists.
+
+    This catches the gap where the cloud-fallback generated picks on GitHub
+    Actions but the laptop's ``record`` command didn't find them locally.
+    """
+    import csv
+
+    book = ROOT / "data" / "gap_reversal"
+    recorded = set()
+    if (book / "paper_book.csv").exists():
+        with (book / "paper_book.csv").open() as handle:
+            recorded = {r["session"] for r in csv.DictReader(handle)}
+    sessions = _sessions(FORWARD_START, now.date().isoformat())
+    # Don't flag today or yesterday (record runs at 15:40, data may not be ready).
+    cutoff = (now.date() - timedelta(days=2)).isoformat()
+    unrecorded = []
+    for d in sessions:
+        if d > cutoff or d in recorded:
+            continue
+        dated = book / "history" / f"picks_{d.replace('-', '')}.json"
+        if dated.exists():
+            import json
+
+            from nse_intraday_ai.gap_reversal import published_late
+            try:
+                late = published_late(json.loads(dated.read_text()))
+            except ValueError:
+                late = False
+            if not late:                 # a LATE list ("skip today") is not recorded on purpose
+                unrecorded.append(d)
+    if unrecorded:
+        return ("unrecorded sessions", WARN,
+                f"picks exist but no paper result: {', '.join(unrecorded)} "
+                f"— run: python scripts/gap_reversal.py record")
+    return ("unrecorded sessions", OK, "all sessions with picks have been recorded")
+
+
 def market_is_open(now: datetime) -> bool:
     from nse_intraday_ai.nse_calendar import is_trading_day
 
@@ -309,6 +347,7 @@ def main() -> int:
     checks += check_book(now)
     checks.append(check_learning())
     checks.append(check_published(now))
+    checks.append(check_unrecorded(now))
     checks.append(check_preopen(now))
     checks.append(check_intraday(now))
 
