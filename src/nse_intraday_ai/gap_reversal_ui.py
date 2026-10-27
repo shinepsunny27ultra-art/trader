@@ -126,7 +126,7 @@ def _phase(now: datetime) -> str:
     m = now.hour * 60 + now.minute
     if now.weekday() >= 5 or now.date() in _holidays():
         return "🌙 Market closed today — the next list is published at 08:15 IST on the next session."
-    for end, msg in ((540, "🕒 Before the open — list at 08:15; enter in the 09:00–09:07 pre-open auction."),
+    for end, msg in ((540, "🕒 Before the open — list at 08:15; enter in the 09:00–09:05 pre-open auction."),
                      (555, "🟢 Pre-open — place the MIS short orders now (the open is the measured entry)."),
                      (570, "🛑 Market open — place a BUY SL-M at each fill + stop distance."),
                      (915, "⏳ Holding — nothing to do until 15:15 unless a stop fills."),
@@ -337,6 +337,11 @@ def page_today() -> None:
         st.warning(f"**Stale list.** This list is for **{session}**; the next trading session is "
                    f"**{expected:%a %d %b %Y}**. Its list is published at 08:15 IST that morning — "
                    "do not trade this one.")
+    built = str(payload.get("generated_at", ""))
+    if session == expected.isoformat() and built[:10] and built[:10] < session:
+        st.info(f"**Built the evening before** ({built[:10]} {built[11:16]}). The 08:15 run refreshes it "
+                "with the overnight closes; if no refresh has arrived by 08:20, trade this list — it tested "
+                "as good as the 08:15 one.")
     if session == now.date().isoformat() and G.published_late(payload):
         sent = str(payload.get("published_at") or payload.get("generated_at", ""))[11:16]
         st.error(f"**Late list — skip today.** It went out at {sent}, after the {G.ENTRY_CUTOFF} pre-open "
@@ -397,8 +402,10 @@ def page_today() -> None:
     cfg = payload.get("config", {})
     with st.expander("How to trade the list"):
         st.markdown(
-            f"1. **09:00–09:07** pre-open: SELL (MIS) at market each of the top {cfg.get('picks', 8)} "
-            "SHORT names; if a name is blocked for shorting (ASM/T2T), take the next reserve in rank order.\n"
+            f"1. **09:00–09:05** pre-open: SELL (MIS) at market each of the top {cfg.get('picks', 8)} "
+            "SHORT names (NSE rejects pre-open market orders after 09:05; a list with LIMIT prices takes "
+            "limit orders until 09:08); if a name is blocked for shorting (ASM/T2T), take the next reserve "
+            "in rank order.\n"
             f"2. **09:15+**: place a BUY SL-M at your fill + the stop distance ({cfg.get('stop_atr', 0.75)} × daily ATR).\n"
             f"3. **{cfg.get('square_off', '15:15')}**: buy to cover everything still open.\n\n"
             "Entering late (09:20 instead of the open) roughly halved the measured edge.")
@@ -413,23 +420,29 @@ def page_performance() -> None:
         return
     book = book.assign(exposure=book["entry"] * book["quantity"]).sort_values(["session", "symbol"])
     book["bps"] = book["net"] / book["exposure"] * 1e4
+    # The expectation is the traded model's walk-forward net per trade (what the
+    # drift alarm checks against), not the 10-year gap-rule backtest.
     backtest = read_json(str(OUT / "backtest.json")) or {}
     decade = backtest.get("decade") or {}
-    exp_bps = decade.get("net_bps_per_trade")
+    state = read_json(str(MODELS / "meta_state.json")) or {}
+    exp_bps = state.get("expected_bps") or decade.get("net_bps_per_trade")
     daily = book.groupby("session").agg(trades=("net", "size"), net=("net", "sum"),
                                          exposure=("exposure", "sum")).reset_index()
     daily["cumulative"] = daily["net"].cumsum()
     if exp_bps is not None:
         daily["backtest_pace"] = (daily["exposure"] * exp_bps / 1e4).cumsum()
-    wins, losses = book[book["net"] > 0], book[book["net"] <= 0]
+    filled = book[book["quantity"] > 0]                  # unfilled limit orders are not trades
+    wins, losses = filled[filled["net"] > 0], filled[filled["net"] <= 0]
     c = st.columns(6)
     c[0].metric("Net P&L", f"₹{book['net'].sum():+,.0f}", f"{book['net'].sum() / CAPITAL * 100:+.2f}% of ₹{CAPITAL / 1e5:.0f}L")
-    c[1].metric("Sessions / trades", f"{len(daily)} / {len(book)}")
-    c[2].metric("Win rate", f"{len(wins) / len(book) * 100:.0f}%")
-    c[3].metric("Stop rate", f"{(book['exit_reason'] == 'STOP').mean() * 100:.0f}%")
+    c[1].metric("Sessions / trades", f"{len(daily)} / {len(filled)}",
+                f"{len(book) - len(filled)} limit orders unfilled" if len(book) > len(filled) else None,
+                delta_color="off")
+    c[2].metric("Win rate", f"{len(wins) / max(len(filled), 1) * 100:.0f}%")
+    c[3].metric("Stop rate", f"{(filled['exit_reason'] == 'STOP').mean() * 100:.0f}%")
     c[4].metric("Avg win / loss", f"₹{wins['net'].mean() if len(wins) else 0:,.0f} / ₹{losses['net'].mean() if len(losses) else 0:,.0f}")
     c[5].metric("Net per trade", f"{book['bps'].mean():+.1f} bps",
-                f"{book['bps'].mean() - exp_bps:+.1f} vs backtest" if exp_bps is not None else None)
+                f"{book['bps'].mean() - exp_bps:+.1f} vs model's walk-forward" if exp_bps is not None else None)
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.06, row_heights=[0.62, 0.38])
     fig.add_scatter(x=daily["session"], y=daily["cumulative"], name="Paper equity (cumulative net)",
                     mode="lines+markers", line=dict(width=2.5, color=UP), row=1, col=1)
