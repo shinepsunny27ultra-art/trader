@@ -1,11 +1,11 @@
 {
   "weights": {
-    "ranker": 0.8730442846184854,
-    "rule": 0.12695571538151448
+    "ranker": 0.8800253222631913,
+    "rule": 0.11997467773680875
   },
   "eta": 0.5,
   "floor": 0.05,
-  "updated_through": "2026-10-26",
+  "updated_through": "2026-10-27",
   "history": [
     {
       "session": "2026-09-30",
@@ -226,27 +226,31 @@
       },
       "book": -39.663055419921875,
       "cusum": 77.88
+    },
+    {
+      "session": "2026-10-27",
+      "weights": {
+        "ranker": 0.8800253222631913,
+        "rule": 0.11997467773680875
+      },
+      "returns": {
+        "rule": -146.8119659423828,
+        "ranker": -92.9374008178711
+      },
+      "book": -92.9374008178711,
+      "cusum": 207.57
     }
   ],
   "expected_bps": 46.75,
-  "slack_bps": 10.0,
-  "threshold_bps": 400.0,
-  "cusum": 77.88305541992187,
+  "slack_bps": 40.0,
+  "threshold_bps": 1000.0,
+  "cusum": 146.10045623779297,
   "alarm": false,
-  "alarm_session": "2026-10-14",
-  "alarm_sessions_elapsed": 8,
-  "cautious_mode": true,
+  "alarm_session": null,
+  "alarm_sessions_elapsed": 0,
+  "cautious_mode": false,
   "recovery_window": 10,
-  "cautious_returns": [
-    -173.24232482910156,
-    228.8074188232422,
-    24.90351104736328,
-    -8.011075973510742,
-    433.547119140625,
-    158.6475830078125,
-    333.51470947265625,
-    -39.663055419921875
-  ],
+  "cautious_returns": [],
   "track": [
     {
       "session": "2025-09-26",
@@ -1822,6 +1826,11 @@
       "session": "2026-10-26",
       "rule": 0.0,
       "ranker": -39.663055419921875
+    },
+    {
+      "session": "2026-10-27",
+      "rule": -146.8119659423828,
+      "ranker": -92.9374008178711
     }
   ],
   "guard_window": 60,
