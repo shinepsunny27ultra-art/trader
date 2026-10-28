@@ -1,6 +1,6 @@
 {
   "session": "2026-10-28",
-  "generated_at": "2026-10-28T07:54:32+05:30",
+  "generated_at": "2026-10-28T08:15:44+05:30",
   "publisher": "laptop",
   "config": {
     "universe_size": 300,
@@ -33,7 +33,7 @@
       "reserve": false,
       "entry": null,
       "stop_price": null,
-      "score": 40.468786,
+      "score": 41.745059,
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 4.56
@@ -154,25 +154,6 @@
     },
     {
       "rank": 8,
-      "symbol": "MAHABANK.NS",
-      "side": "SHORT",
-      "gap_prev_pct": 1.156,
-      "prev_close": 80.0,
-      "atr": 2.8603,
-      "stop_distance": 2.15,
-      "quantity": 1562,
-      "position_value": 124960.0,
-      "turnover_cr": 125.86,
-      "reserve": false,
-      "entry": null,
-      "stop_price": null,
-      "score": 20.157705,
-      "ranked_by": "ranker",
-      "limit_price": null,
-      "stop_pct": 2.688
-    },
-    {
-      "rank": 9,
       "symbol": "DHOOTTRANS.NS",
       "side": "SHORT",
       "gap_prev_pct": 1.856,
@@ -182,7 +163,7 @@
       "quantity": 85,
       "position_value": 124932.98,
       "turnover_cr": 123.91,
-      "reserve": true,
+      "reserve": false,
       "entry": null,
       "stop_price": null,
       "score": 19.845061,
@@ -191,7 +172,7 @@
       "stop_pct": 3.877
     },
     {
-      "rank": 10,
+      "rank": 9,
       "symbol": "BBOX.NS",
       "side": "SHORT",
       "gap_prev_pct": 1.382,
@@ -210,26 +191,7 @@
       "stop_pct": 4.452
     },
     {
-      "rank": 11,
-      "symbol": "PAYTM.NS",
-      "side": "SHORT",
-      "gap_prev_pct": 0.925,
-      "prev_close": 1601.6,
-      "atr": 67.7149,
-      "stop_distance": 50.79,
-      "quantity": 78,
-      "position_value": 124924.8,
-      "turnover_cr": 661.61,
-      "reserve": true,
-      "entry": null,
-      "stop_price": null,
-      "score": 19.045122,
-      "ranked_by": "ranker",
-      "limit_price": null,
-      "stop_pct": 3.171
-    },
-    {
-      "rank": 12,
+      "rank": 10,
       "symbol": "TEMPSENS.NS",
       "side": "SHORT",
       "gap_prev_pct": 0.436,
@@ -246,6 +208,44 @@
       "ranked_by": "ranker",
       "limit_price": null,
       "stop_pct": 4.685
+    },
+    {
+      "rank": 11,
+      "symbol": "MAHABANK.NS",
+      "side": "SHORT",
+      "gap_prev_pct": 1.156,
+      "prev_close": 80.0,
+      "atr": 2.8603,
+      "stop_distance": 2.15,
+      "quantity": 1562,
+      "position_value": 124960.0,
+      "turnover_cr": 125.86,
+      "reserve": true,
+      "entry": null,
+      "stop_price": null,
+      "score": 18.688693,
+      "ranked_by": "ranker",
+      "limit_price": null,
+      "stop_pct": 2.688
+    },
+    {
+      "rank": 12,
+      "symbol": "UPL.NS",
+      "side": "SHORT",
+      "gap_prev_pct": -0.291,
+      "prev_close": 519.0,
+      "atr": 17.3824,
+      "stop_distance": 13.04,
+      "quantity": 240,
+      "position_value": 124560.02,
+      "turnover_cr": 108.38,
+      "reserve": true,
+      "entry": null,
+      "stop_price": null,
+      "score": 17.33304,
+      "ranked_by": "ranker",
+      "limit_price": null,
+      "stop_pct": 2.513
     }
   ],
   "based_on": "2026-10-27",
@@ -350,6 +350,6 @@
   "learned_through": "2026-10-27",
   "candidates": 280,
   "missing_inputs": [],
-  "published_at": "2026-10-28T07:54:32+05:30",
+  "published_at": "2026-10-28T08:15:44+05:30",
   "late": false
 }
