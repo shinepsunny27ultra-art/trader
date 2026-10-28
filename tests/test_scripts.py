@@ -278,3 +278,29 @@ def test_health_repushes_when_the_cloud_copy_is_behind(tmp_path, monkeypatch):
     assert status == hc.OK and pushed and "re-pushed" in detail
     pushed.clear()
     assert hc.check_cloud_copy()[1] == hc.OK and not pushed                 # in sync: nothing to do
+
+
+def test_time_bound_jobs_ignore_a_boot_time_burst():
+    # 2026-10-28 07:54: the clock jumped from "June 5" at boot, every timer fired,
+    # and the 09:18 job pushed "No opening prices ... No trades today".
+    from datetime import datetime
+
+    gs = _load_gap_script()
+    at = lambda hm: datetime(2026, 10, 28, *map(int, hm.split(":")), tzinfo=gs.IST)   # noqa: E731
+    assert gs.outside_window("09:15", "15:30", at("07:54"))
+    assert not gs.outside_window("09:15", "15:30", at("09:18"))
+    assert gs.outside_window("09:05", "09:20", at("07:54")) and not gs.outside_window("09:05", "09:20", at("09:10"))
+    ka = _load_keep_awake()
+    assert ka.evening_anchor("2045", datetime(2026, 10, 28, 7, 54)) is None            # daytime: no lock
+    assert ka.evening_anchor("2045", datetime(2026, 10, 28, 21, 0)) == datetime(2026, 10, 28, 21, 0)
+    assert ka.evening_anchor("2045", datetime(2026, 10, 29, 2, 0)) == datetime(2026, 10, 28, 2, 0)
+
+
+def test_levels_before_the_open_sends_nothing(monkeypatch, capsys):
+    gs = _load_gap_script()
+    monkeypatch.setattr(gs, "wait_for_clock", lambda *a, **k: None)
+    monkeypatch.setattr(gs, "outside_window", lambda *a, **k: True)
+    sent = []
+    monkeypatch.setattr(gs, "push", lambda *a, **k: sent.append(a))
+    gs.cmd_levels(SimpleNamespace(date=None, push=True, no_fetch=True))
+    assert sent == [] and "no stop levels before the 09:15 open" in capsys.readouterr().out

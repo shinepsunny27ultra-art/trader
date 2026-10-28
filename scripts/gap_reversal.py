@@ -441,11 +441,27 @@ def _evening_list_stands(payload: dict, today: date, deadline: datetime, args, c
     return "evening list stands"
 
 
+def outside_window(start: str, end: str, now: datetime | None = None) -> bool:
+    """True if `now` (IST) is outside [start, end).
+
+    The hardware clock comes up as "June 5" after a full shutdown; when NTP fixes
+    it, systemd fires every calendar timer at once.  2026-10-28 07:54: the 09:18
+    stop-levels job ran and pushed "No opening prices ... No trades today".
+    Time-bound jobs therefore check the clock themselves; their timer runs them
+    again at the right time.
+    """
+    hm = (now or datetime.now(IST)).strftime("%H:%M")
+    return not start <= hm < end
+
+
 def cmd_final(args) -> None:
     """09:09 — re-rank with the auction's opening prices and push the FINAL list."""
     from nse_intraday_ai import pipeline as P
 
     wait_for_clock()
+    if not args.date and outside_window("09:05", "09:20"):
+        print("outside 09:05-09:20 (a timer fired at boot?): nothing to do; the 09:10:30 run handles the auction")
+        return
     session = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
     payload = G.read_picks()
     if payload is None or payload.get("session") != session.isoformat():
@@ -488,6 +504,9 @@ def cmd_final(args) -> None:
 
 def cmd_levels(args) -> None:
     wait_for_clock()
+    if not args.date and outside_window("09:15", "15:30"):
+        print("outside the session (a timer fired at boot?): no stop levels before the 09:15 open")
+        return
     session = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
     picks = G.load_picks(session)
     if picks is None:

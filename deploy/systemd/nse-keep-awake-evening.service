@@ -10,4 +10,4 @@ Restart=on-failure
 RestartSec=60
 Type=simple
 WorkingDirectory=%h/trading-workspace
-ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/keep_awake.py 2110 --next-session 1615
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/keep_awake.py 2110 --next-session 1615 --from 2045
