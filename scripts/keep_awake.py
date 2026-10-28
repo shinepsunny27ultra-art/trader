@@ -62,6 +62,21 @@ def window_end(until: str, now: datetime, *, next_session: str | None = None,
     return end
 
 
+def evening_anchor(start: str, now: datetime) -> datetime | None:
+    """The evening a night-time lock belongs to, or None in the daytime (06:00 to `start`).
+
+    2026-10-28 07:54: the clock jumped at boot, every timer fired, and the evening
+    lock took the laptop through to Thursday 16:15.  After midnight the lock still
+    belongs to the previous evening (so it holds to today's session).
+    """
+    from datetime import timedelta
+
+    hm = now.strftime("%H:%M")
+    if "06:00" <= hm < f"{start[:2]}:{start[2:]}":
+        return None
+    return now - timedelta(days=1) if hm < "06:00" else now
+
+
 def hold(end: datetime, *, clock=datetime.now, sleep=time.sleep, mains=on_mains, poll: float = 30.0) -> str:
     """Block (inside systemd-inhibit) until `end` or until the laptop is unplugged."""
     while clock() < end:
@@ -77,13 +92,22 @@ def main() -> int:
     ap.add_argument("--trading-days", action="store_true", help="hold only on NSE trading days")
     ap.add_argument("--next-session", metavar="HHMM",
                     help="if tomorrow is an NSE session, hold through the night to HHMM tomorrow")
+    ap.add_argument("--from", dest="start", metavar="HHMM",
+                    help="evening window: act only from HHMM through the night (before 06:00); a "
+                         "timer fired at boot in the daytime leaves the day to the morning lock")
     ap.add_argument("--hold-until", help=argparse.SUPPRESS)   # the process inside the lock (ISO time)
     args = ap.parse_args()
     if args.hold_until:
         outcome = hold(datetime.fromisoformat(args.hold_until))
         print(f"awake until {args.hold_until[:16]}: {outcome}", flush=True)
         return RETRY if outcome == "unplugged" else 0
-    end = window_end(args.until, datetime.now(), next_session=args.next_session)
+    now = datetime.now()
+    if args.start:
+        now = evening_anchor(args.start, now)
+        if now is None:
+            print(f"daytime: the evening lock starts at {args.start[:2]}:{args.start[2:]}")
+            return 0
+    end = window_end(args.until, now, next_session=args.next_session)
     if datetime.now() >= end:
         print(f"window ended at {end:%H:%M}; nothing to hold")
         return 0
