@@ -63,8 +63,9 @@ def refresh(through: date, *, days: int = 20, log=print) -> None:
         load_history(start, through, ROOT / "data" / "nse_flows", what="oi")
     except Exception as exc:                                  # noqa: BLE001
         log(f"  participant OI refresh failed: {exc}")
-    arrived = G.refresh(list(FT.MARKET_SERIES) + list(FT.ADRS), interval="1d", period="1mo", log=log)
-    log(f"  global/market series: {len(arrived)}/{len(FT.MARKET_SERIES) + len(FT.ADRS)}")
+    wanted = sorted(set(FT.MARKET_SERIES) | set(FT.ADRS) | set(FT.ASIA_OPEN))
+    arrived = G.refresh(wanted, interval="1d", period="1mo", log=log)
+    log(f"  global/market series: {len(arrived)}/{len(wanted)}")
     # Corporate events through this morning (filings up to 08:15 count for
     # today's list) and the board-meeting schedule ahead.  Optional: without
     # them the catalyst features are NaN, never wrong.

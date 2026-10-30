@@ -55,15 +55,18 @@ TRIALS_SO_FAR = 37
 MORNING = DEFAULT_EXCLUDE + FT.OPEN_FEATURES          # what the 08:15 model may not see
 VARIANTS: dict[str, RankerConfig] = {
     # the production champion's recipe
-    "morning": RankerConfig(exclude=MORNING + FT.CORP_FEATURES),
+    "morning": RankerConfig(exclude=MORNING + FT.UNVALIDATED_FEATURES),
     # + catalyst features (results / announcements / exchange queries / gap z)
-    "morning_corp": RankerConfig(exclude=MORNING),
+    "morning_corp": RankerConfig(exclude=MORNING + FT.ASIA_OPEN_FEATURES),
     # optional, not in the default run (already found neutral on the open panel)
-    "morning_lgbm_reg": RankerConfig(ranker_type="lgbm_reg", exclude=MORNING + FT.CORP_FEATURES),
-    "morning_3seed": RankerConfig(seeds=(0, 42, 137), exclude=MORNING + FT.CORP_FEATURES),
+    "morning_lgbm_reg": RankerConfig(ranker_type="lgbm_reg", exclude=MORNING + FT.UNVALIDATED_FEATURES),
+    "morning_3seed": RankerConfig(seeds=(0, 42, 137), exclude=MORNING + FT.UNVALIDATED_FEATURES),
     # 2026-10-06: target shape (stops cap the loss at -0.75 ATR; gains run to the clip)
-    "morning_clip400": RankerConfig(clip_bps=400.0, exclude=MORNING + FT.CORP_FEATURES),
-    "morning_rank": RankerConfig(target_kind="rank", exclude=MORNING + FT.CORP_FEATURES),
+    "morning_clip400": RankerConfig(clip_bps=400.0, exclude=MORNING + FT.UNVALIDATED_FEATURES),
+    "morning_rank": RankerConfig(target_kind="rank", exclude=MORNING + FT.UNVALIDATED_FEATURES),
+    # 2026-10-30: this morning's Asian opening gaps (Tokyo, Seoul, Taipei, Singapore,
+    # Hong Kong, Shanghai), all known before the 08:15 list
+    "morning_asia": RankerConfig(exclude=MORNING + FT.CORP_FEATURES),
 }
 DEFAULT_RUN = ("morning", "morning_corp")
 BASELINE = "morning"

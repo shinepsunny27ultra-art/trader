@@ -50,6 +50,14 @@ MARKET_SERIES = {
 # Motors, Vedanta and Azure Power ADRs were delisted; MakeMyTrip, Sify and
 # WNS have no NSE listing).
 ADRS = {"INFY": "INFY", "WIT": "WIPRO", "HDB": "HDFCBANK", "IBN": "ICICIBANK", "RDY": "DRREDDY"}
+# Asian markets that open before the 08:15 IST list (Tokyo/Seoul 05:30, Taipei/
+# Singapore 06:30, Shanghai/Hong Kong 07:00): this morning's opening gap is known
+# at 08:15.  Yahoo's daily bars carry the exchange-local date, so the bar dated t
+# is the session that opened on the morning of NSE session t.  (Sydney ^AXJO is
+# left out: its Yahoo "open" equals the previous close on 68% of days.)
+ASIA_OPEN = {"^N225": "n225", "^KS11": "kospi", "^TWII": "twii", "^STI": "sti",
+             "^HSI": "hsi", "000001.SS": "shcomp"}
+ASIA_OPEN_FEATURES = tuple(f"{k}_open0" for k in ASIA_OPEN.values()) + ("asia_open0",)
 META_COLUMNS = ["turn_rank", "spread_bps", "val20_cr", "sector"]
 TARGETS = ["short_bps", "long_bps", "intra_bps"]
 # Corporate-event (catalyst) features from nse_corp, plus the gap's size against
@@ -60,7 +68,7 @@ CORP_FEATURES = tuple(nse_corp.FEATURES) + ("gap1_z",)
 # Features that are built but kept OUT of the live models until a walk-forward
 # A/B (scripts/compare_rankers.py, paired t >= 3 after Holm) shows they help.
 # pipeline.weekly() excludes these; empty the tuple to adopt them.
-UNVALIDATED_FEATURES: tuple[str, ...] = CORP_FEATURES
+UNVALIDATED_FEATURES: tuple[str, ...] = CORP_FEATURES + ASIA_OPEN_FEATURES
 
 
 @dataclass
@@ -136,7 +144,7 @@ def load_inputs(start: date, end: date) -> Inputs:
     return Inputs(
         bhav=nse_bhav.load(start, end, series=("EQ", "BE")),
         fo=nse_fo.load(start, end),
-        series=load_series(list(MARKET_SERIES) + list(ADRS)),
+        series=load_series(sorted(set(MARKET_SERIES) | set(ADRS) | set(ASIA_OPEN))),
         participant=load_participant(),
         sectors=sectors,
         extra=nse_extra.load(start, end),
@@ -393,6 +401,19 @@ def build(inputs: Inputs, *, universe: int = 400, live_session: date | None = No
             mkt[f"{key}_r20"] = prior_value(cl / cl.shift(20) - 1, sessions)
         if key in ("ivix", "usvix"):
             mkt[f"{key}_lvl"] = prior_value(cl, sessions)
+    # This morning's Asian opening gaps: the bar dated *t* itself (exact date, NaN
+    # if that market is shut), not prior_value — the open is before 08:15 IST.
+    opens = []
+    for sym, key in ASIA_OPEN.items():
+        if sym not in ser:
+            continue
+        s = ser[sym]
+        g = (s["open"] / s["close"].shift(1) - 1).replace([np.inf, -np.inf], np.nan)
+        g.index = pd.Index(g.index)
+        mkt[f"{key}_open0"] = g.reindex(sessions).to_numpy()
+        opens.append(mkt[f"{key}_open0"])
+    if opens:
+        mkt["asia_open0"] = pd.concat(opens, axis=1).mean(axis=1)          # skips markets that are shut
     adr = pd.DataFrame(np.nan, index=sessions, columns=symbols)
     for a, nse in ADRS.items():
         if a in ser and nse in adr.columns and "spx_r1" in mkt:

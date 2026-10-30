@@ -250,3 +250,23 @@ def test_etf_symbols_reads_nse_security_names(tmp_path):
     assert etfs == {"LIQUID1", "NETF"}
     assert nse_bands.is_etf("ITBEES.NS", etfs)                # by symbol shape
     assert not nse_bands.is_etf("FIRSTCRY", etfs)             # "BRAINBEES" is a company
+
+
+def test_asian_opening_gaps_use_the_same_date_bar_only():
+    # The bar dated t opened before 08:15 IST on NSE session t; a market that is
+    # shut on t gives NaN (never the next day's open).
+    bhav = _bhav()
+    sessions = sorted(bhav["session"].unique())
+    t = sessions[70]
+    idx = pd.Index(sessions)
+    close = pd.Series(100.0 + np.arange(len(idx)), index=idx)
+    n225 = pd.DataFrame({"open": close.shift(1) * 1.01, "high": close, "low": close, "close": close,
+                         "volume": 1.0}, index=idx)
+    hsi = n225.drop(index=t)                                   # Hong Kong shut on t
+    inputs = FT.Inputs(bhav=bhav, fo=pd.DataFrame(), series={"^N225": n225, "^HSI": hsi},
+                       participant=pd.DataFrame())
+    row = FT.build(inputs, universe=10, min_price=1.0).xs(t, level="session").iloc[0]
+    assert row["n225_open0"] == pytest.approx(0.01, rel=1e-4)
+    assert np.isnan(row["hsi_open0"])
+    assert row["asia_open0"] == pytest.approx(0.01, rel=1e-4)
+    assert set(FT.ASIA_OPEN_FEATURES) <= set(FT.UNVALIDATED_FEATURES)   # gated until an A/B passes
