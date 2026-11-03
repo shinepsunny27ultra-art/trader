@@ -1,0 +1,112 @@
+{
+ "market_features": 95,
+ "sessions": 2558,
+ "dev": {
+  "sessions": 1644,
+  "corr_book_vs_market": -0.692,
+  "ridge_corr_pred_vs_market": 0.104,
+  "ridge_direction_hit_pct": 57.8,
+  "ridge_by_prediction_tercile": {
+   "predicted down": {
+    "market": -42.599998474121094,
+    "book": 81.1,
+    "days": 548
+   },
+   "middle": {
+    "market": -28.399999618530273,
+    "book": 66.8,
+    "days": 548
+   },
+   "predicted up": {
+    "market": -10.699999809265137,
+    "book": 46.6,
+    "days": 548
+   }
+  },
+  "ridge_overlay": {
+   "base_mean": 64.8,
+   "sized_mean": 70.6,
+   "base_sharpe": 6.07,
+   "sized_sharpe": 6.08
+  },
+  "hgb_corr_pred_vs_market": 0.113,
+  "hgb_direction_hit_pct": 60.4,
+  "hgb_by_prediction_tercile": {
+   "predicted down": {
+    "market": -40.20000076293945,
+    "book": 81.9,
+    "days": 548
+   },
+   "middle": {
+    "market": -27.399999618530273,
+    "book": 62.0,
+    "days": 548
+   },
+   "predicted up": {
+    "market": -14.100000381469727,
+    "book": 50.5,
+    "days": 548
+   }
+  },
+  "hgb_overlay": {
+   "base_mean": 64.8,
+   "sized_mean": 70.0,
+   "base_sharpe": 6.07,
+   "sized_sharpe": 6.13
+  }
+ },
+ "hold": {
+  "sessions": 285,
+  "corr_book_vs_market": -0.585,
+  "ridge_corr_pred_vs_market": 0.098,
+  "ridge_direction_hit_pct": 56.8,
+  "ridge_by_prediction_tercile": {
+   "predicted down": {
+    "market": -29.0,
+    "book": 74.3,
+    "days": 95
+   },
+   "middle": {
+    "market": -21.799999237060547,
+    "book": 38.6,
+    "days": 95
+   },
+   "predicted up": {
+    "market": -10.399999618530273,
+    "book": 30.8,
+    "days": 95
+   }
+  },
+  "ridge_overlay": {
+   "base_mean": 47.9,
+   "sized_mean": 55.2,
+   "base_sharpe": 5.29,
+   "sized_sharpe": 5.46
+  },
+  "hgb_corr_pred_vs_market": 0.146,
+  "hgb_direction_hit_pct": 61.1,
+  "hgb_by_prediction_tercile": {
+   "predicted down": {
+    "market": -33.599998474121094,
+    "book": 66.1,
+    "days": 95
+   },
+   "middle": {
+    "market": -20.799999237060547,
+    "book": 55.0,
+    "days": 95
+   },
+   "predicted up": {
+    "market": -6.900000095367432,
+    "book": 22.7,
+    "days": 95
+   }
+  },
+  "hgb_overlay": {
+   "base_mean": 47.9,
+   "sized_mean": 55.1,
+   "base_sharpe": 5.29,
+   "sized_sharpe": 5.41
+  }
+ }
+}

@@ -14,6 +14,47 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-11-03 — five losing days, and a market-outlook size signal
+
+**What happened.** 2026-10-27 → 11-02: −₹48,576 in five sessions, from a +₹83,448 peak to
++₹34,871. Four of the five were broad intraday rallies: the median top-300 stock was +96/+27/+85/
++89 bps open→close, with ~70% of stocks up. On 11-02 INOXGREEN rose +15% and five stops were hit.
+The live lists matched the research top-8 exactly (8/8 on 10-28, 10-29, 10-30 and 11-02), so
+nothing is broken. On these days the gap rule lost too. Since the 10-27 retrain took over, the new
+model made −84 bps/trade against −33 for the previous one, on 4 days only (t ≈ −1.2). Over all
+22 live sessions the ranker made +53.5 and the rule +17.0.
+
+**Tested and rejected.** *Rally persistence.* Today's market open→close is unrelated to the
+previous 1/3/5 days (corr −0.06/−0.10). The DEV pattern (worse days after strong rallies)
+reverses in HOLD. *Skipping names with overnight results* (`res_night0`): those picks made
++79 bps/trade, against +62 for the rest. *Skipping names whose gap came with results*
+(`res_in_gap1`): +62.8 vs +62.3. Skipping either costs −0.5 / −1.5 bps/day.
+
+**Adopted: the market outlook** (`market_outlook.py`, `research/gap_book_2026_10/market_direction.py`).
+A small HGB on the 90 market-level inputs known at 08:15 predicts the day's median open→close move
+of the liquid universe. Yearly walk-forward, out of sample: direction right 58–61%, corr 0.10–0.15.
+The book by predicted tercile (down / middle / up):
+
+| period | down | middle | up |
+|---|---|---|---|
+| 2019-01..2025-08 | +82 | +62 | +51 |
+| 2025-09..2026-10 | +66 | +55 | +23 |
+
+With point-in-time cut points, halving the size on predicted-up days (top tercile) gave:
+- *2019-01..2025-08:* +68.0 bps per unit of capital vs +64.8, Sharpe 6.07 → 6.29.
+- *2025-09..2026-10:* +52.9 vs +47.9, Sharpe 5.29 → 5.49.
+
+Total profit falls slightly because about a third of days trade at half size. A 1.5× / 1× / 0.5×
+version adds +3 to +10 bps/day but needs leverage and makes the worst day worse, so it was not adopted.
+
+The signal only changes the size line in the 08:15 message and on the dashboard ("trade 50% today").
+The picks do not change, and the paper book stays at full size so the signal can be judged. It is
+refit with the weekly review, with the rally cut at the 2/3 quantile of its own out-of-sample
+predictions. Fit through 2026-10-27: 90 inputs, out of sample (695 sessions) direction 61.9%,
+corr 0.19, rally cut −17 bps (a usual day drifts lower). The first dry run caught three pre-open
+auction columns that are unknown at 08:15. The open-time family is now excluded, columns that are
+never filled are dropped, and a missing input is tolerated and logged.
+
 ## 2026-10-27 — a −1.1% day, four weeks of live record, and what the record had wrong
 
 **The day.** The ranker's list lost ₹10,772 (−108 bps/slot): OMNI (+5.6% open→close) and

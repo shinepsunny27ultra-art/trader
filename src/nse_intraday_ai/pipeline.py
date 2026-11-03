@@ -244,6 +244,16 @@ def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), 
     rows = rows[rows["was_be_20"].fillna(0) == 0]
     scores = expert_scores(rows, model)
     expert, guard_t = state.guard() if "ranker" in scores else ("rule", None)
+    outlook = None
+    try:                                                      # a size signal, never a pick changer
+        from nse_intraday_ai import market_outlook as MO
+        o = MO.load()
+        outlook = o.predict(rows) if o is not None else None
+        if outlook:
+            log(f"  market outlook: {outlook['predicted_open_to_close_bps']:+.0f} bps open->close "
+                f"({'rally predicted: half size' if outlook['rally_predicted'] else 'full size'})")
+    except Exception as exc:                                  # noqa: BLE001 — optional
+        log(f"  market outlook unavailable ({type(exc).__name__}: {exc})")
     blank = [] if model is None else R.missing_inputs(model, rows[rows["turn_rank"] <= BOOK_UNIVERSE])
     if blank:
         log(f"  WARNING: {len(blank)} model inputs are blank for every candidate: {', '.join(blank[:8])}")
@@ -257,7 +267,9 @@ def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), 
                   {"trained_through": model.trained_through, "n_train": model.n_train,
                    "evidence": model.meta.get("evidence")}),
         "drift_alarm": state.alarm, "cusum": round(state.cusum, 1),
-        "cautious_mode": state.cautious_mode, "size_multiplier": state.position_size_multiplier,
+        "cautious_mode": state.cautious_mode,
+        "size_multiplier": min(state.position_size_multiplier, (outlook or {}).get("size_multiplier", 1.0)),
+        "market_outlook": outlook,
         "learned_through": state.updated_through,
         "candidates": int((rows["turn_rank"] <= BOOK_UNIVERSE).sum()),
         "missing_inputs": blank,
@@ -370,6 +382,14 @@ def weekly(*, eval_years: float = 2.0, min_t: float = 2.0, log=print) -> dict:
             R.promote(directory, evidence, name)
         verdicts[name] = {"promoted": passed, "challenger": directory.name}
         log(f"  {name}: {'PROMOTED' if passed else 'kept previous'} ({directory.name})")
+
+    try:                                                      # the size signal, refit on the same panel
+        from nse_intraday_ai import market_outlook as MO
+        mo = MO.Outlook.fit(panel, exclude=R.DEFAULT_EXCLUDE + FT.OPEN_FEATURES + FT.UNVALIDATED_FEATURES)
+        mo.save()
+        log(f"  market outlook refit through {mo.trained_through}: {mo.oos}, rally cut {mo.rally_cut_bps:+.1f} bps")
+    except Exception as exc:                                  # noqa: BLE001 — never block the review
+        log(f"  market outlook refit failed: {type(exc).__name__}: {exc}")
 
     state = M.MetaState.load()
     # Seed the guard's paired record with the out-of-sample window so a fresh

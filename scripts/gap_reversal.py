@@ -243,6 +243,12 @@ def _list_message(session: date, last, picks: list[G.Pick], info: dict,
     if preliminary:
         lines.insert(0, f"Built {now:%a %H:%M}, before the overnight global closes. The 08:15 run "
                         "refreshes it; if no 08:15 list arrives, trade this one (tested: as good).")
+    outlook = info.get("market_outlook") or {}
+    if outlook.get("rally_predicted"):
+        lines.insert(0, f"📈 Market outlook: stronger than usual after the open (forecast "
+                        f"{outlook.get('predicted_open_to_close_bps', 0):+.0f} bps open→close; flagged above "
+                        f"{outlook.get('rally_cut_bps', 0):+.0f}, a usual day drifts lower). Short books earn less "
+                        "on such days: trade 50% of the quantities shown today.")
     if info.get("drift_alarm") or info.get("cautious_mode"):
         mult = info.get("size_multiplier", 0.6)
         lines.insert(0, f"⚠ DRIFT ALARM / CAUTIOUS MODE: the live book has been running persistently "
