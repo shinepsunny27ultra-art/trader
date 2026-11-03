@@ -347,6 +347,14 @@ def page_today() -> None:
         st.error(f"**Late list — skip today.** It went out at {sent}, after the {G.ENTRY_CUTOFF} pre-open "
                  "cutoff. The tested trade enters at the open; entering now is a different, untested "
                  "trade, and the paper book does not record it.")
+    outlook = payload.get("market_outlook") or {}
+    if session == expected.isoformat() and outlook:
+        msg = (f"**Market outlook:** forecast {outlook.get('predicted_open_to_close_bps', 0):+.0f} bps open→close "
+               f"for the liquid universe (flagged above {outlook.get('rally_cut_bps', 0):+.0f}; a usual day drifts lower)")
+        if outlook.get("rally_predicted"):
+            st.warning(msg + " — **stronger than usual: trade 50% of the quantities today.**")
+        else:
+            st.caption(msg + " — no rally signal: full size.")
     if payload.get("drift_alarm") or state.get("alarm"):
         st.error(f"**Drift alarm.** Live results have run persistently below the backtest "
                  f"(CUSUM {state.get('cusum', payload.get('cusum', 0)):.0f} / "

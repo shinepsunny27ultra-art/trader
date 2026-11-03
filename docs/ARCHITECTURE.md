@@ -66,6 +66,7 @@ flowchart LR
 | `meta` | `MetaState`: a paired per-expert daily record (*guard*: trade the ranker unless it is worse than the rule at t < −2 over 60 sessions), a CUSUM drift alarm with cautious mode, and diagnostic Hedge weights. |
 | `pipeline` | `morning()` (08:15 list), `open_rerank()` (09:10:30, archives the auction and re-ranks if an open model is promoted), `learn_through()`/`learn_from()` (grade every unlearned session) and `weekly()` (retrain, walk-forward, promote on evidence). |
 | `gap_reversal` | The book itself: `GapReversalConfig`, `Pick`, tick-size and entry-limit rules, the rule ranker, daily and 5-minute simulators, the picks file, and the paper record. It also holds the Yahoo fallback path. |
+| `market_outlook` | Size signal. A small HGB on the market-level inputs known at 08:15 predicts the day's open→close move of the liquid universe. Predicted-rally days (above the 2/3 quantile of its out-of-sample predictions) get "trade 50% today" in the 08:15 message and on the dashboard. It is refit in `weekly()` and never changes the picks. |
 | `costs` | Groww/NSE MIS round-trip cost model (brokerage, STT, exchange, SEBI, stamp, GST, slippage). |
 | `alerts` | ntfy push (topic from `NTFY_TOPIC` or the git-ignored `data/notify.json`); Telegram is optional. |
 | `atomic_io` | Atomic JSON writes and retrying reads, shared by every state file. |
