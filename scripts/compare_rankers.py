@@ -67,6 +67,10 @@ VARIANTS: dict[str, RankerConfig] = {
     # 2026-10-30: this morning's Asian opening gaps (Tokyo, Seoul, Taipei, Singapore,
     # Hong Kong, Shanghai), all known before the 08:15 list
     "morning_asia": RankerConfig(exclude=MORNING + FT.CORP_FEATURES),
+    # 2026-11-03: the edge decayed from ~+68 (2019-24) to ~+45 bps (2025-26); does weighting
+    # recent sessions more adapt better over the decay period?  (rejected 2019-2025 on DEV)
+    "morning_hl2": RankerConfig(halflife_years=2.0, exclude=MORNING + FT.UNVALIDATED_FEATURES),
+    "morning_hl1": RankerConfig(halflife_years=1.0, exclude=MORNING + FT.UNVALIDATED_FEATURES),
 }
 DEFAULT_RUN = ("morning", "morning_corp")
 BASELINE = "morning"

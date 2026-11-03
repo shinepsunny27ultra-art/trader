@@ -36,6 +36,22 @@ they gave +62.27 vs +62.32 bps/slot (+0.16/day, t 0.10, Holm p 0.46). As a timin
 corr with the Indian open→close was −0.05 (DEV) and +0.18 (HOLD), and the book by Asian-open tercile was
 57/71/67 (DEV) and 77/19/45 (HOLD): no stable direction. They stay built and gated. The trial tally is now 38.
 
+**Strategy audit (2026-11-03).**
+- *Execution.* 128 live paper trades (5-minute path, real stop timing) made +21.1 bps net, against
+  +22.6 from the backtest label for the same trades. A gap of −1.5 bps, so the backtest's fills are faithful.
+- *Costs.* Real spreads come from Roll's measure on 1-minute Yahoo bars, 5 days, 74 recently picked names
+  (`research/gap_book_2026_10/roll_spreads_20261103.csv`). The median is 5 bps over the day and 12 near
+  15:15 (p90 12), close to RELIANCE/HDFCBANK/TCS at 1.5–6. The flat 13 bps round trip (auction entry, no
+  spread) is realistic. The daily Abdi-Ranaldo estimate behind the "spread-based costs" numbers (median 51,
+  mean 63 for the same names) has corr −0.08 with the real spread. It measures volatility, not cost. So the
+  dashboard's "ranker, spread-based costs +15 bps" row and the cost-aware ranking (+24 to +30 bps/day
+  "under spread-based costs", −3 to −4 at flat cost) are artefacts. Cost-aware ranking is rejected.
+- *Selection.* 18–22% of ranker picks had gap1 ≤ 0 in every year from 2019 to 2026. Those picks
+  earn more (+73.9 vs +59.4), so there is no drift from the thesis.
+- *Decay.* The ranker made, by year at 13 bps: 2019 +79, 2020 +69, 2021 +68, 2022 +68, 2023 +55,
+  2024 +66, **2025 +43, 2026 +45**. The live picks earned +23 (16 sessions, below the ~45 expected
+  but within noise). Recency weighting (half-life 1y / 2y) is being re-tested over 2023-01 → 2026-10.
+
 **Six losing days (10-27 → 11-03, −₹60,611) — risk overlays tested, none adopted.**
 These were tested on the walk-forward book, 2019 → 2026-10:
 - *Long-short* (long the bottom-8 by short score): DEV Sharpe 6.07 → 6.70, max DD 11.1% → 5.7%.
