@@ -36,6 +36,21 @@ they gave +62.27 vs +62.32 bps/slot (+0.16/day, t 0.10, Holm p 0.46). As a timin
 corr with the Indian open→close was −0.05 (DEV) and +0.18 (HOLD), and the book by Asian-open tercile was
 57/71/67 (DEV) and 77/19/45 (HOLD): no stable direction. They stay built and gated. The trial tally is now 38.
 
+**Six losing days (10-27 → 11-03, −₹60,611) — risk overlays tested, none adopted.**
+These were tested on the walk-forward book, 2019 → 2026-10:
+- *Long-short* (long the bottom-8 by short score): DEV Sharpe 6.07 → 6.70, max DD 11.1% → 5.7%.
+  In HOLD the long leg lost −4.1 bps and the long-short Sharpe was 4.39 vs 5.29. Not stable.
+- *Size down after a streak or drawdown*: daily returns are uncorrelated (lag-1 −0.01). After
+  ≥3/4/5 losing days the next day made +60/+70/+67 bps. In drawdowns beyond 4% / 6% the next day
+  made +78 / +109. De-risking would have cost money.
+- *Sector cap* 2 / 3 names: DEV −4.3 (t −2.8) / −3.3 (t −3.1) bps/day; HOLD neutral.
+- *Drop the top-10% ATR names*: −17 (t −7.1) / −26 (t −3.8). The edge sits in the volatile names.
+
+Since 10-28, with models that had not seen the day, the live ranker made −75 bps/trade, the
+previous model −42, the gap rule −18 and 8 random shorts −34. The regime has been hostile to any
+short book, and selection was worse than random on 5 days (t ≈ −0.9). The weekly retrain promoted
+`ranker_2026-11-02` (+46.9 vs rule +29.1, paired t 3.22). The trial tally is now 43.
+
 **Adopted: the market outlook** (`market_outlook.py`, `research/gap_book_2026_10/market_direction.py`).
 A small HGB on the 90 market-level inputs known at 08:15 predicts the day's median open→close move
 of the liquid universe. Yearly walk-forward, out of sample: direction right 58–61%, corr 0.10–0.15.
