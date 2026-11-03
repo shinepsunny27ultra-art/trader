@@ -30,6 +30,12 @@ reverses in HOLD. *Skipping names with overnight results* (`res_night0`): those 
 +79 bps/trade, against +62 for the rest. *Skipping names whose gap came with results*
 (`res_in_gap1`): +62.8 vs +62.3. Skipping either costs −0.5 / −1.5 bps/day.
 
+**Rejected: this morning's Asian opening gaps** (`{n225,kospi,twii,sti,hsi,shcomp}_open0`, `asia_open0`;
+Tokyo through Shanghai open before 08:15). In the ranker (`compare_rankers.py morning_asia`, 2019 → 2026-11)
+they gave +62.27 vs +62.32 bps/slot (+0.16/day, t 0.10, Holm p 0.46). As a timing signal (`asia_timing.py`),
+corr with the Indian open→close was −0.05 (DEV) and +0.18 (HOLD), and the book by Asian-open tercile was
+57/71/67 (DEV) and 77/19/45 (HOLD): no stable direction. They stay built and gated. The trial tally is now 38.
+
 **Adopted: the market outlook** (`market_outlook.py`, `research/gap_book_2026_10/market_direction.py`).
 A small HGB on the 90 market-level inputs known at 08:15 predicts the day's median open→close move
 of the liquid universe. Yearly walk-forward, out of sample: direction right 58–61%, corr 0.10–0.15.
