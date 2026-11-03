@@ -71,6 +71,8 @@ VARIANTS: dict[str, RankerConfig] = {
     # recent sessions more adapt better over the decay period?  (rejected 2019-2025 on DEV)
     "morning_hl2": RankerConfig(halflife_years=2.0, exclude=MORNING + FT.UNVALIDATED_FEATURES),
     "morning_hl1": RankerConfig(halflife_years=1.0, exclude=MORNING + FT.UNVALIDATED_FEATURES),
+    # 2026-11-03: 60-session market betas (intraday, overnight, daily)
+    "morning_beta": RankerConfig(exclude=MORNING + FT.CORP_FEATURES + FT.ASIA_OPEN_FEATURES),
 }
 DEFAULT_RUN = ("morning", "morning_corp")
 BASELINE = "morning"
