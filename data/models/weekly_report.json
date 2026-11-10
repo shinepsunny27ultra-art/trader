@@ -1,92 +1,92 @@
 {
-  "at": "2026-11-03T08:30:53",
+  "at": "2026-11-10T06:01:14",
   "verdicts": {
     "ranker": {
       "promoted": true,
-      "challenger": "ranker_2026-11-02"
+      "challenger": "ranker_2026-11-09"
     },
     "ranker_open": {
       "promoted": false,
-      "challenger": "ranker_open_2026-11-02"
+      "challenger": "ranker_open_2026-11-09"
     }
   },
   "promoted": true,
-  "challenger": "ranker_2026-11-02",
+  "challenger": "ranker_2026-11-09",
   "window": [
-    "2024-11-02",
-    "2026-11-02"
+    "2024-11-09",
+    "2026-11-09"
   ],
   "preopen_archive_sessions": 1,
   "rule": {
     "sessions": 492,
-    "first": "2024-11-04",
-    "last": "2026-11-02",
-    "net_bps_per_trade": 29.15,
-    "t_stat": 5.19,
-    "sharpe": 3.7,
+    "first": "2024-11-11",
+    "last": "2026-11-09",
+    "net_bps_per_trade": 29.24,
+    "t_stat": 5.22,
+    "sharpe": 3.72,
     "up_day_pct": 56.5,
     "max_drawdown_pct": 6.8,
     "by_year": {
-      "2024": 13.7,
+      "2024": 13.3,
       "2025": 31.4,
       "2026": 29.3
     }
   },
   "ranker": {
     "sessions": 492,
-    "first": "2024-11-04",
-    "last": "2026-11-02",
-    "net_bps_per_trade": 46.93,
-    "t_stat": 6.95,
-    "sharpe": 4.95,
+    "first": "2024-11-11",
+    "last": "2026-11-09",
+    "net_bps_per_trade": 46.51,
+    "t_stat": 6.84,
+    "sharpe": 4.88,
     "up_day_pct": 60.0,
     "max_drawdown_pct": 11.08,
     "by_year": {
-      "2024": 66.8,
+      "2024": 69.1,
       "2025": 42.9,
-      "2026": 48.0
+      "2026": 47.1
     }
   },
   "ranker_open": {
     "sessions": 492,
-    "first": "2024-11-04",
-    "last": "2026-11-02",
-    "net_bps_per_trade": 45.11,
-    "t_stat": 6.95,
-    "sharpe": 4.96,
+    "first": "2024-11-11",
+    "last": "2026-11-09",
+    "net_bps_per_trade": 43.78,
+    "t_stat": 6.73,
+    "sharpe": 4.8,
     "up_day_pct": 60.4,
     "max_drawdown_pct": 7.55,
     "by_year": {
-      "2024": 85.1,
+      "2024": 74.2,
       "2025": 47.1,
-      "2026": 35.1
+      "2026": 35.0
     }
   },
   "vs_rule": {
-    "mean_diff_bps": 17.78,
-    "t_stat": 3.22,
+    "mean_diff_bps": 17.26,
+    "t_stat": 3.08,
     "sessions": 492,
-    "a_better_pct": 54.9
+    "a_better_pct": 54.7
   },
   "open_vs_ranker": {
-    "mean_diff_bps": -1.82,
-    "t_stat": -0.44,
+    "mean_diff_bps": -2.73,
+    "t_stat": -0.66,
     "sessions": 492,
-    "a_better_pct": 51.4
+    "a_better_pct": 51.6
   },
   "ranker_liquidity_cost": {
     "sessions": 492,
-    "first": "2024-11-04",
-    "last": "2026-11-02",
-    "net_bps_per_trade": 16.41,
-    "t_stat": 2.4,
-    "sharpe": 1.71,
+    "first": "2024-11-11",
+    "last": "2026-11-09",
+    "net_bps_per_trade": 16.03,
+    "t_stat": 2.34,
+    "sharpe": 1.66,
     "up_day_pct": 50.6,
     "max_drawdown_pct": 15.42,
     "by_year": {
-      "2024": 38.9,
+      "2024": 46.4,
       "2025": 12.0,
-      "2026": 17.4
+      "2026": 15.8
     }
   }
 }
