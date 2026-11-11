@@ -988,3 +988,31 @@ session,strategy,symbol,side,bar,entry,stop,target,reason,time,status,exit,exit_
 2026-10-26,vol_breakout,CENTRALBK,1,63,29.14,28.81,29.76,new session high on 1.5x volume,14:30,CLOSED,29.12,72,-6.9,-20.2
 2026-10-26,vol_breakout,ATHERENERG,1,66,1518.0,1493.23,1564.44,new session high on 2.0x volume,14:45,TARGET,1587.0,67,454.5,441.2
 2026-10-26,vol_breakout,AEGISVOPAK,-1,66,238.35,242.64,230.3,new session low on 1.6x volume,14:45,CLOSED,238.4,72,-2.1,-15.4
+2026-10-27,gap_fade,DALBHARAT,1,1,1569.1,1542.18,1625.8,gap -1.7 ATR,09:20,STOP,1542.18,9,-171.6,-184.9
+2026-10-27,gap_fade,TATACONSUM,-1,1,964.85,975.66,936.5,gap +1.1 ATR,09:20,STOP,975.66,1,-112.0,-125.3
+2026-10-27,gap_fade,SONACOMS,-1,1,830.75,843.07,781.9,gap +1.1 ATR,09:20,STOP,843.07,15,-148.3,-161.6
+2026-10-27,vol_breakout,SONACOMS,1,12,839.9,830.05,858.38,⭐ high-conviction new session high on 16.2x volume,10:15,TARGET,858.38,20,220.0,206.7
+2026-10-27,vol_breakout,AAVAS,-1,13,1126.5,1143.04,1095.49,⭐ high-conviction new session low on 8.2x volume,10:20,STOP,1143.04,57,-146.8,-160.1
+2026-10-27,vol_breakout,RECLTD,-1,13,284.2,287.26,278.47,⭐ high-conviction new session low on 4.5x volume,10:20,STOP,287.26,30,-107.7,-121.0
+2026-10-27,vol_breakout,NHPC,1,14,73.08,72.42,74.32,⭐ high-conviction new session high on 4.0x volume,10:25,STOP,72.42,22,-90.3,-103.6
+2026-10-27,vol_breakout,ONESOURCE,1,16,1510.7,1489.3,1550.82,⭐ high-conviction new session high on 17.7x volume,10:35,STOP,1489.3,17,-141.7,-155.0
+2026-10-27,vol_breakout,ATHERENERG,1,18,1672.2,1640.52,1731.6,⭐ high-conviction new session high on 5.8x volume,10:45,CLOSED,1669.8,72,-14.4,-27.7
+2026-10-27,vol_breakout,FIVESTAR,-1,19,413.45,419.97,401.23,⭐ high-conviction new session low on 4.0x volume,10:50,STOP,419.97,27,-157.7,-171.0
+2026-10-27,vol_breakout,JINDALSAW,1,19,249.15,243.22,260.27,⭐ high-conviction new session high on 4.0x volume,10:50,STOP,243.22,45,-238.0,-251.3
+2026-10-27,vol_breakout,UNITDSPR,1,22,1255.8,1242.11,1281.47,⭐ high-conviction new session high on 7.2x volume,11:05,TARGET,1281.47,42,204.4,191.1
+2026-10-27,vol_breakout,ACUTAAS,1,23,3476.5,3426.47,3570.31,new session high on 2.7x volume,11:10,TARGET,3570.31,42,269.8,256.5
+2026-10-27,vol_breakout,KAJARIACER,1,24,1151.1,1137.13,1177.29,⭐ high-conviction new session high on 5.2x volume,11:15,STOP,1137.13,60,-121.4,-134.7
+2026-10-27,vol_breakout,GRSE,1,27,1977.7,1948.15,2033.11,new session high on 2.2x volume,11:30,STOP,1948.15,57,-149.4,-162.7
+2026-10-27,vol_breakout,MAZDOCK,1,27,1929.5,1904.54,1976.3,new session high on 1.9x volume,11:30,STOP,1904.54,57,-129.4,-142.7
+2026-10-27,vol_breakout,PIIND,1,28,2037.2,2012.21,2084.06,new session high on 1.8x volume,11:35,TARGET,2084.06,56,230.0,216.7
+2026-10-27,vol_breakout,NAVINFLUOR,1,28,8007.5,7917.16,8176.89,new session high on 1.8x volume,11:35,TARGET,8176.89,55,211.5,198.2
+2026-10-27,vol_breakout,CIPLA,-1,29,1342.5,1353.04,1322.74,new session low on 2.5x volume,11:40,STOP,1353.04,29,-78.5,-91.8
+2026-10-27,vol_breakout,GODFRYPHLP,1,29,1721.0,1699.21,1761.85,new session high on 1.9x volume,11:40,STOP,1699.21,57,-126.6,-139.9
+2026-10-27,vol_breakout,BEML,1,30,1935.3,1905.37,1991.41,new session high on 2.0x volume,11:45,TARGET,1992.5,42,295.6,282.3
+2026-10-27,vol_breakout,MRPL,1,30,188.55,184.78,195.61,new session high on 1.8x volume,11:45,CLOSED,189.34,72,41.9,28.6
+2026-10-27,vol_breakout,IGIL,1,32,406.2,400.59,416.72,⭐ high-conviction new session high on 3.6x volume,11:55,TARGET,416.72,42,259.0,245.7
+2026-10-27,vol_breakout,PGEL,1,33,506.35,498.92,520.28,new session high on 1.9x volume,12:00,STOP,498.92,60,-146.7,-160.0
+2026-10-27,vol_breakout,DATAPATTNS,1,34,4085.6,4035.76,4179.04,⭐ high-conviction new session high on 6.1x volume,12:05,STOP,4035.76,56,-122.0,-135.3
+2026-10-27,vol_breakout,APARINDS,1,36,15450.0,15165.06,15984.27,new session high on 1.7x volume,12:15,STOP,15165.06,54,-184.4,-197.7
+2026-10-27,vol_breakout,NTPC,1,39,305.9,303.13,311.09,new session high on 1.6x volume,12:30,STOP,303.13,56,-90.6,-103.9
+2026-10-27,vol_breakout,BOSCHLTD,1,42,45480.0,45088.29,46214.46,new session high on 1.9x volume,12:45,STOP,45088.29,57,-86.1,-99.4
