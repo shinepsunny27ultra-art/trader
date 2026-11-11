@@ -1,6 +1,6 @@
 {
   "session": "2026-11-11",
-  "generated_at": "2026-11-11T15:35:05+05:30",
+  "generated_at": "2026-11-11T15:40:05+05:30",
   "nbar": 75,
   "last_bar": "15:25",
   "breadth": {
@@ -1657,6 +1657,34 @@
   ],
   "circuit_watch": [],
   "announcements": [
+    {
+      "time": "15:36",
+      "symbol": "PNB",
+      "category": "Analysts/Institutional Investor Meet/Con. Call Updates",
+      "text": "Punjab National Bank has informed the Exchange about Schedule of meet",
+      "move_since_pct": null
+    },
+    {
+      "time": "15:36",
+      "symbol": "PNB",
+      "category": "Analysts/Institutional Investor Meet/Con. Call Updates",
+      "text": "Punjab National Bank has informed the Exchange about Schedule of meet",
+      "move_since_pct": null
+    },
+    {
+      "time": "15:36",
+      "symbol": "GRSE",
+      "category": "Integrated Filing- Financial",
+      "text": "Unaudited Financial Results along with the Limited Review Report for the Quarter and Half Year Ended 30th September, 2026.",
+      "move_since_pct": null
+    },
+    {
+      "time": "15:36",
+      "symbol": "MINDACORP",
+      "category": "Analysts/Institutional Investor Meet/Con. Call Updates",
+      "text": "Minda Corporation Limited has informed the Exchange about Transcript",
+      "move_since_pct": null
+    },
     {
       "time": "15:33",
       "symbol": "HAL",
