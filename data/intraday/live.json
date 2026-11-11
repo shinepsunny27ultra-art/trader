@@ -1,12 +1,12 @@
 {
   "session": "2026-11-11",
-  "generated_at": "2026-11-11T15:40:05+05:30",
+  "generated_at": "2026-11-11T15:45:02+05:30",
   "nbar": 75,
   "last_bar": "15:25",
   "breadth": {
-    "advancing": 334,
+    "advancing": 333,
     "declining": 157,
-    "unchanged": 2,
+    "unchanged": 3,
     "symbols": 493,
     "median_chg_pct": 0.62
   },
@@ -1658,6 +1658,13 @@
   "circuit_watch": [],
   "announcements": [
     {
+      "time": "15:41",
+      "symbol": "M&MFIN",
+      "category": "Issue of Securities",
+      "text": "Mahindra & Mahindra Financial Services Limited has informed the Exchange about issue of Non- Convertible Debentures on Private Placement basis.",
+      "move_since_pct": null
+    },
+    {
       "time": "15:36",
       "symbol": "PNB",
       "category": "Analysts/Institutional Investor Meet/Con. Call Updates",
@@ -1984,7 +1991,7 @@
       "symbol": "TATAPOWER",
       "category": "Analysts/Institutional Investor Meet/Con. Call Updates",
       "text": "Tata Power Company Limited has informed the Exchange about Schedule of meet",
-      "move_since_pct": null
+      "move_since_pct": -0.95
     },
     {
       "time": "09:51",
@@ -4372,7 +4379,7 @@
       "sector": "Power",
       "stocks": 19,
       "median_chg_pct": 1.05,
-      "advancing": 13,
+      "advancing": 12,
       "declining": 6,
       "median_rel_volume": 1.12,
       "leader": "SJVN +3.4%",
@@ -4441,7 +4448,7 @@
     {
       "sector": "Fast Moving Consumer Goods",
       "stocks": 28,
-      "median_chg_pct": 0.55,
+      "median_chg_pct": 0.6,
       "advancing": 19,
       "declining": 9,
       "median_rel_volume": 1.21,
@@ -4451,7 +4458,7 @@
     {
       "sector": "Metals & Mining",
       "stocks": 20,
-      "median_chg_pct": 0.5,
+      "median_chg_pct": 0.52,
       "advancing": 16,
       "declining": 3,
       "median_rel_volume": 1.0,
@@ -4682,7 +4689,7 @@
       333,
       336,
       337,
-      334
+      333
     ],
     "dec": [
       60,
