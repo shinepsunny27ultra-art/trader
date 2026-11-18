@@ -1,6 +1,6 @@
 {
   "session": "2026-11-18",
-  "generated_at": "2026-11-18T15:30:00+05:30",
+  "generated_at": "2026-11-18T15:45:48+05:30",
   "nbar": 75,
   "last_bar": "15:25",
   "breadth": {
@@ -8,7 +8,7 @@
     "declining": 369,
     "unchanged": 1,
     "symbols": 493,
-    "median_chg_pct": -0.96
+    "median_chg_pct": -0.95
   },
   "in_play": [
     {
@@ -2797,6 +2797,16 @@
       "laggard": "PIIND -2.9%"
     },
     {
+      "sector": "Information Technology",
+      "stocks": 25,
+      "median_chg_pct": -0.89,
+      "advancing": 5,
+      "declining": 20,
+      "median_rel_volume": 0.33,
+      "leader": "SAGILITY +2.9%",
+      "laggard": "LTTS -2.6%"
+    },
+    {
       "sector": "Textiles",
       "stocks": 5,
       "median_chg_pct": -0.89,
@@ -2805,16 +2815,6 @@
       "median_rel_volume": null,
       "leader": "VTL +0.1%",
       "laggard": "WELSPUNLIV -3.2%"
-    },
-    {
-      "sector": "Information Technology",
-      "stocks": 25,
-      "median_chg_pct": -0.91,
-      "advancing": 5,
-      "declining": 20,
-      "median_rel_volume": 0.33,
-      "leader": "SAGILITY +2.9%",
-      "laggard": "LTTS -2.6%"
     },
     {
       "sector": "Consumer Services",
@@ -2869,7 +2869,7 @@
     {
       "sector": "Consumer Durables",
       "stocks": 16,
-      "median_chg_pct": -1.51,
+      "median_chg_pct": -1.49,
       "advancing": 3,
       "declining": 13,
       "median_rel_volume": 0.63,
