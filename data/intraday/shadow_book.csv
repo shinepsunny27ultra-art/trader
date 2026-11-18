@@ -1206,3 +1206,14 @@ session,strategy,symbol,side,bar,entry,stop,target,reason,time,status,exit,exit_
 2026-11-12,gap_fade,NAVINFLUOR,-1,1,9840.5,10005.05,9115.0,gap +1.9 ATR,09:20,STOP,10005.05,71,-167.2,-180.5
 2026-11-12,gap_fade,COCHINSHIP,1,1,1210.6,1186.64,1290.0,gap -1.8 ATR,09:20,CLOSED,1193.5,72,-141.3,-154.6
 2026-11-12,gap_fade,RKFORGE,-1,1,781.85,800.18,713.4,gap +1.8 ATR,09:20,CLOSED,786.1,72,-54.4,-67.7
+2026-11-18,vol_breakout,SBIN,1,59,1120.75,1110.61,1139.75,new session high on 1.5x volume,14:10,TARGET,1139.75,65,169.5,156.2
+2026-11-18,vol_breakout,VAML,-1,55,370.8,376.54,360.04,new session low on 1.5x volume,13:50,CLOSED,374.55,72,-101.1,-114.4
+2026-11-18,orb60,PWL,-1,29,128.22,134.73,,first-hour volume 3.2x normal,11:40,CLOSED,127.83,72,30.4,17.1
+2026-11-18,vol_breakout,PWL,-1,29,128.22,130.31,124.3,new session low on 2.5x volume,11:40,CLOSED,127.83,72,30.4,17.1
+2026-11-18,vol_breakout,TVSMOTOR,-1,19,4392.0,4440.19,4301.65,new session low on 1.8x volume,10:50,CLOSED,4370.0,72,50.1,36.8
+2026-11-18,orb60,KAYNES,1,16,2929.0,2858.2,,first-hour volume 4.8x normal,10:35,CLOSED,2882.0,72,-160.5,-173.8
+2026-11-18,vol_breakout,KAYNES,1,16,2929.0,2868.1,3043.18,⭐ high-conviction new session high on 4.6x volume,10:35,CLOSED,2882.0,72,-160.5,-173.8
+2026-11-18,vol_breakout,ADANIENSOL,-1,14,1494.2,1512.07,1460.7,⭐ high-conviction new session low on 3.4x volume,10:25,TARGET,1460.7,46,224.2,210.9
+2026-11-18,vol_breakout,TMPV,-1,13,255.6,259.3,248.67,new session low on 1.6x volume,10:20,CLOSED,253.0,72,101.7,88.4
+2026-11-18,vol_breakout,LICI,-1,12,396.2,400.08,388.93,new session low on 1.6x volume,10:15,STOP,400.08,67,-97.9,-111.2
+2026-11-18,gap_fade,SWANCORP,-1,1,239.0,243.68,230.23,gap +1.5 ATR,09:20,TARGET,230.23,3,366.9,353.6
