@@ -1,7 +1,7 @@
 {
   "session": "2026-11-19",
-  "generated_at": "2026-11-19T08:13:22+05:30",
-  "publisher": "github-actions",
+  "generated_at": "2026-11-18T11:55:47+05:30",
+  "publisher": "laptop",
   "config": {
     "universe_size": 300,
     "picks": 8,
@@ -31,8 +31,8 @@
       "position_value": 124895.63,
       "turnover_cr": 114.14,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 167.55,
+      "stop_price": 177.37,
       "score": 0.029595,
       "ranked_by": "rule",
       "limit_price": 163.54,
@@ -50,8 +50,8 @@
       "position_value": 124446.61,
       "turnover_cr": 377.62,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 669.1,
+      "stop_price": 699.05,
       "score": 0.022942,
       "ranked_by": "rule",
       "limit_price": 657.0,
@@ -69,8 +69,8 @@
       "position_value": 124491.02,
       "turnover_cr": 106.78,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 1218.9,
+      "stop_price": 1269.89,
       "score": 0.021595,
       "ranked_by": "rule",
       "limit_price": 1211.4,
@@ -88,8 +88,8 @@
       "position_value": 124366.71,
       "turnover_cr": 239.09,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 2655.8,
+      "stop_price": 2728.17,
       "score": 0.018274,
       "ranked_by": "rule",
       "limit_price": 2626.3,
@@ -107,8 +107,8 @@
       "position_value": 123546.02,
       "turnover_cr": 624.59,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 4142.0,
+      "stop_price": 4277.28,
       "score": 0.017417,
       "ranked_by": "rule",
       "limit_price": 4087.4,
@@ -126,8 +126,8 @@
       "position_value": 123900.02,
       "turnover_cr": 255.41,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 1467.1,
+      "stop_price": 1514.9,
       "score": 0.012414,
       "ranked_by": "rule",
       "limit_price": 1464.0,
@@ -145,8 +145,8 @@
       "position_value": 124300.82,
       "turnover_cr": 111.76,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 1500.0,
+      "stop_price": 1566.47,
       "score": 0.01004,
       "ranked_by": "rule",
       "limit_price": 1486.4,
@@ -164,8 +164,8 @@
       "position_value": 123493.98,
       "turnover_cr": 434.8,
       "reserve": false,
-      "entry": null,
-      "stop_price": null,
+      "entry": 8776.5,
+      "stop_price": 8924.94,
       "score": 0.009928,
       "ranked_by": "rule",
       "limit_price": 8755.0,
@@ -183,8 +183,8 @@
       "position_value": 124832.71,
       "turnover_cr": 345.91,
       "reserve": true,
-      "entry": null,
-      "stop_price": null,
+      "entry": 337.95,
+      "stop_price": 349.38,
       "score": 0.009863,
       "ranked_by": "rule",
       "limit_price": 335.8,
@@ -202,8 +202,8 @@
       "position_value": 124914.72,
       "turnover_cr": 127.89,
       "reserve": true,
-      "entry": null,
-      "stop_price": null,
+      "entry": 275.0,
+      "stop_price": 287.31,
       "score": 0.009498,
       "ranked_by": "rule",
       "limit_price": 273.7,
@@ -221,8 +221,8 @@
       "position_value": 124836.12,
       "turnover_cr": 145.38,
       "reserve": true,
-      "entry": null,
-      "stop_price": null,
+      "entry": 502.0,
+      "stop_price": 519.82,
       "score": 0.008866,
       "ranked_by": "rule",
       "limit_price": 497.6,
@@ -240,31 +240,125 @@
       "position_value": 124746.61,
       "turnover_cr": 332.12,
       "reserve": true,
-      "entry": null,
-      "stop_price": null,
+      "entry": 253.94,
+      "stop_price": 260.83,
       "score": 0.008273,
       "ranked_by": "rule",
       "limit_price": 251.65,
       "stop_pct": 2.717
     }
   ],
-  "based_on": "2026-11-18",
+  "based_on": "2026-11-17",
   "source": "nse",
-  "ranked_by": "rule",
-  "guard_t": null,
+  "ranked_by": "ranker",
+  "guard_t": 0.8,
   "weights": {
-    "rule": 1.0
+    "rule": 0.4129358946671076,
+    "ranker": 0.5870641053328924
   },
   "experts": [
-    "rule"
+    "rule",
+    "ranker"
   ],
-  "model": null,
+  "model": {
+    "trained_through": "2026-11-16",
+    "n_train": 948385,
+    "evidence": {
+      "window": [
+        "2024-11-16",
+        "2026-11-16"
+      ],
+      "preopen_archive_sessions": 1,
+      "rule": {
+        "sessions": 492,
+        "first": "2024-11-18",
+        "last": "2026-11-16",
+        "net_bps_per_trade": 28.45,
+        "t_stat": 5.08,
+        "sharpe": 3.62,
+        "up_day_pct": 56.3,
+        "max_drawdown_pct": 6.8,
+        "by_year": {
+          "2024": 2.9,
+          "2025": 31.4,
+          "2026": 28.6
+        }
+      },
+      "ranker": {
+        "sessions": 492,
+        "first": "2024-11-18",
+        "last": "2026-11-16",
+        "net_bps_per_trade": 46.24,
+        "t_stat": 6.85,
+        "sharpe": 4.89,
+        "up_day_pct": 60.2,
+        "max_drawdown_pct": 11.08,
+        "by_year": {
+          "2024": 69.4,
+          "2025": 42.9,
+          "2026": 46.8
+        }
+      },
+      "ranker_open": {
+        "sessions": 492,
+        "first": "2024-11-18",
+        "last": "2026-11-16",
+        "net_bps_per_trade": 43.76,
+        "t_stat": 6.77,
+        "sharpe": 4.83,
+        "up_day_pct": 60.6,
+        "max_drawdown_pct": 7.55,
+        "by_year": {
+          "2024": 80.6,
+          "2025": 47.1,
+          "2026": 34.8
+        }
+      },
+      "vs_rule": {
+        "mean_diff_bps": 17.79,
+        "t_stat": 3.2,
+        "sessions": 492,
+        "a_better_pct": 54.7
+      },
+      "open_vs_ranker": {
+        "mean_diff_bps": -2.47,
+        "t_stat": -0.6,
+        "sessions": 492,
+        "a_better_pct": 51.4
+      },
+      "ranker_liquidity_cost": {
+        "sessions": 492,
+        "first": "2024-11-18",
+        "last": "2026-11-16",
+        "net_bps_per_trade": 15.43,
+        "t_stat": 2.27,
+        "sharpe": 1.62,
+        "up_day_pct": 50.4,
+        "max_drawdown_pct": 15.42,
+        "by_year": {
+          "2024": 46.2,
+          "2025": 12.0,
+          "2026": 15.1
+        }
+      }
+    }
+  },
   "drift_alarm": false,
-  "cusum": 375.0,
+  "cusum": 493.8,
   "cautious_mode": false,
   "size_multiplier": 1.0,
-  "market_outlook": null,
-  "learned_through": "2026-11-18",
+  "market_outlook": {
+    "predicted_open_to_close_bps": -31.3,
+    "rally_cut_bps": -17.35,
+    "rally_predicted": false,
+    "size_multiplier": 1.0,
+    "trained_through": "2026-11-16",
+    "inputs_missing": 0
+  },
+  "learned_through": "2026-11-17",
   "candidates": 274,
-  "missing_inputs": []
+  "missing_inputs": [],
+  "published_at": "2026-11-18T11:55:47+05:30",
+  "late": true,
+  "levels_at": "2026-11-19T09:26:18+05:30"
 }
