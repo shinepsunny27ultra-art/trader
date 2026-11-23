@@ -14,6 +14,46 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-11-23 (night) — six names instead of eight; the cloud's model would not have loaded
+
+**Top 6 instead of top 8, same ₹10 L.** Net per trade by the model's rank, 2019-01 → 2026-10
+walk-forward at 13 bps: 1 +98, 2 +86, 3 +75, 4 +62, 5 +44, 6 +57, 7 +45, 8 +33. With the capital
+fixed, ranks 7–8 take money from better names.
+
+| names | bps/day 2019–25 | 2025–26 | Sharpe | max DD % |
+|---|---|---|---|---|
+| 4 | 80.5 | 76.2 | 6.13 / 6.56 | 13.0 / 7.8 |
+| 5 | 73.4 | 68.4 | 5.99 / 6.46 | 11.4 / 7.3 |
+| **6** | **71.6** | **61.2** | 6.19 / 6.02 | 10.8 / 7.3 |
+| 8 | 64.8 | 47.9 | 6.07 / 5.29 | 11.1 / 4.5 |
+| 10 / 12 / 16 | 60.4 / 56.5 / 51.6 | 40.4 / 39.7 / 32.7 | ≤ 5.94 | — |
+
+Top-6 vs top-8 on the same days: +6.8 bps/day (t 5.2) and +13.2 (t 4.0), positive in all eight
+years. The gap rule gains too (+1.9 / +4.0, t 1.5). On the 26 live sessions with saved ranks, the top 6 of each published list made +28.3 bps/day against +8.0 for all eight (t 1.8), under every list source. **Adopted** (`GapReversalConfig.picks = 6`,
+₹1.67 L a name). The learning record keeps grading each expert's top 8, so the guard, the CUSUM and
+their history stay comparable; the weekly report adds `ranker_traded` (the top-6 expectation) for
+the dashboard. 4–5 names earn more but concentrate more. Trial tally 62.
+
+**The cloud model would have failed.** GitHub installs the newest packages; the champion is a
+scikit-learn HistGradientBoosting pickle from 1.8.0, and 1.9.1 raises `No module named '_loss'`.
+`load_champion` caught only `UnpicklingError`, so the list would quietly have fallen back to the gap
+rule. Now: `Ranker.save` records the environment, `promote()` writes `data/models/constraints.txt`,
+every workflow installs `-c constraints.txt` (a fresh pinned install scored 278 candidates
+identically), any load failure is logged and stated in the list ("THE MODEL DID NOT LOAD"), the
+health check has a "champion model loads" check, and the dashboard reads `feature_importance.json`
+instead of unpickling. The laptop's venv takes these packages from `~/.local`; they now also live
+in `.venv` at the same versions, so a user-level upgrade cannot break the model.
+
+**Alerts.** The health check ran every 30 minutes but only wrote to the journal (the disk sat at
+99% unseen). `--push` sends serious problems to the phone, each at most once a day (FAIL every 6 h).
+A GitHub watchdog (~08:35) alerts if no list reached `main`. The paper book records each day's list
+source; the dashboard shows results by source next to the same-day model grade (live: model +45.5
+vs rule +17.9 bps/slot, paired t 1.5 — the cloud's rule days looked better only because they were
+easier days) and by stock with an evidence weight n / (n + 150).
+
+**Considered, not pursued:** reviving the 09:09 open model (2-year walk-forward −2.5 bps vs the
+08:15 model, t −0.6), rank-weighted sizing within the top 6 (more concentration for the same idea).
+
 ## 2026-11-23 (later) — a gold book: at most 3 gold-linked stocks a day, driven by gold
 
 **Ask:** a separate section of gold-related stocks, trades depending on gold, at most three.
