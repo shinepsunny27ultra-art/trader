@@ -1,0 +1,9 @@
+[Unit]
+Description=Gold book paper record, weekdays after the close
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 15:45:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Gold book: fill the slots with gap fades on today's opening prices
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/trading-workspace
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/gold_book.py open --push
+TimeoutStartSec=300

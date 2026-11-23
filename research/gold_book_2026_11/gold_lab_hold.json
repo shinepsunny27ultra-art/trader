@@ -1,0 +1,581 @@
+{
+ "universe_days": 18115,
+ "names_per_day": 7.0,
+ "dev_correlations": {
+  "TITAN": {
+   "n": 1837,
+   "gap_vs_gold_on": 0.081,
+   "intraday_vs_gold_on": 0.014
+  },
+  "KALYANKJIL": {
+   "n": 677,
+   "gap_vs_gold_on": 0.059,
+   "intraday_vs_gold_on": 0.006
+  },
+  "THANGAMAYL": {
+   "n": 1836,
+   "gap_vs_gold_on": -0.008,
+   "intraday_vs_gold_on": 0.003
+  },
+  "RAJESHEXPO": {
+   "n": 1837,
+   "gap_vs_gold_on": 0.047,
+   "intraday_vs_gold_on": 0.036
+  },
+  "PCJEWELLER": {
+   "n": 1835,
+   "gap_vs_gold_on": 0.03,
+   "intraday_vs_gold_on": -0.014
+  },
+  "GOLDIAM": {
+   "n": 1836,
+   "gap_vs_gold_on": 0.032,
+   "intraday_vs_gold_on": -0.009
+  },
+  "TBZ": {
+   "n": 1837,
+   "gap_vs_gold_on": 0.022,
+   "intraday_vs_gold_on": 0.021
+  },
+  "VAIBHAVGBL": {
+   "n": 1836,
+   "gap_vs_gold_on": 0.016,
+   "intraday_vs_gold_on": 0.018
+  },
+  "MUTHOOTFIN": {
+   "n": 1837,
+   "gap_vs_gold_on": 0.129,
+   "intraday_vs_gold_on": 0.116
+  },
+  "MANAPPURAM": {
+   "n": 1837,
+   "gap_vs_gold_on": 0.099,
+   "intraday_vs_gold_on": 0.123
+  },
+  "IIFL": {
+   "n": 1836,
+   "gap_vs_gold_on": 0.004,
+   "intraday_vs_gold_on": 0.024
+  }
+ },
+ "S1_follow_on_0.3": {
+  "dev": {
+   "trades": 2227,
+   "days": 869,
+   "net_bps_per_trade": -2.6,
+   "win_pct": 46.7,
+   "t_day": -0.39,
+   "years_positive_pct": 43.0,
+   "by_year": {
+    "2017": -25.9,
+    "2018": 14.8,
+    "2019": -25.8,
+    "2020": 20.3,
+    "2021": 2.1,
+    "2022": -8.6,
+    "2023": -15.2
+   }
+  },
+  "hold": {
+   "trades": 1479,
+   "days": 493,
+   "net_bps_per_trade": 2.8,
+   "win_pct": 49.2,
+   "t_day": 0.37,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 4.0,
+    "2025": -8.9,
+    "2026": 14.9
+   }
+  }
+ },
+ "S2_fade_on_0.3": {
+  "dev": {
+   "trades": 2227,
+   "days": 869,
+   "net_bps_per_trade": -24.0,
+   "win_pct": 43.1,
+   "t_day": -3.79,
+   "years_positive_pct": 0.0,
+   "by_year": {
+    "2017": -10.5,
+    "2018": -39.7,
+    "2019": -5.7,
+    "2020": -42.4,
+    "2021": -22.7,
+    "2022": -22.2,
+    "2023": -15.4
+   }
+  },
+  "hold": {
+   "trades": 1479,
+   "days": 493,
+   "net_bps_per_trade": -28.8,
+   "win_pct": 43.5,
+   "t_day": -3.8,
+   "years_positive_pct": 0.0,
+   "by_year": {
+    "2024": -28.3,
+    "2025": -16.6,
+    "2026": -43.1
+   }
+  }
+ },
+ "S1_follow_on_0.5": {
+  "dev": {
+   "trades": 1574,
+   "days": 610,
+   "net_bps_per_trade": 0.5,
+   "win_pct": 47.1,
+   "t_day": 0.06,
+   "years_positive_pct": 43.0,
+   "by_year": {
+    "2017": -50.1,
+    "2018": 41.6,
+    "2019": -30.1,
+    "2020": 27.5,
+    "2021": 11.9,
+    "2022": -2.1,
+    "2023": -28.0
+   }
+  },
+  "hold": {
+   "trades": 1158,
+   "days": 386,
+   "net_bps_per_trade": 9.8,
+   "win_pct": 49.6,
+   "t_day": 1.09,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 7.1,
+    "2025": -4.7,
+    "2026": 26.8
+   }
+  }
+ },
+ "S2_fade_on_0.5": {
+  "dev": {
+   "trades": 1574,
+   "days": 610,
+   "net_bps_per_trade": -28.0,
+   "win_pct": 42.9,
+   "t_day": -3.64,
+   "years_positive_pct": 14.0,
+   "by_year": {
+    "2017": 7.5,
+    "2018": -51.5,
+    "2019": -3.6,
+    "2020": -55.1,
+    "2021": -33.5,
+    "2022": -27.0,
+    "2023": -3.5
+   }
+  },
+  "hold": {
+   "trades": 1158,
+   "days": 386,
+   "net_bps_per_trade": -33.1,
+   "win_pct": 43.3,
+   "t_day": -3.85,
+   "years_positive_pct": 0.0,
+   "by_year": {
+    "2024": -30.6,
+    "2025": -16.4,
+    "2026": -52.4
+   }
+  }
+ },
+ "S1_follow_on_1.0": {
+  "dev": {
+   "trades": 609,
+   "days": 231,
+   "net_bps_per_trade": 11.5,
+   "win_pct": 48.6,
+   "t_day": 0.68,
+   "years_positive_pct": 29.0,
+   "by_year": {
+    "2017": -110.5,
+    "2018": -16.8,
+    "2019": -20.8,
+    "2020": 40.7,
+    "2021": 40.3,
+    "2022": -11.8,
+    "2023": -16.6
+   }
+  },
+  "hold": {
+   "trades": 609,
+   "days": 203,
+   "net_bps_per_trade": 2.5,
+   "win_pct": 48.1,
+   "t_day": 0.2,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 10.1,
+    "2025": -28.3,
+    "2026": 20.8
+   }
+  }
+ },
+ "S2_fade_on_1.0": {
+  "dev": {
+   "trades": 609,
+   "days": 231,
+   "net_bps_per_trade": -37.9,
+   "win_pct": 41.9,
+   "t_day": -2.68,
+   "years_positive_pct": 14.0,
+   "by_year": {
+    "2017": 84.5,
+    "2018": -17.2,
+    "2019": -30.4,
+    "2020": -52.1,
+    "2021": -67.3,
+    "2022": -23.8,
+    "2023": -7.4
+   }
+  },
+  "hold": {
+   "trades": 609,
+   "days": 203,
+   "net_bps_per_trade": -30.8,
+   "win_pct": 43.7,
+   "t_day": -2.61,
+   "years_positive_pct": 0.0,
+   "by_year": {
+    "2024": -41.7,
+    "2025": -2.9,
+    "2026": -45.2
+   }
+  }
+ },
+ "S3_trend20": {
+  "dev": {
+   "trades": 3061,
+   "days": 1212,
+   "net_bps_per_trade": -11.0,
+   "win_pct": 45.5,
+   "t_day": -2.14,
+   "years_positive_pct": 29.0,
+   "by_year": {
+    "2017": -38.0,
+    "2018": 59.0,
+    "2019": -23.4,
+    "2020": -7.8,
+    "2021": 0.8,
+    "2022": -29.0,
+    "2023": -23.2
+   }
+  },
+  "hold": {
+   "trades": 1833,
+   "days": 611,
+   "net_bps_per_trade": -30.6,
+   "win_pct": 42.3,
+   "t_day": -4.62,
+   "years_positive_pct": 0.0,
+   "by_year": {
+    "2024": -22.6,
+    "2025": -40.2,
+    "2026": -28.8
+   }
+  }
+ },
+ "S4_resid_rev": {
+  "dev": {
+   "trades": 1633,
+   "days": 1016,
+   "net_bps_per_trade": 26.0,
+   "win_pct": 54.5,
+   "t_day": 2.72,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2016": 53.1,
+    "2017": 14.8,
+    "2018": 37.9,
+    "2019": 38.6,
+    "2020": 33.9,
+    "2021": 17.4,
+    "2022": 20.8,
+    "2023": 14.9
+   }
+  },
+  "hold": {
+   "trades": 1163,
+   "days": 572,
+   "net_bps_per_trade": 25.2,
+   "win_pct": 52.1,
+   "t_day": 2.33,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 51.9,
+    "2025": 47.3,
+    "2026": -20.5
+   }
+  }
+ },
+ "C4_raw_gap_rev": {
+  "dev": {
+   "trades": 1629,
+   "days": 1019,
+   "net_bps_per_trade": 22.5,
+   "win_pct": 54.3,
+   "t_day": 2.32,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2016": 53.2,
+    "2017": 12.4,
+    "2018": 41.3,
+    "2019": 25.8,
+    "2020": 16.1,
+    "2021": 18.8,
+    "2022": 23.8,
+    "2023": 3.9
+   }
+  },
+  "hold": {
+   "trades": 1210,
+   "days": 579,
+   "net_bps_per_trade": 13.0,
+   "win_pct": 51.2,
+   "t_day": 1.27,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 40.6,
+    "2025": 29.5,
+    "2026": -25.5
+   }
+  }
+ },
+ "S5_resid_trend": {
+  "dev": {
+   "trades": 675,
+   "days": 458,
+   "net_bps_per_trade": 37.7,
+   "win_pct": 56.3,
+   "t_day": 2.38,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2016": 126.0,
+    "2017": 26.8,
+    "2018": 123.6,
+    "2019": 19.4,
+    "2020": 26.6,
+    "2021": 2.5,
+    "2022": 18.3,
+    "2023": 7.3
+   }
+  },
+  "hold": {
+   "trades": 500,
+   "days": 284,
+   "net_bps_per_trade": 19.3,
+   "win_pct": 51.0,
+   "t_day": 1.12,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 59.3,
+    "2025": 56.6,
+    "2026": -32.2
+   }
+  }
+ },
+ "S6_gap1_short_gold_down": {
+  "dev": {
+   "trades": 450,
+   "days": 299,
+   "net_bps_per_trade": 30.8,
+   "win_pct": 54.4,
+   "t_day": 1.75,
+   "years_positive_pct": 62.0,
+   "by_year": {
+    "2016": 97.8,
+    "2017": 57.0,
+    "2018": 78.6,
+    "2019": -57.5,
+    "2020": 21.8,
+    "2021": 58.6,
+    "2022": -30.8,
+    "2023": -18.8
+   }
+  },
+  "hold": {
+   "trades": 238,
+   "days": 118,
+   "net_bps_per_trade": -9.8,
+   "win_pct": 53.8,
+   "t_day": -0.52,
+   "years_positive_pct": 67.0,
+   "by_year": {
+    "2024": 11.7,
+    "2025": 47.4,
+    "2026": -24.0
+   }
+  }
+ },
+ "S7_trend_on": {
+  "dev": {
+   "trades": 1179,
+   "days": 457,
+   "net_bps_per_trade": -2.1,
+   "win_pct": 47.7,
+   "t_day": -0.24,
+   "years_positive_pct": 43.0,
+   "by_year": {
+    "2017": -40.3,
+    "2018": 85.6,
+    "2019": -34.9,
+    "2020": 13.6,
+    "2021": 22.9,
+    "2022": -29.2,
+    "2023": -16.4
+   }
+  },
+  "hold": {
+   "trades": 795,
+   "days": 265,
+   "net_bps_per_trade": -14.3,
+   "win_pct": 45.3,
+   "t_day": -1.35,
+   "years_positive_pct": 0.0,
+   "by_year": {
+    "2024": -8.1,
+    "2025": -31.0,
+    "2026": -1.1
+   }
+  }
+ },
+ "S8_lenders_follow_0.0": {
+  "dev": {
+   "trades": 4634,
+   "days": 1837,
+   "net_bps_per_trade": -3.9,
+   "win_pct": 47.4,
+   "t_day": -0.92,
+   "years_positive_pct": 25.0,
+   "by_year": {
+    "2016": 7.0,
+    "2017": -15.5,
+    "2018": -1.3,
+    "2019": -18.7,
+    "2020": 24.9,
+    "2021": -4.6,
+    "2022": -11.0,
+    "2023": -4.1
+   }
+  },
+  "hold": {
+   "trades": 2115,
+   "days": 705,
+   "net_bps_per_trade": 7.5,
+   "win_pct": 50.0,
+   "t_day": 1.32,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2024": 4.4,
+    "2025": 4.4,
+    "2026": 14.5
+   }
+  }
+ },
+ "S8_lenders_follow_0.3": {
+  "dev": {
+   "trades": 2874,
+   "days": 1133,
+   "net_bps_per_trade": 6.9,
+   "win_pct": 49.1,
+   "t_day": 1.23,
+   "years_positive_pct": 50.0,
+   "by_year": {
+    "2016": 59.1,
+    "2017": -6.0,
+    "2018": 20.4,
+    "2019": -8.6,
+    "2020": 35.5,
+    "2021": 13.3,
+    "2022": -12.4,
+    "2023": -7.5
+   }
+  },
+  "hold": {
+   "trades": 1479,
+   "days": 493,
+   "net_bps_per_trade": 16.9,
+   "win_pct": 51.9,
+   "t_day": 2.41,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2024": 6.8,
+    "2025": 19.3,
+    "2026": 24.4
+   }
+  }
+ },
+ "S8_lenders_follow_0.5": {
+  "dev": {
+   "trades": 1997,
+   "days": 792,
+   "net_bps_per_trade": 16.5,
+   "win_pct": 50.5,
+   "t_day": 2.31,
+   "years_positive_pct": 75.0,
+   "by_year": {
+    "2016": 88.3,
+    "2017": 8.1,
+    "2018": 28.3,
+    "2019": 6.6,
+    "2020": 47.6,
+    "2021": 23.2,
+    "2022": -3.1,
+    "2023": -19.1
+   }
+  },
+  "hold": {
+   "trades": 1158,
+   "days": 386,
+   "net_bps_per_trade": 18.6,
+   "win_pct": 52.2,
+   "t_day": 2.35,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2024": 5.7,
+    "2025": 15.5,
+    "2026": 33.1
+   }
+  }
+ },
+ "S9_lenders_follow_trend": {
+  "dev": {
+   "trades": 1932,
+   "days": 764,
+   "net_bps_per_trade": 11.8,
+   "win_pct": 50.3,
+   "t_day": 1.63,
+   "years_positive_pct": 62.0,
+   "by_year": {
+    "2016": 101.0,
+    "2017": 20.4,
+    "2018": 25.0,
+    "2019": -11.8,
+    "2020": 35.6,
+    "2021": 12.9,
+    "2022": -17.1,
+    "2023": -9.6
+   }
+  },
+  "hold": {
+   "trades": 978,
+   "days": 326,
+   "net_bps_per_trade": 16.4,
+   "win_pct": 51.4,
+   "t_day": 1.92,
+   "years_positive_pct": 100.0,
+   "by_year": {
+    "2024": 9.8,
+    "2025": 22.6,
+    "2026": 15.3
+   }
+  }
+ }
+}

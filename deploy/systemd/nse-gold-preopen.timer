@@ -1,0 +1,9 @@
+[Unit]
+Description=Gold book pre-open list, 09:00:30 IST (pre-open orders 09:00-09:07)
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 09:00:30
+Persistent=false
+
+[Install]
+WantedBy=timers.target

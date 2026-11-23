@@ -30,7 +30,9 @@ def state_files(root: Path = ROOT) -> list[Path]:
     return [data / "gap_reversal" / "picks.json", data / "gap_reversal" / "paper_book.csv",
             data / "gap_reversal" / "backtest.json", models / "champion.json",
             models / "weekly_report.json", models / "meta_state.json",
-            *model_files(models)]
+            *model_files(models),
+            data / "gold_book" / "picks.json", data / "gold_book" / "paper_book.csv",
+            data / "gold_book" / "gold_marks.csv"]
 
 
 def model_files(models: Path) -> list[Path]:
