@@ -26,6 +26,37 @@ from nse_intraday_ai.features import META_COLUMNS, TARGETS
 
 ROOT = Path(__file__).resolve().parents[2]
 MODELS = ROOT / "data" / "models"
+CONSTRAINTS = MODELS / "constraints.txt"
+# The packages a pickled model depends on.  scikit-learn's HistGradientBoosting
+# pickle only loads under the version that wrote it (2026-11-23: 1.8.0 -> 1.9.1
+# fails with "No module named '_loss'"), so the GitHub runner installs exactly
+# the versions the champion was saved with (`constraints.txt`).
+PINNED = {"scikit-learn": "sklearn", "numpy": "numpy", "scipy": "scipy", "pandas": "pandas",
+          "lightgbm": "lightgbm", "joblib": "joblib", "threadpoolctl": "threadpoolctl"}
+LAST_LOAD_ERROR: str | None = None
+
+
+def environment() -> dict[str, str]:
+    """distribution -> version of the modules actually imported (not pip's view)."""
+    import importlib
+
+    out = {}
+    for dist, module in PINNED.items():
+        try:
+            out[dist] = importlib.import_module(module).__version__
+        except Exception:                                     # noqa: BLE001 — optional package
+            continue
+    return out
+
+
+def write_constraints(env: dict[str, str], path: Path | None = None) -> Path:
+    """A pip constraints file pinning `env` (the champion's saving environment)."""
+    path = path or CONSTRAINTS
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("# The champion model's package versions (written by ranker.promote).\n"
+                    "# pip install -r requirements.txt -c data/models/constraints.txt\n"
+                    + "".join(f"{k}=={v}\n" for k, v in sorted(env.items())))
+    return path
 NON_FEATURES = set(META_COLUMNS) | set(TARGETS)
 
 
@@ -174,8 +205,10 @@ class Ranker:
         (directory / "meta.json").write_text(json.dumps({
             "config": asdict(self.config), "features": self.features,
             "trained_through": self.trained_through, "n_train": self.n_train,
-            "saved_at": datetime.now().isoformat(timespec="seconds"), **self.meta,
+            "saved_at": datetime.now().isoformat(timespec="seconds"),
+            **{**self.meta, "environment": environment()},
         }, indent=2, default=str))
+        write_importance(self, directory)
         return directory
 
     @classmethod
@@ -193,6 +226,19 @@ class Ranker:
                    models=pickle.loads((directory / "models.pkl").read_bytes()),
                    trained_through=meta.pop("trained_through"), n_train=meta.pop("n_train"),
                    meta=meta)
+
+
+def write_importance(model: Ranker, directory: Path) -> None:
+    """feature_importance.json beside the pickle: the dashboard reads it without
+    unpickling (Streamlit Cloud runs other package versions)."""
+    try:
+        imp = model.feature_importance()
+    except Exception:                                         # noqa: BLE001 — a summary only
+        return
+    method = "total split gain" if model.config.ranker_type == "hgb" else "split importance"
+    pct = (imp / imp.sum() * 100) if imp.sum() > 0 else imp
+    (directory / "feature_importance.json").write_text(json.dumps(
+        {"method": method, "importance_pct": {k: round(float(v), 4) for k, v in pct.items()}}, indent=1))
 
 
 def missing_inputs(model: Ranker, rows: pd.DataFrame, *, threshold: float = 0.99,
@@ -220,12 +266,24 @@ def champion_path(name: str = "ranker") -> Path:
 
 def load_champion(name: str = "ranker") -> Ranker | None:
     """The promoted model, or None (the book then runs on the gap rule)."""
+    global LAST_LOAD_ERROR
     pointer = champion_path(name)
     if not pointer.exists():
         return None
     try:
         return Ranker.load(MODELS / json.loads(pointer.read_text())["directory"])
-    except (OSError, KeyError, ValueError, pickle.UnpicklingError):
+    except Exception as exc:                                  # noqa: BLE001 — never break the morning
+        # A pickle from another scikit-learn version raises ImportError/AttributeError,
+        # not UnpicklingError: say so loudly instead of quietly ranking by the rule.
+        saved = {}
+        try:
+            saved = json.loads((MODELS / json.loads(pointer.read_text())["directory"] / "meta.json")
+                               .read_text()).get("environment", {})
+        except Exception:                                     # noqa: BLE001
+            pass
+        LAST_LOAD_ERROR = (f"{name} could not load ({type(exc).__name__}: {str(exc)[:120]}); "
+                           f"saved with {saved or 'unknown versions'}, running {environment()}")
+        print(f"WARNING: {LAST_LOAD_ERROR}", flush=True)
         return None
 
 
@@ -234,6 +292,12 @@ def promote(directory: Path, evidence: dict, name: str = "ranker") -> None:
     champion_path(name).write_text(json.dumps({
         "directory": directory.name, "promoted_at": datetime.now().isoformat(timespec="seconds"),
         "evidence": evidence}, indent=2, default=str))
+    if name == "ranker":                                      # the cloud installs these versions
+        try:
+            env = json.loads((directory / "meta.json").read_text()).get("environment") or environment()
+        except (OSError, ValueError):
+            env = environment()
+        write_constraints(env)
 
 
 # ── walk-forward evaluation ─────────────────────────────────────────────────

@@ -280,6 +280,7 @@ def morning(session: date, config: G.GapReversalConfig = G.GapReversalConfig(), 
         "learned_through": state.updated_through,
         "candidates": int((rows["turn_rank"] <= BOOK_UNIVERSE).sum()),
         "missing_inputs": blank,
+        "model_error": R.LAST_LOAD_ERROR if model is None and R.champion_path().exists() else None,
     }
     return prev, picks, info
 

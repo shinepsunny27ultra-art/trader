@@ -61,11 +61,20 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            data/models/constraints.txt
 
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          # The champion's pickles load only under the versions that saved them
+          # (scikit-learn 1.9 cannot read a 1.8 model): install exactly those.
+          if [ -f data/models/constraints.txt ]; then
+            pip install -r requirements.txt -c data/models/constraints.txt
+          else
+            pip install -r requirements.txt
+          fi
 
       - name: Restore the NSE archive
         uses: actions/cache/restore@v4
@@ -92,8 +101,11 @@ jobs:
           P.refresh(today - timedelta(days=1), days=430)
           PY
 
+      # Never let the cache block the list: a failed save (nothing to save after a
+      # failed refresh, a key clash on a re-run) must not skip the fallback below.
       - name: Save the NSE archive
         if: always()
+        continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: ${{ env.ARCHIVE }}

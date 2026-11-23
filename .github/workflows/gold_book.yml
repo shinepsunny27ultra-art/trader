@@ -54,11 +54,20 @@ jobs:
         with:
           python-version: "3.12"
           cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            data/models/constraints.txt
 
       - name: Install Dependencies
         run: |
           pip install --upgrade pip
-          pip install -r requirements.txt
+          # The champion's pickles load only under the versions that saved them
+          # (scikit-learn 1.9 cannot read a 1.8 model): install exactly those.
+          if [ -f data/models/constraints.txt ]; then
+            pip install -r requirements.txt -c data/models/constraints.txt
+          else
+            pip install -r requirements.txt
+          fi
 
       # The morning gap workflow keeps ~430 days of NSE files here (refreshed ~03:30 IST).
       - name: Restore the NSE archive

@@ -137,3 +137,14 @@ def test_fallback_publishes_from_actions_only_with_force(tmp_path, monkeypatch):
                               log=lambda *a: None)
     assert "github-actions" in _git(remote, "show", "main:data/picks.json")
     assert _git(remote, "show", "main:app.py") == "v1"                           # rest of main kept
+
+
+def test_state_files_carry_the_version_pins(tmp_path):
+    import json
+    models = tmp_path / "data" / "models"
+    (models / "ranker_a").mkdir(parents=True)
+    (models / "ranker_a" / "models.pkl").write_bytes(b"x")
+    (models / "champion.json").write_text(json.dumps({"directory": "ranker_a"}))
+    (models / "constraints.txt").write_text("scikit-learn==1.8.0\n")
+    rel = {f.relative_to(tmp_path).as_posix() for f in cloud_sync.state_files(tmp_path)}
+    assert "data/models/constraints.txt" in rel
