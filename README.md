@@ -14,7 +14,7 @@ Experiments and decisions: [docs/research-log.md](docs/research-log.md)
 |---|---|
 | Universe | The 300 most liquid NSE EQ-series names by 20-session traded value, point-in-time, less ETFs (they trade in EQ too). Price ≥ ₹50; names that were trade-for-trade in the last 20 sessions are excluded. |
 | Ranking | HistGradientBoosting ranker over ~190 point-in-time features. It falls back to the gap rule (yesterday's overnight gap) whenever its live paired record says so. |
-| Size | Top 8, equal weight (₹1.25 L each on ₹10 L), MIS, no leverage. |
+| Size | Top 6, equal weight (₹1.67 L each on ₹10 L), MIS, no leverage. Top-6 beat top-8 on the same days: +6.8 bps/day (t 5.2) 2019–25, +13.2 (t 4.0) 2025–26. |
 | Entry | Ranker lists: market SELL in the pre-open (09:00–09:05) at the open. Rule-ranked lists: **pre-open SELL LIMIT at prev close × (1 − 0.75%)**, rounded up to the tick, placed 09:00–09:08; **cancel anything unfilled at 09:15**. The push message always states which applies. |
 | Stop | BUY SL-M at fill + 0.75 × 14-day ATR. |
 | Exit | Cover at 15:15. |
@@ -28,8 +28,22 @@ Experiments and decisions: [docs/research-log.md](docs/research-log.md)
 | Ranker, walk-forward 2019-01 → 2026-10 (08:45 features) | +65.4 vs rule +35.1 | paired t 11.9 | 6.9 |
 | Ranker vs rule, 2024-10 → 2026-10 (first promotion) | +50.1 vs +30.0 | paired t 3.7 | — |
 
-Live paper record since 2026-09-29 is in the app (Performance page) and in
-`data/gap_reversal/paper_book.csv`.
+Live paper record since 2026-09-29 is in the app (Performance page, also by list source and by
+stock) and in `data/gap_reversal/paper_book.csv`.
+
+**Laptop off?** The GitHub workflows do the laptop's job with the same promoted model: the
+08:00 list (`gap_picks.yml`, NSE archive in the Actions cache, the champion's exact package
+versions from `data/models/constraints.txt`), a watchdog at ~08:35 that alerts if no list reached
+`main`, and the 16:30 paper record (`gap_record.yml`).
+
+## Gold stocks (separate page, paper-tracked)
+
+At most 3 gold-linked stocks a day (`src/nse_intraday_ai/gold_book.py`, research in
+`research/gold_book_2026_11/`): the gold lenders (MUTHOOTFIN, MANAPPURAM, IIFL) follow a ≥ 0.5%
+overnight move in spot gold (list at 09:01, pre-open entry), and the slots left fade the part of a
+gold stock's opening gap that gold does not explain (09:16). Backtest +15.9 bps/trade 2016–23,
++17.7 in 2024–26, Sharpe ≈ 1.1, worst drawdown 47% of its capital — a weak edge, so small size
+until the paper record (from 2026-11-25) says otherwise.
 
 ## Data sources (all free)
 
@@ -44,7 +58,7 @@ Live paper record since 2026-09-29 is in the app (Performance page) and in
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 deploy/install.sh                      # systemd user timers + dashboard
-PYTHONPATH=src .venv/bin/python -m pytest -q -W error      # 90+ tests, zero warnings
+PYTHONPATH=src .venv/bin/python -m pytest -q -W error      # 200+ tests, zero warnings
 ```
 
 Day to day, everything runs on timers (see ARCHITECTURE §4). Manual commands:
@@ -53,7 +67,8 @@ Day to day, everything runs on timers (see ARCHITECTURE §4). Manual commands:
 PYTHONPATH=src .venv/bin/python scripts/gap_reversal.py picks --push      # today's list
 PYTHONPATH=src .venv/bin/python scripts/gap_reversal.py record            # paper-record a session
 PYTHONPATH=src .venv/bin/python scripts/learn.py                          # retrain + walk-forward review
-PYTHONPATH=src .venv/bin/python scripts/health_check.py                   # system health
+PYTHONPATH=src .venv/bin/python scripts/health_check.py                   # system health (--push: phone alerts)
+PYTHONPATH=src .venv/bin/python scripts/gold_book.py preopen --dry-run    # the gold list, printed only
 PYTHONPATH=src .venv/bin/python scripts/daily_monitor.py --push           # live vs expected
 PYTHONPATH=src .venv/bin/python scripts/compare_rankers.py morning morning_corp   # research A/B
 ./run_app.sh                                                              # dashboard on :8501
