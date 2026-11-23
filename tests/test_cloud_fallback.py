@@ -297,3 +297,13 @@ def test_laptop_adopts_sessions_the_cloud_recorded():
     assert book.loc[book["session"] == "2026-11-17", "net"].tolist() == [1.0, 2.0]   # local kept
     assert book.loc[book["session"] == "2026-11-20", "symbol"].tolist() == ["C", "D"]
     assert gs.adopt_remote_sessions(local, None) == (local, [])
+
+
+def test_watchdog_alerts_only_when_todays_list_is_missing_or_unmodelled():
+    gs = _gs()
+    day = date(2026, 11, 25)
+    now = datetime(2026, 11, 25, 8, 35, tzinfo=IST)
+    assert "No gap-reversal list" in gs.watchdog_message(None, day, now)
+    assert "No gap-reversal list" in gs.watchdog_message({"session": "2026-11-23"}, day, now)
+    assert gs.watchdog_message({"session": "2026-11-25", "ranked_by": "ranker"}, day, now) is None
+    assert "did not load" in gs.watchdog_message({"session": "2026-11-25", "model_error": "x"}, day, now)

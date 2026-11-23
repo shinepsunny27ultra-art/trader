@@ -709,6 +709,15 @@ def _sync_record(message: str, recorded: list[str]) -> None:
     print("published the paper book to main" if ok else "main already has these sessions — not published")
 
 
+def list_source(payload: dict) -> tuple[str, str]:
+    """(ranked_by, source) of a traded list: source = laptop-morning | laptop-evening | cloud."""
+    ranked = payload.get("ranked_by") or next((p.get("ranked_by") for p in payload.get("picks", [])), "rule")
+    if payload.get("publisher") == "github-actions":
+        return ranked, "cloud"
+    built = str(payload.get("generated_at", ""))[:10]
+    return ranked, ("laptop-evening" if built and built < str(payload.get("session", "")) else "laptop-morning")
+
+
 def cmd_record(args) -> None:
     wait_for_clock()
     book = pd.read_csv(PAPER) if PAPER.exists() else pd.DataFrame()
@@ -769,6 +778,7 @@ def cmd_record(args) -> None:
             continue
         rows = pd.DataFrame([{**asdict(t), "net": round(t.net, 2)} for t in trades])
         rows["session"] = session.isoformat()
+        rows["ranked_by"], rows["source"] = list_source(payload)
         if not book.empty:
             book = book[book["session"] != session.isoformat()]
         book = pd.concat([book, rows], ignore_index=True)
@@ -795,6 +805,38 @@ def cmd_record(args) -> None:
              enabled=args.push and session == recorded[-1][0], priority="default")
     _sync_record(f"chore(data): paper result for {recorded[-1][0]} [skip ci]",
                  [d.isoformat() for d, _ in recorded])
+
+
+def watchdog_message(payload: dict | None, today: date, now: datetime) -> str | None:
+    """None if today's list is out (and ranked as intended); else the alert to push."""
+    if not payload or payload.get("session") != today.isoformat():
+        return (f"No gap-reversal list for {today:%a %d %b} by {now:%H:%M} IST — neither the laptop nor the "
+                "cloud fallback published one. Do not trade an older list.")
+    if payload.get("model_error"):
+        return f"Today's list is ranked by the gap rule because the model did not load: {payload['model_error']}"
+    return None
+
+
+def cmd_watchdog(args) -> None:
+    """GitHub, ~08:35 IST: alert if today's list never reached `main`."""
+    import json
+
+    from nse_intraday_ai import cloud_sync
+    from nse_intraday_ai.nse_calendar import is_trading_day
+    now = datetime.now(IST)
+    if not is_trading_day(now.date()):
+        print(f"{now.date()}: not a trading day")
+        return
+    raw = cloud_sync.read_remote(G.PICKS_PATH)
+    try:
+        payload = json.loads(raw) if raw else None
+    except ValueError:
+        payload = None
+    msg = watchdog_message(payload, now.date(), now)
+    if msg is None:
+        print(f"today's list is on main ({payload.get('publisher')}, ranked by {payload.get('ranked_by')})")
+        return
+    push("⚠ Gap-reversal watchdog", msg, enabled=args.push)
 
 
 def _window_summary(result: G.BacktestResult) -> dict:
@@ -878,6 +920,8 @@ def main() -> None:
     f.add_argument("--deadline", default=FALLBACK_DEADLINE, help="HH:MM IST the laptop has priority until")
     f.add_argument("--dry-run", action="store_true", help="build and decide, but neither publish nor push")
     f.add_argument("--any-day", action="store_true", help="skip the trading-day check (tests/dry runs)")
+    w = sub.add_parser("watchdog", help="alert if today's list never reached main (GitHub, ~08:35 IST)")
+    w.add_argument("--push", action="store_true", help="send to the phone via ntfy")
     b = sub.add_parser("backtest")
     b.add_argument("--sessions", type=int, default=14, help="replay the last N sessions")
     b.add_argument("--since", help="replay every session from this ISO date instead")
@@ -886,6 +930,7 @@ def main() -> None:
     b.add_argument("--save", action="store_true", help=f"write {BACKTEST.relative_to(ROOT)} for the app")
     args = parser.parse_args()
     {"picks": cmd_picks, "final": cmd_final, "levels": cmd_levels, "record": cmd_record,
+     "watchdog": cmd_watchdog,
      "backtest": cmd_backtest, "cloud-fallback": cmd_cloud_fallback}[args.cmd](args)
 
 
