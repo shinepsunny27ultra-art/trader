@@ -16,7 +16,6 @@ import io
 import json
 import os
 import sys
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -145,7 +144,8 @@ def cmd_stage(args, stage: str) -> None:
         # The lender trades are entered in the pre-open: only those that went out at
         # 09:01 count; with no 09:01 list, the open list is gap fades only.
         same = prior and prior.get("session") == session.isoformat()
-        keep = [p for p in prior.get("picks", []) if p["rule"] == "LENDERS"] if same else []
+        in_time = same and "LENDERS" in tradable_rules(prior)          # a late 09:01 list was not tradable
+        keep = [p for p in prior.get("picks", []) if p["rule"] == "LENDERS"] if in_time else []
     opens, source = opens_now(session) if stage == "open" else ({}, None)
     payload = GB.build(session, stage=stage, opens=opens, keep=keep)
     payload["opens_from"] = source
@@ -165,12 +165,6 @@ def cmd_stage(args, stage: str) -> None:
         print("main got this stage first — not pushing to the phone")
         return
     push(title, body, enabled=args.push)
-
-
-@dataclass
-class Booked:
-    session: str
-    rows: list[dict]
 
 
 def tradable_rules(payload: dict) -> set[str]:
@@ -195,9 +189,13 @@ def record_session(session: date, payload: dict) -> list[dict] | None:
     G.refresh([p["symbol"] + ".NS" for p in picks], interval="5m", period="60d")
     official = archived_opens(session)
     rows = []
+    past = session < datetime.now(IST).date()
     for p in picks:
         bars = G.load_session_bars(p["symbol"] + ".NS", session)
-        if bars.empty or G.SQUARE_OFF_BAR not in bars.index and bars.index.max() < G.SQUARE_OFF_BAR - 1:
+        if bars.empty and past:
+            print(f"  {session} {p['symbol']}: no 5-minute bars (suspended or not on Yahoo) — no trade")
+            continue
+        if bars.empty or (G.SQUARE_OFF_BAR not in bars.index and bars.index.max() < G.SQUARE_OFF_BAR - 1):
             return None                                       # not complete yet: retry next run
         t = GB.simulate(p, bars, GB.entry_bar(p["rule"]), G.SQUARE_OFF_BAR,
                         open_price=official.get(p["symbol"]))
