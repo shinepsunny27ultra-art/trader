@@ -359,19 +359,82 @@ def check_intraday(now: datetime) -> tuple[str, str, str]:
             f"last scan {gen:%Y-%m-%d %H:%M} ({age:.0f} min ago)")
 
 
-def check_disk() -> tuple[str, str, str]:
-    out = _run("df", "-h", str(ROOT))
-    line = out.splitlines()[-1] if out else ""
-    parts = line.split()
-    if len(parts) < 5:
-        return ("disk", WARN, "unreadable")
-    used = int(parts[4].rstrip("%"))
-    return ("disk", OK if used < 90 else WARN, f"{parts[4]} used, {parts[3]} free")
+def check_disk(free_gb: float | None = None, used_pct: float | None = None) -> tuple[str, str, str]:
+    """A full disk stops sqlite writes (the candle cache) and every job with them.
+
+    2026-11-23: 99% used, 4.4 GB free, warned only in the journal for weeks."""
+    import shutil
+    if free_gb is None or used_pct is None:
+        try:
+            u = shutil.disk_usage(ROOT)
+        except OSError:
+            return ("disk", WARN, "unreadable")
+        free_gb, used_pct = u.free / 1e9, u.used / (u.used + u.free) * 100   # as df reports it
+    status = FAIL if free_gb < 1.0 else WARN if (free_gb < 3.0 or used_pct >= 98) else OK
+    return ("disk", status, f"{used_pct:.0f}% used, {free_gb:.1f} GB free"
+            + ("" if status == OK else " — free space (outside the project: ~/SW, ~/Documents, ~/.cache)"))
+
+
+def check_model_loads() -> tuple[str, str, str]:
+    """The champion unpickles under the libraries installed now.
+
+    scikit-learn's model pickles only load under the version that wrote them; a
+    `pip install --user -U` (the venv reads ~/.local) would silently send the
+    08:15 list back to the gap rule."""
+    from nse_intraday_ai import ranker as R
+    if not R.champion_path().exists():
+        return ("champion model loads", OK, "no champion promoted")
+    model = R.load_champion()
+    if model is None:
+        return ("champion model loads", FAIL, R.LAST_LOAD_ERROR or "could not load")
+    return ("champion model loads", OK, f"trained through {model.trained_through}")
+
+
+# Checks worth a phone push (the rest are chronic or cosmetic: pre-open archive,
+# intraday monitor feed, linger).
+PUSH_CHECKS = ("disk", "champion model loads", "NSE bhavcopy", "gap-reversal picks", "model inputs",
+               "drift alarm", "lists published", "unrecorded sessions", "cloud copy (Streamlit)",
+               "model review", "webpage", "app memory", "unit ")
+ALERTS = ROOT / "data" / "health_alerts.json"
+
+
+def push_problems(problems: list[tuple[str, str, str]], now: datetime, *, send=None,
+                  path: Path = ALERTS) -> list[str]:
+    """Push new problems to the phone: each check at most once a day (FAIL: every 6 h)."""
+    import json
+    if send is None:
+        from nse_intraday_ai.alerts import send_ntfy
+
+        def send(body: str, title: str) -> bool:
+            return send_ntfy(body, title=title, priority="high", tags="warning")
+    try:
+        last = json.loads(path.read_text())
+    except (OSError, ValueError):
+        last = {}
+    due = []
+    for name, status, detail in problems:
+        if not name.startswith(PUSH_CHECKS):
+            continue
+        gap = timedelta(hours=6 if status == FAIL else 24)
+        prev = last.get(name)
+        if prev and now - datetime.fromisoformat(prev) < gap:
+            continue
+        due.append((name, status, detail))
+    if not due:
+        return []
+    body = "\n".join(f"{'FAIL' if s == FAIL else 'warn'} · {n}: {d}" for n, s, d in due)
+    if send(body, "⚠ NSE desk health"):
+        for name, _, _ in due:
+            last[name] = now.isoformat(timespec="seconds")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(last, indent=1))
+    return [n for n, _, _ in due]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--quiet", action="store_true", help="print only problems")
+    parser.add_argument("--push", action="store_true", help="push new problems to the phone (rate-limited)")
     args = parser.parse_args()
 
     now = datetime.now(tz=IST)
@@ -380,6 +443,7 @@ def main() -> int:
     checks.append(check_app())
     checks.append(check_memory())
     checks.append(check_disk())
+    checks.append(check_model_loads())
     checks += check_data(now)
     checks += check_book(now)
     checks.append(check_learning())
@@ -402,6 +466,10 @@ def main() -> int:
     if not problems:
         print("\nall good.")
         return 0
+    if args.push:
+        sent = push_problems(problems, now)
+        if sent:
+            print(f"\npushed to the phone: {', '.join(sent)}")
     print(f"\n{len(problems)} problem(s). Common fixes:")
     print("  stale bhavcopy : python scripts/gap_reversal.py picks   (fetches NSE data)")
     print("  app not serving: systemctl --user restart nse-signal-lab.service")

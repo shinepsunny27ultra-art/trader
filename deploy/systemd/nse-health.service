@@ -6,5 +6,5 @@ After=network-online.target nse-gap-picks.service nse-gap-record.service
 [Service]
 Type=oneshot
 WorkingDirectory=%h/trading-workspace
-ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/health_check.py --quiet
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/health_check.py --quiet --push
 TimeoutStartSec=300

@@ -498,8 +498,67 @@ def page_performance() -> None:
         st.caption(f"5-minute backtest {s['first']} → {s['last']}: {s['avg_net_bps']:+.1f} bps/trade net, "
                    f"win rate {s['win_rate_pct']:.0f}%, {s['stops_hit']}/{s['trades']} stops. Decade: "
                    f"{decade.get('net_bps_per_trade', 0):+.1f} bps/trade, t = {decade.get('t_stat')}.")
+    _by_source(book, state)
+    _by_stock(book)
     st.markdown("**Trades**")
     table(book.sort_values(["session", "symbol"], ascending=[False, True]).round(2), "paper_trades")
+
+
+SOURCE_LABEL = {"laptop-morning": "Laptop, 08:15 model list", "laptop-evening": "Laptop, evening list",
+                "cloud": "GitHub cloud list", "unknown": "Not recorded"}
+
+
+def _by_source(book: pd.DataFrame, state: dict) -> None:
+    """Paper result by which list was traded, next to the model's own grade of both
+    experts on the *same* days — different days are not a fair comparison."""
+    if "source" not in book.columns:
+        return
+    track = pd.DataFrame(state.get("track") or [])
+    graded = track.set_index("session")[["ranker", "rule"]] if {"session", "ranker", "rule"} <= set(track.columns) \
+        else pd.DataFrame(columns=["ranker", "rule"])
+    rows = []
+    for (src, ranked), g in book.fillna({"source": "unknown", "ranked_by": "unknown"}).groupby(["source", "ranked_by"]):
+        days = sorted(g["session"].unique())
+        same = graded.reindex(days).dropna()
+        rows.append({"List traded": SOURCE_LABEL.get(src, src), "Ranked by": ranked, "Sessions": len(days),
+                     "Paper net ₹": round(g["net"].sum()), "Paper bps/trade": round(g["bps"].mean(), 1),
+                     "Same days: model bps": round(same["ranker"].mean(), 1) if len(same) else None,
+                     "Same days: gap rule bps": round(same["rule"].mean(), 1) if len(same) else None})
+    st.markdown("**By list source**")
+    table(pd.DataFrame(rows), "paper_by_source")
+    if len(graded):
+        live = graded[graded.index >= str(book["session"].min())].dropna()
+        d = live["ranker"] - live["rule"]
+        if len(d) > 2 and d.std() > 0:
+            st.caption(f"Different sources traded different days, so their paper results mostly reflect the days. "
+                       f"Graded on the same {len(d)} days, the model made {live['ranker'].mean():+.1f} bps/slot and the "
+                       f"gap rule {live['rule'].mean():+.1f} (paired {d.mean():+.1f}, t = {d.mean() / d.std() * len(d) ** 0.5:+.1f}).")
+
+
+# Trades a name needs before its own average outweighs the book's: per-trade noise
+# (~250 bps) over the true spread between names (~20 bps), squared.  Dropping names
+# after losing runs cost 3-10 bps/day in the 2019-2026 walk-forward
+# (research/gap_book_2026_10/loser_filter.py).
+SHRINK_TRADES = 150
+
+
+def _by_stock(book: pd.DataFrame) -> None:
+    filled = book[book["quantity"] > 0]
+    if filled.empty:
+        return
+    overall = filled["bps"].mean()
+    g = filled.groupby("symbol").agg(Trades=("net", "size"), Wins=("net", lambda x: int((x > 0).sum())),
+                                     Net=("net", "sum"), Avg=("bps", "mean")).reset_index()
+    g["Evidence weight %"] = g["Trades"] / (g["Trades"] + SHRINK_TRADES) * 100
+    g["Best estimate bps"] = overall + (g["Avg"] - overall) * g["Trades"] / (g["Trades"] + SHRINK_TRADES)
+    g = g.sort_values("Net").rename(columns={"symbol": "Stock", "Net": "Net ₹", "Avg": "Own avg bps"}).round(1)
+    with st.expander(f"By stock ({len(g)} names) — does any stock 'always lose'?"):
+        table(g, "paper_by_stock")
+        st.caption(f"A single trade swings about ±250 bps, so a name's own average over a handful of trades is mostly "
+                   f"luck: with {int(g['Trades'].max())} trades a record carries "
+                   f"{g['Evidence weight %'].max():.0f}% weight at most. 'Best estimate' blends it with the book's "
+                   f"{overall:+.1f} bps. Tested 2019–2026: dropping names after losing runs cost 3–10 bps/day — "
+                   "names that just lost tend to be better shorts next time.")
 
 
 # ── Model ───────────────────────────────────────────────────────────────────

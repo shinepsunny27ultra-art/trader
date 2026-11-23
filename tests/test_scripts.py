@@ -304,3 +304,23 @@ def test_levels_before_the_open_sends_nothing(monkeypatch, capsys):
     monkeypatch.setattr(gs, "push", lambda *a, **k: sent.append(a))
     gs.cmd_levels(SimpleNamespace(date=None, push=True, no_fetch=True))
     assert sent == [] and "no stop levels before the 09:15 open" in capsys.readouterr().out
+
+
+def test_health_disk_thresholds_and_rate_limited_phone_alerts(tmp_path):
+    from datetime import datetime, timedelta
+    from zoneinfo import ZoneInfo
+    hc = _load_health()
+    assert hc.check_disk(free_gb=40.0, used_pct=60)[1] == hc.OK
+    assert hc.check_disk(free_gb=4.4, used_pct=99)[1] == hc.WARN          # 2026-11-23
+    assert hc.check_disk(free_gb=0.6, used_pct=99.8)[1] == hc.FAIL
+    sent = []
+    send = lambda body, title: sent.append(body) or True                   # noqa: E731
+    now = datetime(2026, 11, 23, 20, 30, tzinfo=ZoneInfo("Asia/Kolkata"))
+    probs = [("disk", hc.WARN, "99% used"), ("pre-open archive", hc.WARN, "1 session"),
+             ("champion model loads", hc.FAIL, "ModuleNotFoundError")]
+    path = tmp_path / "alerts.json"
+    assert hc.push_problems(probs, now, send=send, path=path) == ["disk", "champion model loads"]
+    assert hc.push_problems(probs, now + timedelta(hours=1), send=send, path=path) == []   # rate-limited
+    assert hc.push_problems(probs, now + timedelta(hours=7), send=send, path=path) == ["champion model loads"]
+    assert hc.push_problems(probs, now + timedelta(hours=25), send=send, path=path) == ["disk", "champion model loads"]
+    assert len(sent) == 3 and "pre-open" not in "".join(sent)

@@ -77,6 +77,12 @@ jobs:
           key: nse-archive-${{ github.run_id }}
           restore-keys: nse-archive-
 
+      # Nobody watches the laptop at 08:30: if neither it nor the cloud fallback got
+      # today's gap list onto main, say so on the phone.
+      - name: Watchdog - is today's gap list on main?
+        continue-on-error: true
+        run: python scripts/gap_reversal.py watchdog --push
+
       - name: Pre-open list (lender trades), 09:00:30 IST
         run: |
           python - <<'PY'
