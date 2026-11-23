@@ -255,3 +255,45 @@ def test_workflow_schedule_meets_the_0830_ist_deadline():
     assert "cloud-fallback --push" in run and "--dry-run" in run
     assert on["workflow_dispatch"]["inputs"]["mode"]["default"] == "dry-run"
     assert job["permissions"]["contents"] == "write"
+
+
+# ── a late laptop run must not replace a list that went out on time ─────────
+
+def _at_ist(day: date, hhmm: str) -> datetime:
+    h, m = map(int, hhmm.split(":"))
+    return datetime(day.year, day.month, day.day, h, m, tzinfo=IST)
+
+
+def test_late_laptop_run_keeps_the_on_time_list():
+    # 2026-11-18: the evening list (built 11-17 21:01) was on the phone at the
+    # open; the laptop woke at 11:55 and rebuilt it, so `record` dropped the day.
+    gs = _gs()
+    day = date(2026, 11, 18)
+    evening = {"session": "2026-11-18", "publisher": "laptop", "generated_at": "2026-11-17T21:01:41+05:30",
+               "published_at": "2026-11-17T21:01:41+05:30", "late": False}
+    cloud = {"session": "2026-11-18", "publisher": "github-actions", "generated_at": "2026-11-18T08:13:22+05:30"}
+    late = dict(evening, generated_at="2026-11-18T11:55:47+05:30", late=True)
+    none = lambda: None                                                  # noqa: E731
+    assert gs.on_time_list(day, _at_ist(day, "11:55"), local=lambda: evening, remote=none) is evening
+    assert gs.on_time_list(day, _at_ist(day, "09:26"), local=none, remote=lambda: cloud) is cloud
+    assert gs.on_time_list(day, _at_ist(day, "11:55"), local=lambda: late, remote=none) is None
+    # before the cutoff the 08:15 run refreshes the list as usual
+    assert gs.on_time_list(day, _at_ist(day, "08:15"), local=lambda: evening, remote=none) is None
+    # the 21:00 run builds tomorrow's list even though today's stands
+    assert gs.on_time_list(day, _at_ist(day, "21:00"), local=lambda: evening, remote=none) is None
+    # yesterday's list is not today's
+    assert gs.on_time_list(date(2026, 11, 19), _at_ist(date(2026, 11, 19), "10:00"),
+                           local=lambda: evening, remote=none) is None
+
+
+def test_laptop_adopts_sessions_the_cloud_recorded():
+    import pandas as pd
+    gs = _gs()
+    local = pd.DataFrame({"session": ["2026-11-17", "2026-11-17"], "symbol": ["A", "B"], "net": [1.0, 2.0]})
+    remote = pd.DataFrame({"session": ["2026-11-17", "2026-11-20", "2026-11-20"],
+                           "symbol": ["A", "C", "D"], "net": [9.0, 3.0, 4.0]})
+    book, new = gs.adopt_remote_sessions(local, remote)
+    assert new == ["2026-11-20"]
+    assert book.loc[book["session"] == "2026-11-17", "net"].tolist() == [1.0, 2.0]   # local kept
+    assert book.loc[book["session"] == "2026-11-20", "symbol"].tolist() == ["C", "D"]
+    assert gs.adopt_remote_sessions(local, None) == (local, [])

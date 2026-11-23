@@ -14,6 +14,45 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-11-23 — "names that always lose": a blacklist tested and rejected; two lost days restored
+
+**The question.** The paper book kept picking names that lost (KANOHAR 7 trades −₹11k,
+OMNI 4/−₹11k, IFCI 3/3 losers, PFOCUS 2/2, CYIENT 3/3). Drop a name after a losing run?
+
+**Test** (`research/gap_book_2026_10/loser_filter.py` → `loser_filter.json`): the production
+recipe's walk-forward scores 2019-01..2026-10, booked as live (top-8 of 300, T2T out, 13 bps);
+each rule simulated session by session on the book's own closed trades, so a dropped name's
+record freezes exactly as it would live. 13 rules: last 2/3 trades all lost (20/60/120-session
+lookback), ≥2 of 3 / 3 of 4 / 4 of 5 lost, 60-session sum < −300/−500/−800 bps, and the name's
+mean short return as a candidate < −40/−80 bps.
+
+| rule | names dropped/day | DEV Δ bps/day (t) | HOLD Δ (t) |
+|---|---|---|---|
+| last 2 lost (60) | 2.2 | −9.0 (−5.2) | −6.7 (−1.7) |
+| last 3 lost (60) | 0.9 | −4.5 (−4.2) | −3.9 (−1.5) |
+| 3 of last 4 lost | 1.2 | −5.0 (−3.8) | −6.5 (−2.2) |
+| 60-day sum < −500 bps | 1.0 | −5.6 (−4.9) | −9.9 (−3.2) |
+| candidate mean < −80 | 0.6 | −2.8 (−2.7) | −0.1 (−0.1) |
+
+**Every rule loses money**, in DEV and HOLD alike. Dropping 2.2 names a day *at random* costs
+−4.9 bps/day (sd 0.9, 20 draws); dropping the recent losers costs −9.0, so a name that just
+lost is a *better* short than the average replacement — the reversal the book trades. A
+small per-name record (2–7 trades, ±250 bps each) is noise. KANOHAR made +₹3,728 on 11-18,
+the day after the list was written. Not adopted; trial tally 43 → 56.
+
+**Two plumbing bugs found reviewing the week.**
+- 11-18 and 11-19 had on-time lists (the evening list; the cloud fallback at 08:13), but the
+  laptop woke at 11:55 / 09:26 and its catch-up job rebuilt over them, stamped LATE — `record`
+  dropped both days. Restored from `main` history and booked: +₹12,263 and +₹12,139.
+  `on_time_list()` now keeps a list that went out before 09:08 for the rest of the session.
+- Evening build for Wed 11-25: Tue 11-24 (Guru Nanak Jayanti) had no bhavcopy and no marker
+  yet, so `previous_session` raised DataNotReady and the list fell back to the gap rule.
+  It now also consults NSE's published holiday list.
+
+**The week (11-16..11-20) on paper:** +₹1,414, −₹975, +₹12,263, +₹12,139, −₹1,345 = +₹23.5k;
+11-23 −₹2,282. 11-20 and 11-23 were the cloud's gap-rule lists (laptop off); the model's own
+grade for those days was +154 and +164 bps/slot against the rule's −8 and −25.
+
 ## 2026-11-03 — five losing days, and a market-outlook size signal
 
 **What happened.** 2026-10-27 → 11-02: −₹48,576 in five sessions, from a +₹83,448 peak to

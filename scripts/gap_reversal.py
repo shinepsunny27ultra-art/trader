@@ -33,6 +33,10 @@ PAPER = OUT / "paper_book.csv"
 BACKTEST = OUT / "backtest.json"
 CONFIG = G.GapReversalConfig()
 HISTORY_DAYS_DEFAULT = 20          # calendar days of NSE files the morning refresh looks back
+# The GitHub runner ranks with the model too (2026-11-23), whose longest inputs
+# are 250-session highs/lows and returns: ~430 calendar days of NSE files.  The
+# Actions cache keeps them between runs, so only the first run downloads them all.
+CLOUD_HISTORY_DAYS = 430
 # The first session of the forward (never-backtested) paper record.
 FORWARD_START = date(2026, 9, 29)
 
@@ -182,6 +186,26 @@ def laptop_already_published(payload: dict | None, today: date) -> bool:
     return published_today(payload, today) == "laptop"
 
 
+def on_time_list(today: date, now: datetime, *, local=None, remote=None) -> dict | None:
+    """Today's list if one already went out before the entry cutoff and it is now past it.
+
+    2026-11-18/19: the laptop woke at 11:55 / 09:26 and its catch-up 08:15 job
+    rebuilt the list over the evening list (11-18) and the cloud fallback's
+    (11-19) — both on time, both what the phone showed at the open.  The late
+    rebuild was stamped LATE, so `record` dropped two tradeable days.
+    """
+    if not G.ENTRY_CUTOFF < now.strftime("%H:%M") < "15:30":   # after 15:30 the job builds tomorrow's
+        return None
+    for read in (local or G.read_picks, remote or _remote_picks):
+        try:
+            payload = read()
+        except Exception:                                     # noqa: BLE001 — network is optional
+            payload = None
+        if payload and payload.get("session") == today.isoformat() and not G.published_late(payload):
+            return payload
+    return None
+
+
 def cmd_picks(args) -> None:
     wait_for_clock()
     session = date.fromisoformat(args.date) if args.date else None
@@ -197,12 +221,18 @@ def cmd_picks(args) -> None:
         if in_actions and laptop_already_published(G.read_picks(), today):
             print(f"{today}: the laptop already published today's list — the cloud fallback stands aside")
             return
+        standing = None if in_actions else on_time_list(today, datetime.now(IST))
+        if standing:
+            print(f"{today}: the {standing.get('publisher', 'laptop')} list built "
+                  f"{str(standing.get('generated_at', ''))[:16]} went out before {G.ENTRY_CUTOFF} "
+                  "and stands — a late rebuild would replace the list that was traded")
+            return
     history_days = args.history_days
     if in_actions and history_days == HISTORY_DAYS_DEFAULT:
         # A fresh runner starts with an empty data/: the 20-session liquidity rank
         # and the 14-session ATR need a full window (2026-10-06: 12 sessions let
         # FEDDERSHOL and SEDEMAC into the "top 300").
-        history_days = 45
+        history_days = CLOUD_HISTORY_DAYS
     try:
         session, last, picks, info = _publish(session, fetch=not args.no_fetch,
                                               history_days=history_days)
@@ -630,9 +660,62 @@ def record_session(session: date, *, fetch: bool, now: datetime | None = None) -
     return trades
 
 
+def _remote_book() -> pd.DataFrame | None:
+    """The paper book as it is on GitHub `main` right now (None if unreadable)."""
+    import io
+
+    from nse_intraday_ai import cloud_sync
+
+    raw = cloud_sync.read_remote(PAPER)
+    try:
+        return pd.read_csv(io.StringIO(raw)) if raw else None
+    except (ValueError, pd.errors.ParserError):
+        return None
+
+
+def adopt_remote_sessions(book: pd.DataFrame, remote: pd.DataFrame | None) -> tuple[pd.DataFrame, list[str]]:
+    """Add the sessions `main` has and `book` lacks (the cloud recorded them while the
+    laptop was off): the laptop then neither re-records them nor pushes them away."""
+    if remote is None or remote.empty or "session" not in remote:
+        return book, []
+    have = set(book["session"]) if not book.empty else set()
+    new = sorted(set(remote["session"]) - have)
+    if not new:
+        return book, []
+    return pd.concat([book, remote[remote["session"].isin(new)]], ignore_index=True), new
+
+
+def _sync_record(message: str, recorded: list[str]) -> None:
+    """Publish the paper book.  On GitHub Actions only if `main` has not recorded
+    these sessions meanwhile (the laptop's 15:40 record wins)."""
+    from nse_intraday_ai import cloud_sync
+
+    if not os.environ.get("GITHUB_ACTIONS"):
+        _sync(message)
+        return
+    rel = PAPER.resolve().relative_to(ROOT.resolve()).as_posix()
+
+    def nobody_recorded(read) -> bool:
+        import io
+        raw = read(rel)
+        if not raw:
+            return True
+        done = set(pd.read_csv(io.StringIO(raw))["session"])
+        return not (set(recorded) & done)
+
+    ok = cloud_sync.publish([PAPER], message, force=True, attempts=3, guard=nobody_recorded)
+    print("published the paper book to main" if ok else "main already has these sessions — not published")
+
+
 def cmd_record(args) -> None:
     wait_for_clock()
     book = pd.read_csv(PAPER) if PAPER.exists() else pd.DataFrame()
+    if not os.environ.get("GITHUB_ACTIONS"):
+        book, adopted = adopt_remote_sessions(book, _remote_book())
+        if adopted:
+            print(f"adopted from main (recorded by the cloud): {', '.join(adopted)}")
+            OUT.mkdir(parents=True, exist_ok=True)
+            book.sort_values(["session", "symbol"]).to_csv(PAPER, index=False)
     if args.date:
         sessions = [date.fromisoformat(args.date)]
     else:
@@ -642,8 +725,9 @@ def cmd_record(args) -> None:
         last = last_completed_session(datetime.now(IST))
         start = max(FORWARD_START, last - timedelta(days=45))
         done = set(book["session"]) if not book.empty else set()
+        from nse_intraday_ai.nse_calendar import is_trading_day
         sessions = [d.date() for d in pd.bdate_range(start, last)
-                    if d.date().isoformat() not in done]
+                    if d.date().isoformat() not in done and is_trading_day(d.date())]
 
     # Lists that went out after the entry cutoff were never tradable: take any
     # such session back out of the book (2026-10-14 and 10-16 had been booked).
@@ -657,7 +741,10 @@ def cmd_record(args) -> None:
             book = book[~book["session"].isin(dropped_late)]
             print(f"removed from the paper book (list published LATE): {', '.join(dropped_late)}")
 
-    coverage = G.session_coverage(G.nifty500_symbols(), min(sessions)) if sessions else {}
+    try:
+        coverage = G.session_coverage(G.nifty500_symbols(), min(sessions)) if sessions else {}
+    except Exception:                                         # noqa: BLE001 — no candle DB (fresh runner)
+        coverage = {}
     newest = max(coverage) if coverage else None
     recorded = []
     for session in sessions:
@@ -689,7 +776,8 @@ def cmd_record(args) -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     book.sort_values(["session", "symbol"]).to_csv(PAPER, index=False)
     if not recorded:
-        _sync("chore(data): paper book without LATE lists [skip ci]")
+        if not os.environ.get("GITHUB_ACTIONS"):
+            _sync("chore(data): paper book without LATE lists [skip ci]")
         return
 
     per_day = book.groupby("session")["net"].sum()
@@ -703,7 +791,8 @@ def cmd_record(args) -> None:
                  f"({per_day.sum() / CONFIG.capital * 100:+.2f}%), {(per_day > 0).sum()} up days")
         push(f"📒 Gap-reversal result {session:%d %b}", body,
              enabled=args.push and session == recorded[-1][0], priority="default")
-    _sync(f"chore(data): paper result for {recorded[-1][0]} [skip ci]")
+    _sync_record(f"chore(data): paper result for {recorded[-1][0]} [skip ci]",
+                 [d.isoformat() for d, _ in recorded])
 
 
 def _window_summary(result: G.BacktestResult) -> dict:
@@ -781,7 +870,8 @@ def main() -> None:
                                                "publishes first")
     f.add_argument("--push", action="store_true", help="send to the phone via ntfy when published")
     f.add_argument("--no-fetch", action="store_true", help="use the local cache as-is")
-    f.add_argument("--history-days", type=int, default=45, help="calendar days of NSE files to refresh")
+    f.add_argument("--history-days", type=int, default=CLOUD_HISTORY_DAYS,
+                   help="calendar days of NSE files to refresh (the model needs ~430)")
     f.add_argument("--build-at", default=FALLBACK_BUILD_AT, help="HH:MM IST to start building")
     f.add_argument("--deadline", default=FALLBACK_DEADLINE, help="HH:MM IST the laptop has priority until")
     f.add_argument("--dry-run", action="store_true", help="build and decide, but neither publish nor push")
