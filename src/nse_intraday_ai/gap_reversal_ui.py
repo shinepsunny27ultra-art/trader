@@ -440,7 +440,11 @@ def page_performance() -> None:
     backtest = read_json(str(OUT / "backtest.json")) or {}
     decade = backtest.get("decade") or {}
     state = read_json(str(MODELS / "meta_state.json")) or {}
-    exp_bps = state.get("expected_bps") or decade.get("net_bps_per_trade")
+    report = read_json(str(MODELS / "weekly_report.json")) or {}
+    traded = report.get("ranker_traded") or {}
+    # The traded book's own walk-forward (top 6 since 2026-11-23) when the weekly
+    # review has computed it; else the guard's top-8 figure, which understates it.
+    exp_bps = traded.get("net_bps_per_trade") or state.get("expected_bps") or decade.get("net_bps_per_trade")
     daily = book.groupby("session").agg(trades=("net", "size"), net=("net", "sum"),
                                          exposure=("exposure", "sum")).reset_index()
     daily["cumulative"] = daily["net"].cumsum()
@@ -457,7 +461,8 @@ def page_performance() -> None:
     c[3].metric("Stop rate", f"{(filled['exit_reason'] == 'STOP').mean() * 100:.0f}%")
     c[4].metric("Avg win / loss", f"₹{wins['net'].mean() if len(wins) else 0:,.0f} / ₹{losses['net'].mean() if len(losses) else 0:,.0f}")
     c[5].metric("Net per trade", f"{book['bps'].mean():+.1f} bps",
-                f"{book['bps'].mean() - exp_bps:+.1f} vs model's walk-forward" if exp_bps is not None else None)
+                f"{book['bps'].mean() - exp_bps:+.1f} vs model's walk-forward"
+                + ("" if traded else " (top-8)") if exp_bps is not None else None)
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.06, row_heights=[0.62, 0.38])
     fig.add_scatter(x=daily["session"], y=daily["cumulative"], name="Paper equity (cumulative net)",
                     mode="lines+markers", line=dict(width=2.5, color=UP), row=1, col=1)

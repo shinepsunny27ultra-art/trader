@@ -377,6 +377,11 @@ def weekly(*, eval_years: float = 2.0, min_t: float = 2.0, log=print) -> dict:
         "open_vs_ranker": R.paired(open_book, model_book, start),
         "ranker_liquidity_cost": R.summarize(
             R.book(panel, oos.where(clean), universe=BOOK_UNIVERSE, cost_bps=None), start),
+        # The book trades the top `picks` (6 since 2026-11-23); the guard and the
+        # drift alarm keep grading top-8 books, this is the dashboard's expectation.
+        "ranker_traded": R.summarize(R.book(panel, oos.where(clean), k=gcfg.picks, universe=BOOK_UNIVERSE,
+                                            entry_limit=lim["ranker"]), start),
+        "traded_picks": gcfg.picks,
     }
     verdicts = {}
     for name, cfg, gate, own in (
