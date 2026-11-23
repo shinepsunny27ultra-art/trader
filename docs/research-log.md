@@ -14,6 +14,44 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-11-23 (later) — a gold book: at most 3 gold-linked stocks a day, driven by gold
+
+**Ask:** a separate section of gold-related stocks, trades depending on gold, at most three.
+`research/gold_book_2026_11/` (gold_lab.py, combine.py; production code in
+`src/nse_intraday_ai/gold_book.py`, which the lab imports — re-run gave identical numbers).
+
+**Setup.** 17 names fixed by industry (jewellers TITAN, KALYANKJIL, SENCO, THANGAMAYL, RAJESHEXPO,
+PCJEWELLER, SKYGOLD, SHANTIGOLD, GOLDIAM, TBZ, VAIBHAVGBL, BLUESTONE, MOTISONS, PNGJL; lenders
+MUTHOOTFIN, MANAPPURAM, IIFL); tradable if ≥ ₹10 cr/day, ≥ ₹50, no T2T (~7 a day). Gold = Dukascopy
+1-minute spot XAU/USD at 09:00 and 15:30 IST. Trades as the gap book (open → 15:15, stop 0.75×ATR,
+13 bps; +5 when the rule needs today's open). DEV 2016-07..2023-12, HOLD 2024-01..2026-11 once.
+
+**DEV correlations** of the overnight gold move with the stock's *intraday* move: MUTHOOTFIN +0.12,
+MANAPPURAM +0.12, jewellers −0.01..+0.04. With the opening gap: TITAN +0.08, MUTHOOTFIN +0.13.
+
+| rule | DEV bps/trade (t) | HOLD bps/trade (t) |
+|---|---|---|
+| follow overnight gold, top-3 β names, ±0.3/0.5/1.0% | −2.6 / +0.5 / +11.5 (≤0.7) | +2.8 / +9.8 / +2.5 |
+| fade overnight gold (same) | −24 / −28 / −38 | −29 / −33 / −31 |
+| gold 20-day trend → long/short top-3 β | −11.0 (−2.1) | −30.6 (−4.6) |
+| **S4: fade gold-adjusted gap** (gap0 − β·g_on, ≥1%) | **+26.0 (2.7)**, 8/8 years + | **+25.2 (2.3)** |
+| control: fade the raw gap, gold ignored | +22.5 (2.3) | +13.0 (1.3) |
+| S4 only with the gold trend | +37.7 (2.4) | +19.3 (1.1) |
+| main gap rule on gold names when gold trends down | +30.8 (1.7) | −9.8 |
+| **S8: lenders follow overnight gold ≥0.5%** (added after the correlations) | **+16.5 (2.3)** | **+18.6 (2.4)**, 3/3 years + |
+
+**Combined book** (S8 first, S4 fills the slots; chosen after the HOLD look): DEV +15.9 (t 2.5),
+HOLD +17.7 (t 2.4), Sharpe ≈ 1.1, max drawdown 47% of the book's capital — weak next to the gap book.
+No rule reached DEV t ≥ 3. 16 rules + 1 control + 1 combination.
+
+**Live.** Yahoo's GC=F jumps on contract rolls (2026-10-26: −0.61% "overnight" vs spot −0.23%), so
+the live gold price is Dukascopy spot too, stored as `data/gold_book/gold_marks.csv` (09:00/15:30 by
+session) and topped up each morning. The live list reproduced the lab's on 56/56 sessions. Entry
+delay, 2026-05..11 5-minute bars (gross, no stops): lenders +63 bps at the open vs +36 at 09:20; so
+the lender trades go out at 09:01 for the pre-open, gap fades at 09:16 (booked at the 09:20 bar —
+an untested delay). Paper record from 2026-11-25; laptop timers + `gold_book.yml` on GitHub.
+2026-11-23 itself (gold +1.01% overnight): long the three lenders, −₹7,128.
+
 ## 2026-11-23 — "names that always lose": a blacklist tested and rejected; two lost days restored
 
 **The question.** The paper book kept picking names that lost (KANOHAR 7 trades −₹11k,

@@ -21,12 +21,14 @@ if str(_SRC) not in sys.path:          # `streamlit run` does not put src/ on th
     sys.path.insert(0, str(_SRC))
 
 from nse_intraday_ai import gap_reversal_ui as ui  # noqa: E402
+from nse_intraday_ai import gold_ui  # noqa: E402
 from nse_intraday_ai import intraday_ui  # noqa: E402
 
 ROOT = _SRC.parent
 APP_NAME = "NSE Trading Desk"
 DEVELOPER = "Shine"
-PAGES = {"📋 Gap book — Today": ui.page_today, "📡 Intraday monitor": intraday_ui.page_intraday,
+PAGES = {"📋 Gap book — Today": ui.page_today, "🥇 Gold stocks": gold_ui.page_gold,
+         "📡 Intraday monitor": intraday_ui.page_intraday,
          "📈 Performance": ui.page_performance, "🧠 Model": ui.page_model, "ℹ️ About": None}
 
 

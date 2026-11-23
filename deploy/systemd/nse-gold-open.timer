@@ -1,0 +1,9 @@
+[Unit]
+Description=Gold book final list, 09:16 IST (after the 09:15 open)
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 09:16:00
+Persistent=false
+
+[Install]
+WantedBy=timers.target

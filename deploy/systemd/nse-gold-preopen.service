@@ -1,0 +1,9 @@
+[Unit]
+Description=Gold book: lender trades for the pre-open (gold's overnight move)
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/trading-workspace
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/gold_book.py preopen --push
+TimeoutStartSec=300

@@ -1,0 +1,9 @@
+[Unit]
+Description=Gold book: record the session's paper result
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/trading-workspace
+ExecStart=%h/trading-workspace/.venv/bin/python %h/trading-workspace/scripts/gold_book.py record --push
+TimeoutStartSec=600
