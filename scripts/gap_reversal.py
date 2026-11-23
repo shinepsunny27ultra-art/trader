@@ -534,7 +534,7 @@ def cmd_final(args) -> None:
         f"\nReserves: {reserves}"
         f"\nEnter: MIS market SELL at 09:15:00 sharp (this list uses today's opening prices)."
         f"\nThen: BUY SL-M at your fill + the stop shown. Cover all at {CONFIG.square_off}."
-        f"\n{changed} of 8 names differ from the 08:15 list. If you already entered the 08:15 "
+        f"\n{changed} of {CONFIG.picks} names differ from the 08:15 list. If you already entered the 08:15 "
         f"list in the pre-open, keep it — do not double up.")
     push(f"🎯 FINAL gap-reversal shorts {session:%a %d %b}", body, enabled=args.push)
     _sync(f"chore(data): final picks for {session} [skip ci]")
