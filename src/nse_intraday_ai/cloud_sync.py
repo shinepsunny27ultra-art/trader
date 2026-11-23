@@ -48,8 +48,8 @@ def model_files(models: Path) -> list[Path]:
         if pointer.name != "champion.json":
             out.append(pointer)
         out += sorted(p for p in directory.glob("*") if p.is_file())
-    outlook = models / "market_outlook.pkl"
-    return out + ([outlook] if outlook.exists() else [])
+    outlook, pins = models / "market_outlook.pkl", models / "constraints.txt"
+    return out + [p for p in (outlook, pins) if p.exists()]
 
 
 def read_remote(path: Path, *, branch: str = "main", remote: str = "origin", root: Path = ROOT,

@@ -287,9 +287,11 @@ def _list_message(session: date, last, picks: list[G.Pick], info: dict,
         t = info.get("guard_t")
         ranked = ("\nRanked by the trained model"
                   + (f" (60-session edge over the gap rule: t={t:+.1f})." if t is not None else "."))
+    elif info.get("model_error"):
+        ranked = (f"\n⚠ THE MODEL DID NOT LOAD — ranked by the gap rule instead. {info['model_error']}")
     elif os.environ.get("GITHUB_ACTIONS"):
-        ranked = ("\nCLOUD FALLBACK: the laptop has not published today's list, so this one is ranked by "
-                  "the gap rule (no model in the cloud).")
+        ranked = ("\nCLOUD FALLBACK: the laptop has not published today's list, and this one is ranked by "
+                  f"the gap rule ({info.get('fallback') or 'the model guard is off or no model is promoted'}).")
     elif info.get("ranked_by") == "rule" and "fallback" not in info:
         ranked = ("\nRanked by the gap rule — the model's guard has switched it off "
                   f"(t={info.get('guard_t')}) or no model is promoted yet.")

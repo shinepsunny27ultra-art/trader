@@ -118,5 +118,8 @@ def load(path: Path = PATH) -> Outlook | None:
         raw = pickle.loads(path.read_bytes())
     except (OSError, pickle.UnpicklingError, EOFError):
         return None
+    except Exception as exc:                                  # noqa: BLE001 — other library versions
+        print(f"WARNING: market outlook could not load ({type(exc).__name__}: {str(exc)[:120]})", flush=True)
+        return None
     raw.pop("saved_at", None)
     return Outlook(**raw)

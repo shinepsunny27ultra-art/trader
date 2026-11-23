@@ -195,3 +195,33 @@ def test_default_cusum_rarely_fires_on_a_healthy_book():
         return n / len(years)
     new, old = alarms_per_year(), alarms_per_year(slack_bps=10.0, threshold_bps=400.0)
     assert new < 2.5 and old > 4 * new
+
+
+def test_save_records_versions_and_importances_and_promote_pins_them(tmp_path, monkeypatch):
+    import json
+    monkeypatch.setattr(R, "MODELS", tmp_path)
+    monkeypatch.setattr(R, "CONSTRAINTS", tmp_path / "constraints.txt")
+    p = _panel(n_days=300)
+    directory = R.Ranker.fit(p, FAST).save(tmp_path / "ranker_x")
+    meta = json.loads((directory / "meta.json").read_text())
+    assert meta["environment"]["scikit-learn"] and meta["environment"]["numpy"]
+    imp = json.loads((directory / "feature_importance.json").read_text())["importance_pct"]
+    assert max(imp, key=imp.get) == "signal"                     # the planted signal leads
+    R.promote(directory, {"t": 3.1})
+    pins = (tmp_path / "constraints.txt").read_text()
+    assert f"scikit-learn=={meta['environment']['scikit-learn']}" in pins
+
+
+def test_a_champion_from_another_library_version_is_reported_not_silent(tmp_path, monkeypatch, capsys):
+    # 2026-11-23: scikit-learn 1.9.1 raises ModuleNotFoundError('_loss') on a 1.8.0 pickle,
+    # which the old except clause let through (and the list fell back to the rule quietly).
+    import json
+    monkeypatch.setattr(R, "MODELS", tmp_path)
+    p = _panel(n_days=300)
+    directory = R.Ranker.fit(p, FAST).save(tmp_path / "ranker_x")
+    R.promote(directory, {})
+    monkeypatch.setattr(R.pickle, "loads", lambda b: (_ for _ in ()).throw(ModuleNotFoundError("No module named '_loss'")))
+    assert R.load_champion() is None
+    assert "_loss" in (R.LAST_LOAD_ERROR or "") and "scikit-learn" in R.LAST_LOAD_ERROR
+    assert "WARNING" in capsys.readouterr().out
+    assert json.loads((tmp_path / "champion.json").read_text())["directory"] == "ranker_x"

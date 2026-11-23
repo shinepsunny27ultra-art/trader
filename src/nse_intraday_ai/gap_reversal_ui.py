@@ -87,7 +87,14 @@ def expected_session(now: datetime) -> date:
 
 @st.cache_data(ttl=600, show_spinner="Loading champion model…")
 def feature_importance(directory: str, mtime: float) -> tuple[pd.Series, str]:
-    """Top-25 importances (% of total) and the method used; empty on failure."""
+    """Top-25 importances (% of total) and the method used; empty on failure.
+
+    Reads feature_importance.json (written with the model) when present: the
+    pickle only loads under the scikit-learn version that wrote it."""
+    saved = read_json(str(Path(directory) / "feature_importance.json"))
+    if saved and saved.get("importance_pct"):
+        imp = pd.Series(saved["importance_pct"], dtype=float).sort_values(ascending=False)
+        return imp.head(25), str(saved.get("method", ""))
     try:
         from nse_intraday_ai.ranker import Ranker
         ranker = Ranker.load(Path(directory))
@@ -570,7 +577,7 @@ def page_model() -> None:
     directory = MODELS / str((champ or {}).get("directory", ""))
     if not champ or not (directory / "meta.json").exists():
         st.info("No champion model artifacts to inspect." if not champ else
-                "Model files stay on the trading laptop (this cloud copy shows the summaries only).")
+                "The champion's files have not reached this copy yet.")
         return
     imp, method = feature_importance(str(directory), (directory / "meta.json").stat().st_mtime)
     if imp.empty:
