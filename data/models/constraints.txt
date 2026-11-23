@@ -1,0 +1,9 @@
+# The champion model's package versions (written by ranker.promote).
+# pip install -r requirements.txt -c data/models/constraints.txt
+joblib==1.5.3
+lightgbm==4.7.0
+numpy==2.5.2
+pandas==3.0.2
+scikit-learn==1.8.0
+scipy==1.16.1
+threadpoolctl==3.6.0
