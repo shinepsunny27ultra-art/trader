@@ -270,3 +270,25 @@ def test_asian_opening_gaps_use_the_same_date_bar_only():
     assert np.isnan(row["hsi_open0"])
     assert row["asia_open0"] == pytest.approx(0.01, rel=1e-4)
     assert set(FT.ASIA_OPEN_FEATURES) <= set(FT.UNVALIDATED_FEATURES)   # gated until an A/B passes
+
+
+def test_intraday_beta_measures_market_sensitivity_from_past_days_only():
+    # S00 moves exactly 2x the market open->close every day; S01 does not move with it.
+    rng = np.random.default_rng(3)
+    days = list(pd.bdate_range("2026-01-01", periods=120).date)
+    mkt = rng.normal(0, 0.01, len(days))
+    rows = []
+    for j in range(12):
+        close = 100.0 + 10 * j
+        for i, d in enumerate(days):
+            prev, o = close, close * (1 + rng.normal(0, 0.003))
+            k = 2.0 if j == 0 else (0.0 if j == 1 else 1.0)
+            close = o * (1 + k * mkt[i] + rng.normal(0, 0.001 if j < 2 else 0.004))
+            rows.append({"session": d, "symbol": f"S{j:02d}", "series": "EQ", "open": o, "high": max(o, close) * 1.002,
+                         "low": min(o, close) * 0.998, "close": close, "prev_close": prev, "volume": 1e5,
+                         "value": 1e8 * (12 - j), "trades": 1000, "deliv_qty": 5e4, "deliv_pct": 50.0})
+    panel = FT.build(_inputs(pd.DataFrame(rows)), universe=12, min_price=1.0)
+    last = panel.xs(days[-1], level="session")
+    assert last.loc["S00", "beta_intra60"] == pytest.approx(2.0, abs=0.25)
+    assert abs(last.loc["S01", "beta_intra60"]) < 0.3
+    assert set(FT.BETA_FEATURES) <= set(FT.UNVALIDATED_FEATURES)          # gated until an A/B passes

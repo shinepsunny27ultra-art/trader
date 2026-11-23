@@ -7,13 +7,14 @@ import pandas as pd
 import pytest
 
 from nse_intraday_ai import meta as M
-from nse_intraday_ai import nse_bhav
+from nse_intraday_ai import nse_bhav, nse_calendar
 from nse_intraday_ai import pipeline as P
 
 
 @pytest.fixture
 def cache(tmp_path, monkeypatch):
     monkeypatch.setattr(nse_bhav, "CACHE", tmp_path)
+    monkeypatch.setattr(nse_calendar, "holidays", lambda refresh=False: {date(2026, 11, 24)})
 
     def put(day: date, holiday: bool = False):
         path = nse_bhav._holiday_marker(day, tmp_path) if holiday else nse_bhav._path(day, tmp_path)
@@ -36,6 +37,13 @@ def test_previous_session_refuses_a_day_without_file_or_marker(cache):
     cache(date(2026, 9, 28))
     with pytest.raises(P.DataNotReady):
         P.previous_session(date(2026, 9, 30))
+
+
+def test_previous_session_knows_a_published_holiday_before_it_happens(cache):
+    # 2026-11-23 evening, building Wed 25 Nov: Tue 24 Nov is on NSE's holiday
+    # list but has no marker yet.  It must be skipped, not treated as missing data.
+    cache(date(2026, 11, 23))
+    assert P.previous_session(date(2026, 11, 25)) == date(2026, 11, 23)
 
 
 def _rows(n=30, seed=0):

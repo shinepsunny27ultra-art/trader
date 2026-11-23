@@ -3,9 +3,12 @@ name: NSE morning gap list (cloud fallback)
 # All times IST (cron below is UTC = IST - 5:30).
 #
 # The laptop publishes the model-ranked list at 08:15 IST.  This workflow only
-# stands in when it does not: `gap_reversal.py cloud-fallback` builds the
-# gap-rule list at 08:00, gives the laptop until 08:20, then publishes to main
-# and pushes to the phone - by ~08:21 IST.
+# stands in when it does not: `gap_reversal.py cloud-fallback` builds the list
+# at 08:00, gives the laptop until 08:20, then publishes to main and pushes to
+# the phone - by ~08:21 IST.  Since 2026-11-23 it ranks with the same promoted
+# model as the laptop (the laptop syncs the model files to main); the ~430 days
+# of NSE files the model's inputs need live in the Actions cache, topped up by
+# the "Refresh the NSE archive" step while the 03:00 run waits.
 #
 # GitHub starts scheduled runs late (15 min is normal here, more under load) and
 # can drop them, so the main run is scheduled at 03:00 IST and simply waits
@@ -30,6 +33,18 @@ concurrency:
   group: gap-picks
   cancel-in-progress: false
 
+env:
+  ARCHIVE: |
+    data/nse_bhav
+    data/nse_fo
+    data/nse_extra
+    data/nse_flows
+    data/nse_bands
+    data/nse_preopen
+    data/nse_corp
+    data/nse_holidays.json
+    data/candles.sqlite3
+
 jobs:
   morning_picks:
     runs-on: ubuntu-latest
@@ -51,6 +66,38 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Restore the NSE archive
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.ARCHIVE }}
+          key: nse-archive-${{ github.run_id }}
+          restore-keys: nse-archive-
+
+      # The first run on an empty cache downloads ~430 days (10-30 min); later
+      # runs fetch only the days since.  Done now, not at 08:00, so the list is
+      # still out by 08:21.  A failure here only means the 08:00 build fetches more.
+      - name: Refresh the NSE archive
+        continue-on-error: true
+        timeout-minutes: 90
+        env:
+          PYTHONPATH: src
+          PYTHONUNBUFFERED: "1"
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+          from nse_intraday_ai import pipeline as P
+          today = datetime.now(ZoneInfo("Asia/Kolkata")).date()
+          P.refresh(today - timedelta(days=1), days=430)
+          PY
+
+      - name: Save the NSE archive
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.ARCHIVE }}
+          key: nse-archive-${{ github.run_id }}
 
       - name: Cloud fallback (stands aside if the laptop publishes by 08:20 IST)
         env:

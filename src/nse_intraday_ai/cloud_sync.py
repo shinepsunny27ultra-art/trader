@@ -20,12 +20,34 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def state_files(root: Path = ROOT) -> list[Path]:
     """Small files the cloud dashboard reads besides the live scan: the list, the
-    paper record, the backtest summary and the model/monitoring summaries.  Model
-    binaries and raw market data stay on the laptop (the repo is public)."""
+    paper record, the backtest summary and the model/monitoring summaries — and
+    the promoted models themselves (~1.5 MB each), so the GitHub cloud fallback
+    ranks with the model on mornings the laptop is off (2026-11-23: until then
+    it could only run the gap rule).  Raw market data stays off git; the
+    workflow keeps its own archive in the Actions cache."""
     data = root / "data"
+    models = data / "models"
     return [data / "gap_reversal" / "picks.json", data / "gap_reversal" / "paper_book.csv",
-            data / "gap_reversal" / "backtest.json", data / "models" / "champion.json",
-            data / "models" / "weekly_report.json", data / "models" / "meta_state.json"]
+            data / "gap_reversal" / "backtest.json", models / "champion.json",
+            models / "weekly_report.json", models / "meta_state.json",
+            *model_files(models)]
+
+
+def model_files(models: Path) -> list[Path]:
+    """The files of every promoted champion (08:15 and 09:09) and the market outlook."""
+    import json
+
+    out = []
+    for pointer in sorted(models.glob("champion*.json")):
+        try:
+            directory = models / json.loads(pointer.read_text())["directory"]
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if pointer.name != "champion.json":
+            out.append(pointer)
+        out += sorted(p for p in directory.glob("*") if p.is_file())
+    outlook = models / "market_outlook.pkl"
+    return out + ([outlook] if outlook.exists() else [])
 
 
 def read_remote(path: Path, *, branch: str = "main", remote: str = "origin", root: Path = ROOT,

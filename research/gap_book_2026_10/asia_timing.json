@@ -1,0 +1,59 @@
+{
+ "sessions": 1922,
+ "dev": {
+  "sessions": 1638,
+  "corr_asia_vs_market_oc": -0.054,
+  "corr_asia_vs_book": 0.061,
+  "spearman_asia_vs_book": 0.029
+ },
+ "hold": {
+  "sessions": 284,
+  "corr_asia_vs_market_oc": 0.177,
+  "corr_asia_vs_book": -0.051,
+  "spearman_asia_vs_book": -0.029
+ },
+ "dev_by_asia_tercile": {
+  "0": {
+   "days": 546,
+   "book_bps": 57.0,
+   "book_down_pct": 38.1,
+   "market_oc_bps": -29.399999618530273
+  },
+  "1": {
+   "days": 546,
+   "book_bps": 70.8,
+   "book_down_pct": 32.8,
+   "market_oc_bps": -27.100000381469727
+  },
+  "2": {
+   "days": 546,
+   "book_bps": 66.6,
+   "book_down_pct": 34.2,
+   "market_oc_bps": -25.100000381469727
+  }
+ },
+ "hold_by_asia_tercile": {
+  "0": {
+   "days": 92,
+   "book_bps": 76.8,
+   "book_down_pct": 33.7,
+   "market_oc_bps": -40.0
+  },
+  "1": {
+   "days": 80,
+   "book_bps": 19.2,
+   "book_down_pct": 47.5,
+   "market_oc_bps": -18.200000762939453
+  },
+  "2": {
+   "days": 112,
+   "book_bps": 45.1,
+   "book_down_pct": 33.0,
+   "market_oc_bps": -6.199999809265137
+  }
+ },
+ "tercile_cuts_bps": [
+  -11.3,
+  24.8
+ ]
+}

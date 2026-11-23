@@ -50,9 +50,28 @@ def test_state_files_are_small_dashboard_inputs_only(tmp_path):
     rel = {f.relative_to(tmp_path).as_posix() for f in files}
     assert "data/gap_reversal/picks.json" in rel and "data/gap_reversal/paper_book.csv" in rel
     assert "data/models/meta_state.json" in rel
-    # The repo is public: no model binaries, credentials or raw market data.
+    # The repo is public: no credentials or raw market data.
     assert all(f.suffix in {".json", ".csv"} for f in files)
     assert not any("auth" in r or r.endswith(".pkl") or "candles" in r for r in rel)
+
+
+def test_state_files_carry_the_promoted_models_for_the_cloud_fallback(tmp_path):
+    import json
+    models = tmp_path / "data" / "models"
+    for name in ("ranker_2026-11-16", "ranker_2026-11-09", "ranker_open_2026-11-16"):
+        (models / name).mkdir(parents=True)
+        (models / name / "models.pkl").write_bytes(b"x")
+        (models / name / "meta.json").write_text("{}")
+    (models / "champion.json").write_text(json.dumps({"directory": "ranker_2026-11-16"}))
+    (models / "champion_ranker_open.json").write_text(json.dumps({"directory": "ranker_open_2026-11-16"}))
+    (models / "market_outlook.pkl").write_bytes(b"x")
+    (tmp_path / "data" / "auth.json").write_text("{}")
+    rel = {f.relative_to(tmp_path).as_posix() for f in cloud_sync.state_files(tmp_path)}
+    assert {"data/models/ranker_2026-11-16/models.pkl", "data/models/ranker_2026-11-16/meta.json",
+            "data/models/champion_ranker_open.json", "data/models/ranker_open_2026-11-16/models.pkl",
+            "data/models/market_outlook.pkl"} <= rel
+    assert not any("2026-11-09" in r for r in rel)                  # only the champions
+    assert not any("auth" in r or "candles" in r or "nse_" in r for r in rel)
 
 
 def _repo_pair(tmp_path):

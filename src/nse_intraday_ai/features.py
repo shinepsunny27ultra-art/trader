@@ -68,7 +68,9 @@ CORP_FEATURES = tuple(nse_corp.FEATURES) + ("gap1_z",)
 # Features that are built but kept OUT of the live models until a walk-forward
 # A/B (scripts/compare_rankers.py, paired t >= 3 after Holm) shows they help.
 # pipeline.weekly() excludes these; empty the tuple to adopt them.
-UNVALIDATED_FEATURES: tuple[str, ...] = CORP_FEATURES + ASIA_OPEN_FEATURES
+# Market betas (2026-11-03): built, gated until compare_rankers shows they help.
+BETA_FEATURES = ("beta_intra60", "beta_gap60", "beta_ret60")
+UNVALIDATED_FEATURES: tuple[str, ...] = CORP_FEATURES + ASIA_OPEN_FEATURES + BETA_FEATURES
 
 
 @dataclass
@@ -316,6 +318,17 @@ def build(inputs: Inputs, *, universe: int = 400, live_session: date | None = No
     f["amihud20"] = lag(np.log((r.abs() / val.replace(0, np.nan)).rolling(20, min_periods=10).mean() * 1e9))
     f["res_ret1"] = lag(resid)
     f["res_ret5"] = lag(resid.rolling(5, min_periods=3).sum())
+    # Market sensitivity (60 sessions to t-1): how hard a stock moves with the
+    # market.  The short book loses on broad intraday rallies (2026-10-27..11-03);
+    # a high intraday beta is the short a rally hurts most.  Market = the
+    # cross-sectional median of the liquid set (the same proxy as res_ret).
+    for name, x, m in (("beta_intra60", intra, intra.median(axis=1)),
+                       ("beta_gap60", gap, gap.median(axis=1)),
+                       ("beta_ret60", r, mkt_r)):
+        roll = dict(window=60, min_periods=40)
+        cov = x.mul(m, axis=0).rolling(**roll).mean() - x.rolling(**roll).mean().mul(m.rolling(**roll).mean(), axis=0)
+        var = m.rolling(**roll).var(ddof=0).replace(0, np.nan)
+        f[name] = lag(cov.div(var, axis=0))
     up_gap = (gap > 0).astype(float).where(gap.notna())
     runs = np.zeros(up_gap.shape)
     arr = up_gap.to_numpy()

@@ -14,6 +14,45 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
+## 2026-11-23 — "names that always lose": a blacklist tested and rejected; two lost days restored
+
+**The question.** The paper book kept picking names that lost (KANOHAR 7 trades −₹11k,
+OMNI 4/−₹11k, IFCI 3/3 losers, PFOCUS 2/2, CYIENT 3/3). Drop a name after a losing run?
+
+**Test** (`research/gap_book_2026_10/loser_filter.py` → `loser_filter.json`): the production
+recipe's walk-forward scores 2019-01..2026-10, booked as live (top-8 of 300, T2T out, 13 bps);
+each rule simulated session by session on the book's own closed trades, so a dropped name's
+record freezes exactly as it would live. 13 rules: last 2/3 trades all lost (20/60/120-session
+lookback), ≥2 of 3 / 3 of 4 / 4 of 5 lost, 60-session sum < −300/−500/−800 bps, and the name's
+mean short return as a candidate < −40/−80 bps.
+
+| rule | names dropped/day | DEV Δ bps/day (t) | HOLD Δ (t) |
+|---|---|---|---|
+| last 2 lost (60) | 2.2 | −9.0 (−5.2) | −6.7 (−1.7) |
+| last 3 lost (60) | 0.9 | −4.5 (−4.2) | −3.9 (−1.5) |
+| 3 of last 4 lost | 1.2 | −5.0 (−3.8) | −6.5 (−2.2) |
+| 60-day sum < −500 bps | 1.0 | −5.6 (−4.9) | −9.9 (−3.2) |
+| candidate mean < −80 | 0.6 | −2.8 (−2.7) | −0.1 (−0.1) |
+
+**Every rule loses money**, in DEV and HOLD alike. Dropping 2.2 names a day *at random* costs
+−4.9 bps/day (sd 0.9, 20 draws); dropping the recent losers costs −9.0, so a name that just
+lost is a *better* short than the average replacement — the reversal the book trades. A
+small per-name record (2–7 trades, ±250 bps each) is noise. KANOHAR made +₹3,728 on 11-18,
+the day after the list was written. Not adopted; trial tally 43 → 56.
+
+**Two plumbing bugs found reviewing the week.**
+- 11-18 and 11-19 had on-time lists (the evening list; the cloud fallback at 08:13), but the
+  laptop woke at 11:55 / 09:26 and its catch-up job rebuilt over them, stamped LATE — `record`
+  dropped both days. Restored from `main` history and booked: +₹12,263 and +₹12,139.
+  `on_time_list()` now keeps a list that went out before 09:08 for the rest of the session.
+- Evening build for Wed 11-25: Tue 11-24 (Guru Nanak Jayanti) had no bhavcopy and no marker
+  yet, so `previous_session` raised DataNotReady and the list fell back to the gap rule.
+  It now also consults NSE's published holiday list.
+
+**The week (11-16..11-20) on paper:** +₹1,414, −₹975, +₹12,263, +₹12,139, −₹1,345 = +₹23.5k;
+11-23 −₹2,282. 11-20 and 11-23 were the cloud's gap-rule lists (laptop off); the model's own
+grade for those days was +154 and +164 bps/slot against the rule's −8 and −25.
+
 ## 2026-11-03 — five losing days, and a market-outlook size signal
 
 **What happened.** 2026-10-27 → 11-02: −₹48,576 in five sessions, from a +₹83,448 peak to
@@ -29,6 +68,43 @@ previous 1/3/5 days (corr −0.06/−0.10). The DEV pattern (worse days after st
 reverses in HOLD. *Skipping names with overnight results* (`res_night0`): those picks made
 +79 bps/trade, against +62 for the rest. *Skipping names whose gap came with results*
 (`res_in_gap1`): +62.8 vs +62.3. Skipping either costs −0.5 / −1.5 bps/day.
+
+**Rejected: this morning's Asian opening gaps** (`{n225,kospi,twii,sti,hsi,shcomp}_open0`, `asia_open0`;
+Tokyo through Shanghai open before 08:15). In the ranker (`compare_rankers.py morning_asia`, 2019 → 2026-11)
+they gave +62.27 vs +62.32 bps/slot (+0.16/day, t 0.10, Holm p 0.46). As a timing signal (`asia_timing.py`),
+corr with the Indian open→close was −0.05 (DEV) and +0.18 (HOLD), and the book by Asian-open tercile was
+57/71/67 (DEV) and 77/19/45 (HOLD): no stable direction. They stay built and gated. The trial tally is now 38.
+
+**Strategy audit (2026-11-03).**
+- *Execution.* 128 live paper trades (5-minute path, real stop timing) made +21.1 bps net, against
+  +22.6 from the backtest label for the same trades. A gap of −1.5 bps, so the backtest's fills are faithful.
+- *Costs.* Real spreads come from Roll's measure on 1-minute Yahoo bars, 5 days, 74 recently picked names
+  (`research/gap_book_2026_10/roll_spreads_20261103.csv`). The median is 5 bps over the day and 12 near
+  15:15 (p90 12), close to RELIANCE/HDFCBANK/TCS at 1.5–6. The flat 13 bps round trip (auction entry, no
+  spread) is realistic. The daily Abdi-Ranaldo estimate behind the "spread-based costs" numbers (median 51,
+  mean 63 for the same names) has corr −0.08 with the real spread. It measures volatility, not cost. So the
+  dashboard's "ranker, spread-based costs +15 bps" row and the cost-aware ranking (+24 to +30 bps/day
+  "under spread-based costs", −3 to −4 at flat cost) are artefacts. Cost-aware ranking is rejected.
+- *Selection.* 18–22% of ranker picks had gap1 ≤ 0 in every year from 2019 to 2026. Those picks
+  earn more (+73.9 vs +59.4), so there is no drift from the thesis.
+- *Decay.* The ranker made, by year at 13 bps: 2019 +79, 2020 +69, 2021 +68, 2022 +68, 2023 +55,
+  2024 +66, **2025 +43, 2026 +45**. The live picks earned +23 (16 sessions, below the ~45 expected
+  but within noise). Recency weighting (half-life 1y / 2y) is being re-tested over 2023-01 → 2026-10.
+
+**Six losing days (10-27 → 11-03, −₹60,611) — risk overlays tested, none adopted.**
+These were tested on the walk-forward book, 2019 → 2026-10:
+- *Long-short* (long the bottom-8 by short score): DEV Sharpe 6.07 → 6.70, max DD 11.1% → 5.7%.
+  In HOLD the long leg lost −4.1 bps and the long-short Sharpe was 4.39 vs 5.29. Not stable.
+- *Size down after a streak or drawdown*: daily returns are uncorrelated (lag-1 −0.01). After
+  ≥3/4/5 losing days the next day made +60/+70/+67 bps. In drawdowns beyond 4% / 6% the next day
+  made +78 / +109. De-risking would have cost money.
+- *Sector cap* 2 / 3 names: DEV −4.3 (t −2.8) / −3.3 (t −3.1) bps/day; HOLD neutral.
+- *Drop the top-10% ATR names*: −17 (t −7.1) / −26 (t −3.8). The edge sits in the volatile names.
+
+Since 10-28, with models that had not seen the day, the live ranker made −75 bps/trade, the
+previous model −42, the gap rule −18 and 8 random shorts −34. The regime has been hostile to any
+short book, and selection was worse than random on 5 days (t ≈ −0.9). The weekly retrain promoted
+`ranker_2026-11-02` (+46.9 vs rule +29.1, paired t 3.22). The trial tally is now 43.
 
 **Adopted: the market outlook** (`market_outlook.py`, `research/gap_book_2026_10/market_direction.py`).
 A small HGB on the 90 market-level inputs known at 08:15 predicts the day's median open→close move

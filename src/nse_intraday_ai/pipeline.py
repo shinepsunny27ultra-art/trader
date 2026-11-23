@@ -28,7 +28,7 @@ import pandas as pd
 from nse_intraday_ai import features as FT
 from nse_intraday_ai import gap_reversal as G
 from nse_intraday_ai import meta as M
-from nse_intraday_ai import nse_bhav, nse_extra, nse_fo, nse_preopen
+from nse_intraday_ai import nse_bhav, nse_calendar, nse_extra, nse_fo, nse_preopen
 from nse_intraday_ai import ranker as R
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,7 +64,8 @@ def refresh(through: date, *, days: int = 20, log=print) -> None:
     except Exception as exc:                                  # noqa: BLE001
         log(f"  participant OI refresh failed: {exc}")
     wanted = sorted(set(FT.MARKET_SERIES) | set(FT.ADRS) | set(FT.ASIA_OPEN))
-    arrived = G.refresh(wanted, interval="1d", period="1mo", log=log)
+    # nifty/bank/midcap r20 need 21 bars: a fresh runner (long refresh) gets 3 months.
+    arrived = G.refresh(wanted, interval="1d", period="1mo" if days <= 45 else "3mo", log=log)
     log(f"  global/market series: {len(arrived)}/{len(wanted)}")
     # Corporate events through this morning (filings up to 08:15 count for
     # today's list) and the board-meeting schedule ahead.  Optional: without
@@ -86,14 +87,20 @@ def previous_session(session: date) -> date:
     """The last NSE session before `session`, from the files themselves.
 
     Walks back over weekdays: a day with a bhavcopy is a session, a day with a
-    holiday marker is not; a day with neither means the data is not ready.
+    holiday marker or on NSE's published holiday list is not; a day with
+    neither means the data is not ready.
+
+    2026-11-23: the evening build for Wed 25 Nov looked for Tue 24 Nov (Guru
+    Nanak Jayanti) — no file and no marker yet, because the downloader only
+    marks a holiday after the day — and fell back to the gap rule.
     """
     day = session - timedelta(days=1)
     for _ in range(15):
         if day.weekday() < 5:
             if nse_bhav._path(day, nse_bhav.CACHE).exists():
                 return day
-            if not nse_bhav._holiday_marker(day, nse_bhav.CACHE).exists():
+            if (not nse_bhav._holiday_marker(day, nse_bhav.CACHE).exists()
+                    and day not in nse_calendar.holidays()):
                 raise DataNotReady(f"no NSE bhavcopy (and no holiday marker) for {day}")
         day -= timedelta(days=1)
     raise DataNotReady(f"no NSE session in the 15 days before {session}")
