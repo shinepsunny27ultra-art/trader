@@ -70,7 +70,7 @@ def test_drop_untradeable_promotes_reserves_and_renumbers():
     table = pd.concat([table, pd.DataFrame({"series": "EQ", "band": 20.0},
                                            index=pd.Index(["R1", "R2", "R3", "R4"], name="symbol"))])
     picks = [_pick(i, s, 5.2 if s == "AUGMONT" else 3.0) for i, s in enumerate(names, 1)]
-    kept, dropped = G.drop_untradeable(picks, table)
+    kept, dropped = G.drop_untradeable(picks, table, G.GapReversalConfig(picks=8))   # 8 + 4 reserves
     assert [d.split()[0] for d in dropped] == ["AUGMONT", "SMALLCO"]
     assert [p.rank for p in kept] == list(range(1, 11))
     main = [p.symbol.removesuffix(".NS") for p in kept if not p.reserve]

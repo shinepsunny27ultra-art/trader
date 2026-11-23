@@ -10,7 +10,7 @@ The trade, decided entirely before the open:
 
   universe   the 300 most liquid NIFTY 500 names by 20-session rupee turnover
   rank       by YESTERDAY's overnight gap, open(t-1) / close(t-2) - 1
-  action     SHORT the top 8, equal rupee weight, MIS (intraday)
+  action     SHORT the top 6, equal rupee weight, MIS (intraday)
   entry      at the official open — a market order in the 09:00-09:07
              pre-open call auction, which fills at the opening price
   stop       buy-stop at entry + 0.75 x the 14-day daily ATR
@@ -73,7 +73,12 @@ SQUARE_OFF_BAR = 72          # the 15:15 bar; exit at its open
 @dataclass(frozen=True)
 class GapReversalConfig:
     universe_size: int = 300
-    picks: int = 8
+    # 2026-11-23: 6, not 8, on the same capital.  The model's net per trade falls
+    # with rank (1: +98, 4: +62, 8: +33 bps, 2019-2026 walk-forward), so ranks 7-8
+    # take capital from better names: top-6 vs top-8 +6.8 bps/day (t 5.2) 2019-25,
+    # +13.2 (t 4.0) 2025-26, every year positive; Sharpe and drawdown about equal.
+    # The learning record still grades each expert's top 8 (comparable history).
+    picks: int = 6
     stop_atr: float = 0.75
     min_price: float = 50.0
     turnover_window: int = 20

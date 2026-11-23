@@ -148,7 +148,7 @@ def test_record_refuses_a_finished_day_whose_bars_stop_early(monkeypatch):
         gs.record_session(date(2026, 10, 27), fetch=False, now=datetime(2026, 10, 27, 19, 15, tzinfo=gs.IST))
     # during the session the same bars are simply "so far"
     assert len(gs.record_session(date(2026, 10, 27), fetch=False,
-                                 now=datetime(2026, 10, 27, 14, 20, tzinfo=gs.IST))) == 8
+                                 now=datetime(2026, 10, 27, 14, 20, tzinfo=gs.IST))) == gs.CONFIG.picks
     monkeypatch.setattr(G, "load_session_bars", lambda sym, s: _bars_until(74))
     trades = gs.record_session(date(2026, 10, 27), fetch=False, now=datetime(2026, 10, 27, 19, 15, tzinfo=gs.IST))
     assert {t.exit_reason for t in trades} == {"SQUARE_OFF"}
