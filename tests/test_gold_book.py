@@ -126,3 +126,23 @@ def test_gold_page_renders_a_list_and_a_record(tmp_path, monkeypatch):
     assert not at.exception, [e.value for e in at.exception]
     shown = " ".join(str(m.value) for m in at.metric)
     assert "+0.80%" in shown
+
+
+def _gs():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("gold_script", Path(__file__).resolve().parents[1] / "scripts" / "gold_book.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_only_lists_published_in_time_are_tradable():
+    gs = _gs()
+    on_time = {"session": "2026-11-25", "published": {"preopen": "2026-11-25T09:00:41+05:30",
+                                                      "open": "2026-11-25T09:16:20+05:30"}}
+    assert gs.tradable_rules(on_time) == {"LENDERS", "GAP_FADE"}
+    late = {"session": "2026-11-25", "published": {"preopen": "2026-11-25T09:12:00+05:30",
+                                                   "open": "2026-11-25T09:40:00+05:30"}}
+    assert gs.tradable_rules(late) == set()
+    yesterday = {"session": "2026-11-25", "published": {"preopen": "2026-11-24T09:00:00+05:30"}}
+    assert gs.tradable_rules(yesterday) == set()

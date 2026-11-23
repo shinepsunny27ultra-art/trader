@@ -307,3 +307,14 @@ def test_watchdog_alerts_only_when_todays_list_is_missing_or_unmodelled():
     assert "No gap-reversal list" in gs.watchdog_message({"session": "2026-11-23"}, day, now)
     assert gs.watchdog_message({"session": "2026-11-25", "ranked_by": "ranker"}, day, now) is None
     assert "did not load" in gs.watchdog_message({"session": "2026-11-25", "model_error": "x"}, day, now)
+
+
+def test_list_source_tags_laptop_morning_evening_and_cloud():
+    gs = _gs()
+    assert gs.list_source({"session": "2026-11-25", "publisher": "github-actions", "ranked_by": "ranker",
+                           "generated_at": "2026-11-25T08:01:00+05:30"}) == ("ranker", "cloud")
+    assert gs.list_source({"session": "2026-11-25", "publisher": "laptop", "ranked_by": "ranker",
+                           "generated_at": "2026-11-23T21:00:40+05:30"}) == ("ranker", "laptop-evening")
+    assert gs.list_source({"session": "2026-11-25", "publisher": "laptop",
+                           "generated_at": "2026-11-25T08:15:30+05:30",
+                           "picks": [{"ranked_by": "rule"}]}) == ("rule", "laptop-morning")
