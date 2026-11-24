@@ -35,6 +35,11 @@ little there. Top-6 does not pass the two-period bar → **reverted to 8** (it w
 and no list was traded with it). Top-4 passes both (t 6.4 / 3.3, Sharpe higher in both) but puts
 ₹2.5 L in each name (worst day 2025–26 −4.8% vs −3.0%): left to the user.
 
+**Queued A/Bs run (2026-11-24, `compare_rankers.py`, panel rebuilt through 2026-11-23, 2019-01 →).**
+Baseline +61.9 bps/slot (Sharpe 5.94). Recency weighting, half-life 1 y: −1.7 (t −0.8); 2 y: +0.7 (t 0.4;
+2025-09 → +1.7, t 0.4). Market betas (`beta_intra60/gap60/ret60`): −0.05 (t 0.0). Same at top-4. All
+rejected; the betas stay gated. Trial tally 65.
+
 **GitHub's schedule.** This repository's scheduled runs start 4–8 h late (the 03:00 run began
 06:42–09:31; the 07:47/08:07 back-ups 15:00–16:00), so 17-Nov's cloud run came after the open and a
 08:30 gold workflow would almost never have run in time. `gap_picks.yml` now has nine starts from
