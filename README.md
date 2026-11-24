@@ -14,7 +14,7 @@ Experiments and decisions: [docs/research-log.md](docs/research-log.md)
 |---|---|
 | Universe | The 300 most liquid NSE EQ-series names by 20-session traded value, point-in-time, less ETFs (they trade in EQ too). Price ≥ ₹50; names that were trade-for-trade in the last 20 sessions are excluded. |
 | Ranking | HistGradientBoosting ranker over ~190 point-in-time features. It falls back to the gap rule (yesterday's overnight gap) whenever its live paired record says so. |
-| Size | Top 6, equal weight (₹1.67 L each on ₹10 L), MIS, no leverage. Top-6 beat top-8 on the same days: +6.8 bps/day (t 5.2) 2019–25, +13.2 (t 4.0) 2025–26. |
+| Size | Top 8, equal weight (₹1.25 L each on ₹10 L), MIS, no leverage. (Top 4 earns more in both test periods but doubles the money per name — see the research log, 2026-11-24.) |
 | Entry | Ranker lists: market SELL in the pre-open (09:00–09:05) at the open. Rule-ranked lists: **pre-open SELL LIMIT at prev close × (1 − 0.75%)**, rounded up to the tick, placed 09:00–09:08; **cancel anything unfilled at 09:15**. The push message always states which applies. |
 | Stop | BUY SL-M at fill + 0.75 × 14-day ATR. |
 | Exit | Cover at 15:15. |
