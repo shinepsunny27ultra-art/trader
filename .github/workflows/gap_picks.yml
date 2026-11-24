@@ -5,22 +5,32 @@ name: NSE morning gap list (cloud fallback)
 # The laptop publishes the model-ranked list at 08:15 IST.  This workflow only
 # stands in when it does not: `gap_reversal.py cloud-fallback` builds the list
 # at 08:00, gives the laptop until 08:20, then publishes to main and pushes to
-# the phone - by ~08:21 IST.  Since 2026-11-23 it ranks with the same promoted
-# model as the laptop (the laptop syncs the model files to main); the ~430 days
-# of NSE files the model's inputs need live in the Actions cache, topped up by
-# the "Refresh the NSE archive" step while the 03:00 run waits.
+# the phone - by ~08:21 IST.  It ranks with the same promoted model as the
+# laptop (the model files and their package pins are on main); the ~430 days of
+# NSE files the model's inputs need live in the Actions cache.
 #
-# GitHub starts scheduled runs late (15 min is normal here, more under load) and
-# can drop them, so the main run is scheduled at 03:00 IST and simply waits
-# until 08:00; two later runs are back-ups in case it is dropped.  Only one run
-# executes at a time (concurrency group); a run that finds today's list already
-# on main stands aside.  Runner minutes are free for public repositories.
+# GitHub starts this repository's scheduled runs 4-8 HOURS late (Nov 2026: the
+# 03:00 run started between 06:42 and 09:31 IST; the 07:47/08:07 back-ups at
+# 15:00-16:00).  So there are many night-time starts at odd minutes: whichever
+# starts first waits until 08:00 and does the job (a job may run 6 h, so none is
+# scheduled before ~02:40); the rest find the list on main and stand aside in a
+# minute.  The concurrency group keeps one run going and at most one pending.
+#
+# Job 2 (gold) starts when job 1 ends (~08:21 on a timely day) instead of on its
+# own schedule, which would be just as late: the watchdog, then the gold book's
+# 09:01 and 09:16 lists.  Runner minutes are free for public repositories.
 
 on:
   schedule:
-    - cron: '30 21 * * 0-4'   # 03:00 IST Mon-Fri: main run, waits until 08:00 IST
-    - cron: '17 2 * * 1-5'    # 07:47 IST Mon-Fri: back-up
-    - cron: '37 2 * * 1-5'    # 08:07 IST Mon-Fri: back-up
+    - cron: '13 21 * * 0-4'   # 02:43 IST Mon-Fri
+    - cron: '30 21 * * 0-4'   # 03:00
+    - cron: '11 22 * * 0-4'   # 03:41
+    - cron: '47 22 * * 0-4'   # 04:17
+    - cron: '23 23 * * 0-4'   # 04:53
+    - cron: '59 23 * * 0-4'   # 05:29
+    - cron: '35 0 * * 1-5'    # 06:05
+    - cron: '17 2 * * 1-5'    # 07:47
+    - cron: '37 2 * * 1-5'    # 08:07
   workflow_dispatch:
     inputs:
       mode:
@@ -34,6 +44,13 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  PYTHONPATH: src
+  PYTHONUNBUFFERED: "1"
+  NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}   # optional: phone push on days the laptop is off
+  GIT_AUTHOR_NAME: github-actions[bot]
+  GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
   ARCHIVE: |
     data/nse_bhav
     data/nse_fo
@@ -48,7 +65,7 @@ env:
 jobs:
   morning_picks:
     runs-on: ubuntu-latest
-    timeout-minutes: 345          # the 03:00 IST run ends by ~08:21 IST (5 h 21 min)
+    timeout-minutes: 355          # a 02:43 IST start ends by ~08:38 IST
     permissions:
       contents: write
 
@@ -76,22 +93,23 @@ jobs:
             pip install -r requirements.txt
           fi
 
+      - name: Today (IST)
+        id: day
+        run: echo "ist=$(TZ=Asia/Kolkata date +%F)" >> "$GITHUB_OUTPUT"
+
       - name: Restore the NSE archive
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.ARCHIVE }}
-          key: nse-archive-${{ github.run_id }}
+          key: nse-archive-${{ steps.day.outputs.ist }}
           restore-keys: nse-archive-
 
       # The first run on an empty cache downloads ~430 days (10-30 min); later
-      # runs fetch only the days since.  Done now, not at 08:00, so the list is
-      # still out by 08:21.  A failure here only means the 08:00 build fetches more.
+      # runs fetch only the days since.  A failure here only means the 08:00
+      # build fetches more.
       - name: Refresh the NSE archive
         continue-on-error: true
-        timeout-minutes: 90
-        env:
-          PYTHONPATH: src
-          PYTHONUNBUFFERED: "1"
+        timeout-minutes: 60
         run: |
           python - <<'PY'
           from datetime import datetime, timedelta
@@ -101,30 +119,97 @@ jobs:
           P.refresh(today - timedelta(days=1), days=430)
           PY
 
-      # Never let the cache block the list: a failed save (nothing to save after a
-      # failed refresh, a key clash on a re-run) must not skip the fallback below.
+      # One cache entry per day (the many runs would otherwise fill the 10 GB
+      # limit); later runs that day hit the existing key, which is harmless.
+      # Never let the cache block the list.
       - name: Save the NSE archive
         if: always()
         continue-on-error: true
         uses: actions/cache/save@v4
         with:
           path: ${{ env.ARCHIVE }}
-          key: nse-archive-${{ github.run_id }}
+          key: nse-archive-${{ steps.day.outputs.ist }}
 
       - name: Cloud fallback (stands aside if the laptop publishes by 08:20 IST)
         env:
-          PYTHONPATH: src
-          PYTHONUNBUFFERED: "1"
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}   # optional: phone push on days the laptop is off
           EVENT: ${{ github.event_name }}
           MODE: ${{ inputs.mode }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
         run: |
           if [ "$EVENT" = "workflow_dispatch" ] && [ "$MODE" != "publish" ]; then
             python scripts/gap_reversal.py cloud-fallback --dry-run --any-day --build-at 00:00 --deadline 00:00
           else
             python scripts/gap_reversal.py cloud-fallback --push
           fi
+
+  gold:
+    needs: morning_picks
+    if: always() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            data/models/constraints.txt
+
+      - name: Install Dependencies
+        run: |
+          pip install --upgrade pip
+          if [ -f data/models/constraints.txt ]; then
+            pip install -r requirements.txt -c data/models/constraints.txt
+          else
+            pip install -r requirements.txt
+          fi
+
+      - name: Restore the NSE archive
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.ARCHIVE }}
+          key: nse-archive-none
+          restore-keys: nse-archive-
+
+      # Nobody watches the laptop at 08:30: if neither it nor job 1 got today's
+      # gap list onto main, say so on the phone.
+      - name: Watchdog - is today's gap list on main?
+        continue-on-error: true
+        run: python scripts/gap_reversal.py watchdog --push
+
+      - name: Gold pre-open list (lender trades), 09:00:30 IST
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import time
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          now = datetime.now(ZoneInfo("Asia/Kolkata"))
+          wait = (now.replace(hour=9, minute=0, second=30, microsecond=0) - now).total_seconds()
+          if 0 < wait < 3 * 3600:
+              print(f"waiting {wait / 60:.1f} min", flush=True)
+              time.sleep(wait)
+          PY
+          python scripts/gold_book.py preopen --push
+
+      - name: Gold final list (gap fades), 09:16 IST
+        continue-on-error: true
+        run: |
+          python - <<'PY'
+          import time
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          now = datetime.now(ZoneInfo("Asia/Kolkata"))
+          wait = (now.replace(hour=9, minute=16, second=0, microsecond=0) - now).total_seconds()
+          if 0 < wait < 3 * 3600:
+              print(f"waiting {wait / 60:.1f} min", flush=True)
+              time.sleep(wait)
+          PY
+          python scripts/gold_book.py open --push

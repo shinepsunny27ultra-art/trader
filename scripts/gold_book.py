@@ -5,7 +5,7 @@
     python scripts/gold_book.py open [--push]      # 09:16 IST: fill the slots with gap fades
     python scripts/gold_book.py record [--push]    # after the close: paper result
 
-Runs on the laptop (systemd) and on GitHub Actions (.github/workflows/gold_book.yml).
+Runs on the laptop (systemd) and on GitHub Actions (job `gold` of .github/workflows/gap_picks.yml).
 Whichever runs first publishes a stage; a stage already on `main` is not
 overwritten by an earlier stage, so the two never fight.
 """
