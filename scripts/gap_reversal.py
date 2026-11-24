@@ -827,6 +827,9 @@ def cmd_watchdog(args) -> None:
     if not is_trading_day(now.date()):
         print(f"{now.date()}: not a trading day")
         return
+    if now.strftime("%H:%M") < "08:20":                     # the lists are due by 08:21
+        print(f"{now:%H:%M}: too early to judge — the list is due by 08:21")
+        return
     raw = cloud_sync.read_remote(G.PICKS_PATH)
     try:
         payload = json.loads(raw) if raw else None

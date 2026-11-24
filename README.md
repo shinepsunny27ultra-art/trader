@@ -33,8 +33,8 @@ stock) and in `data/gap_reversal/paper_book.csv`.
 
 **Laptop off?** The GitHub workflows do the laptop's job with the same promoted model: the
 08:00 list (`gap_picks.yml`, NSE archive in the Actions cache, the champion's exact package
-versions from `data/models/constraints.txt`), a watchdog at ~08:35 that alerts if no list reached
-`main`, and the 16:30 paper record (`gap_record.yml`).
+versions from `data/models/constraints.txt`), a watchdog at ~08:21 that alerts if no list reached
+`main`, the gold lists, and the 16:30 paper record (`gap_record.yml`).
 
 ## Gold stocks (separate page, paper-tracked)
 
