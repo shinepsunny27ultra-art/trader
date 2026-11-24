@@ -58,7 +58,7 @@ def page_about() -> None:
     st.markdown(
         "**Strategy**\n\n"
         "- Every trading day, rank the 300 most liquid NIFTY 500 names by **yesterday's overnight gap** "
-        "(or by the promoted ML ranker) and **short the top 6** at the 09:15 open, equal ₹ weight, MIS.\n"
+        "(or by the promoted ML ranker) and **short the top 8** at the 09:15 open, equal ₹ weight, MIS.\n"
         "- Each short carries a **buy-stop at fill + 0.75 × 14-day ATR** and is **covered at 15:15**.\n"
         "- The edge is the intraday give-back of overnight gains: +24.7 bps/trade net over ten years of daily "
         "bars (t = 9.2); the walk-forward ML ranker added ~20 bps/trade over the rule (2024-10 → 2026-10).\n\n"

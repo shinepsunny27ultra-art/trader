@@ -14,7 +14,34 @@ git checkout fa1b3e2 -- scripts/<name>.py # restore one
 
 Newest first.
 
-## 2026-11-23 (night) — six names instead of eight; the cloud's model would not have loaded
+## 2026-11-24 — correction: top-6 was adopted on stale scores and reverted; GitHub runs 4–8 h late
+
+**Top-6 reverted.** The 2026-11-23 sweep below joined the 27-Oct walk-forward scores
+(`pre_20261123/morning_scores.parquet`) to a newer panel. Its scores equal the current ones through
+2025-09 and differ from the 2025-10 refit on (features changed since); the current run is what the
+production model trains on. On current scores (panel through 2026-11-23):
+
+| names | vs top-8, 2019-01..2025-08 | vs top-8, 2025-09..2026-11 | Sharpe / max DD 2025–26 |
+|---|---|---|---|
+| 4 | +15.7 bps/day (t 6.4) | +18.9 (t 3.3) | 5.63 / 9.0% |
+| 5 | +8.6 (t 4.6) | +8.8 (t 2.0) | 5.11 / 11.1% |
+| 6 | +6.8 (t 5.2) | +3.2 (t 1.0) | 4.97 / 11.7% |
+| 8 | — | — | 5.20 / 7.5% |
+| 10 | −4.4 (t −4.6) | −3.8 (t −1.6) | 5.08 / 7.3% |
+
+Net bps by rank, 2025–26: 88, 67, 46, 59, 15, 21, 23, 50 (2019–25: 98, 86, 74, 64, 45, 63, 53, 36).
+The edge sits in the top four in both periods; ranks 5–6 were weak in 2025–26, so a cut at six gains
+little there. Top-6 does not pass the two-period bar → **reverted to 8** (it was live for one evening
+and no list was traded with it). Top-4 passes both (t 6.4 / 3.3, Sharpe higher in both) but puts
+₹2.5 L in each name (worst day 2025–26 −4.8% vs −3.0%): left to the user.
+
+**GitHub's schedule.** This repository's scheduled runs start 4–8 h late (the 03:00 run began
+06:42–09:31; the 07:47/08:07 back-ups 15:00–16:00), so 17-Nov's cloud run came after the open and a
+08:30 gold workflow would almost never have run in time. `gap_picks.yml` now has nine starts from
+02:43 to 08:07 (the first one to start waits for 08:00), one archive cache per day, and the gold lists
+and the watchdog as a second job that starts when the first ends.
+
+## 2026-11-23 (night) — [top-6 part superseded 2026-11-24, see above]; the cloud's model would not have loaded
 
 **Top 6 instead of top 8, same ₹10 L.** Net per trade by the model's rank, 2019-01 → 2026-10
 walk-forward at 13 bps: 1 +98, 2 +86, 3 +75, 4 +62, 5 +44, 6 +57, 7 +45, 8 +33. With the capital
@@ -29,7 +56,7 @@ fixed, ranks 7–8 take money from better names.
 | 10 / 12 / 16 | 60.4 / 56.5 / 51.6 | 40.4 / 39.7 / 32.7 | ≤ 5.94 | — |
 
 Top-6 vs top-8 on the same days: +6.8 bps/day (t 5.2) and +13.2 (t 4.0), positive in all eight
-years. The gap rule gains too (+1.9 / +4.0, t 1.5). On the 26 live sessions with saved ranks, the top 6 of each published list made +28.3 bps/day against +8.0 for all eight (t 1.8), under every list source. **Adopted** (`GapReversalConfig.picks = 6`,
+years. The gap rule gains too (+1.9 / +4.0, t 1.5). On the 26 live sessions with saved ranks, the top 6 of each published list made +28.3 bps/day against +8.0 for all eight (t 1.8), under every list source. **Adopted, then reverted on 2026-11-24** (`GapReversalConfig.picks = 6`,
 ₹1.67 L a name). The learning record keeps grading each expert's top 8, so the guard, the CUSUM and
 their history stay comparable; the weekly report adds `ranker_traded` (the top-6 expectation) for
 the dashboard. 4–5 names earn more but concentrate more. Trial tally 62.
