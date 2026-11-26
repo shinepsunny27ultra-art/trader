@@ -1,7 +1,7 @@
 {
   "session": "2026-11-26",
-  "stage": "preopen",
-  "generated_at": "2026-11-26T09:02:55+05:30",
+  "stage": "open",
+  "generated_at": "2026-11-26T09:16:02+05:30",
   "gold": {
     "overnight_pct": 1.35,
     "trend20_pct": -10.66,
@@ -58,7 +58,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 642.45,
-      "gap_pct": null,
+      "gap_pct": 0.4,
       "beta": 0.162,
       "turnover_cr": 36.7
     },
@@ -67,7 +67,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 284.0,
-      "gap_pct": null,
+      "gap_pct": 0.69,
       "beta": 0.308,
       "turnover_cr": 11.2
     },
@@ -76,7 +76,7 @@
       "lender": true,
       "tradable": true,
       "prev_close": 610.5,
-      "gap_pct": null,
+      "gap_pct": 1.19,
       "beta": 0.275,
       "turnover_cr": 457.1
     },
@@ -85,7 +85,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 636.35,
-      "gap_pct": null,
+      "gap_pct": 0.73,
       "beta": 0.228,
       "turnover_cr": 1046.0
     },
@@ -94,7 +94,7 @@
       "lender": true,
       "tradable": true,
       "prev_close": 267.5,
-      "gap_pct": null,
+      "gap_pct": 1.33,
       "beta": 0.411,
       "turnover_cr": 230.9
     },
@@ -103,7 +103,7 @@
       "lender": false,
       "tradable": false,
       "prev_close": 12.82,
-      "gap_pct": null,
+      "gap_pct": 0.39,
       "beta": 0.118,
       "turnover_cr": 32.2
     },
@@ -112,7 +112,7 @@
       "lender": true,
       "tradable": true,
       "prev_close": 2549.6,
-      "gap_pct": null,
+      "gap_pct": 1.19,
       "beta": 0.505,
       "turnover_cr": 291.3
     },
@@ -121,7 +121,7 @@
       "lender": false,
       "tradable": false,
       "prev_close": 14.1,
-      "gap_pct": null,
+      "gap_pct": 0.0,
       "beta": 0.182,
       "turnover_cr": 651.5
     },
@@ -130,7 +130,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 558.0,
-      "gap_pct": null,
+      "gap_pct": 0.36,
       "beta": 0.199,
       "turnover_cr": 29.0
     },
@@ -148,7 +148,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 314.0,
-      "gap_pct": null,
+      "gap_pct": 0.64,
       "beta": 0.255,
       "turnover_cr": 47.1
     },
@@ -157,7 +157,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 208.2,
-      "gap_pct": null,
+      "gap_pct": -1.01,
       "beta": 0.192,
       "turnover_cr": 48.2
     },
@@ -166,7 +166,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 802.3,
-      "gap_pct": null,
+      "gap_pct": 0.46,
       "beta": 0.16,
       "turnover_cr": 166.4
     },
@@ -184,7 +184,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 3842.6,
-      "gap_pct": null,
+      "gap_pct": -0.07,
       "beta": 0.191,
       "turnover_cr": 37.1
     },
@@ -193,7 +193,7 @@
       "lender": false,
       "tradable": true,
       "prev_close": 4686.6,
-      "gap_pct": null,
+      "gap_pct": 0.01,
       "beta": 0.154,
       "turnover_cr": 534.3
     },
@@ -202,7 +202,7 @@
       "lender": false,
       "tradable": false,
       "prev_close": 156.43,
-      "gap_pct": null,
+      "gap_pct": 0.36,
       "beta": 0.278,
       "turnover_cr": 9.2
     }
@@ -214,9 +214,10 @@
     "stop_atr": 0.75,
     "capital_per_name": 125000.0
   },
-  "opens_from": null,
+  "opens_from": "pre-open auction (NSE)",
   "publisher": "github-actions",
   "published": {
-    "preopen": "2026-11-26T09:02:50+05:30"
+    "preopen": "2026-11-26T09:02:50+05:30",
+    "open": "2026-11-26T09:16:00+05:30"
   }
 }
