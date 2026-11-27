@@ -1,55 +1,55 @@
 {
-  "session": "2026-11-26",
+  "session": "2026-11-27",
   "stage": "open",
-  "generated_at": "2026-11-26T09:16:02+05:30",
+  "generated_at": "2026-11-27T09:16:05+05:30",
   "gold": {
-    "overnight_pct": 1.35,
-    "trend20_pct": -10.66,
-    "vs_ma50_pct": -12.46,
+    "overnight_pct": 1.48,
+    "trend20_pct": -10.58,
+    "vs_ma50_pct": -10.89,
     "trend": "DOWN"
   },
   "picks": [
     {
-      "symbol": "IIFL",
-      "side": "LONG",
-      "rule": "LENDERS",
-      "reason": "gold +1.35% overnight: lenders follow gold",
-      "prev_close": 610.5,
-      "open": null,
-      "atr_pct": 5.45,
-      "stop_pct": 4.09,
-      "quantity": 204,
-      "entry": "pre-open 09:01-09:07 (MIS market order; fills at the open)",
-      "beta": null,
-      "resid_pct": null
-    },
-    {
-      "symbol": "MANAPPURAM",
-      "side": "LONG",
-      "rule": "LENDERS",
-      "reason": "gold +1.35% overnight: lenders follow gold",
-      "prev_close": 267.5,
-      "open": null,
-      "atr_pct": 4.05,
-      "stop_pct": 3.04,
-      "quantity": 467,
-      "entry": "pre-open 09:01-09:07 (MIS market order; fills at the open)",
-      "beta": null,
-      "resid_pct": null
-    },
-    {
       "symbol": "MUTHOOTFIN",
       "side": "LONG",
-      "rule": "LENDERS",
-      "reason": "gold +1.35% overnight: lenders follow gold",
-      "prev_close": 2549.6,
-      "open": null,
-      "atr_pct": 3.88,
-      "stop_pct": 2.91,
-      "quantity": 49,
-      "entry": "pre-open 09:01-09:07 (MIS market order; fills at the open)",
-      "beta": null,
-      "resid_pct": null
+      "rule": "GAP_FADE",
+      "reason": "opened +2.34%, gold explains +0.75%: fade the +1.59% rest",
+      "prev_close": 2558.0,
+      "open": 2617.8,
+      "atr_pct": 3.43,
+      "stop_pct": 2.58,
+      "quantity": 47,
+      "entry": "09:16-09:20 (MIS market order)",
+      "beta": 0.507,
+      "resid_pct": 1.59
+    },
+    {
+      "symbol": "KALYANKJIL",
+      "side": "SHORT",
+      "rule": "GAP_FADE",
+      "reason": "opened +1.67%, gold explains +0.34%: fade the +1.33% rest",
+      "prev_close": 639.8,
+      "open": 650.5,
+      "atr_pct": 6.02,
+      "stop_pct": 4.51,
+      "quantity": 192,
+      "entry": "09:16-09:20 (MIS market order)",
+      "beta": 0.229,
+      "resid_pct": 1.33
+    },
+    {
+      "symbol": "SHANTIGOLD",
+      "side": "SHORT",
+      "rule": "GAP_FADE",
+      "reason": "opened +1.58%, gold explains +0.28%: fade the +1.30% rest",
+      "prev_close": 221.35,
+      "open": 224.85,
+      "atr_pct": 5.84,
+      "stop_pct": 4.38,
+      "quantity": 555,
+      "entry": "09:16-09:20 (MIS market order)",
+      "beta": 0.189,
+      "resid_pct": 1.3
     }
   ],
   "universe": [
@@ -57,82 +57,82 @@
       "symbol": "BLUESTONE",
       "lender": false,
       "tradable": true,
-      "prev_close": 642.45,
-      "gap_pct": 0.4,
+      "prev_close": 660.25,
+      "gap_pct": 0.51,
       "beta": 0.162,
-      "turnover_cr": 36.7
+      "turnover_cr": 37.0
     },
     {
       "symbol": "GOLDIAM",
       "lender": false,
       "tradable": true,
-      "prev_close": 284.0,
-      "gap_pct": 0.69,
-      "beta": 0.308,
-      "turnover_cr": 11.2
+      "prev_close": 284.8,
+      "gap_pct": 0.42,
+      "beta": 0.305,
+      "turnover_cr": 11.1
     },
     {
       "symbol": "IIFL",
       "lender": true,
       "tradable": true,
-      "prev_close": 610.5,
-      "gap_pct": 1.19,
-      "beta": 0.275,
-      "turnover_cr": 457.1
+      "prev_close": 593.95,
+      "gap_pct": 1.44,
+      "beta": 0.277,
+      "turnover_cr": 487.9
     },
     {
       "symbol": "KALYANKJIL",
       "lender": false,
       "tradable": true,
-      "prev_close": 636.35,
-      "gap_pct": 0.73,
-      "beta": 0.228,
-      "turnover_cr": 1046.0
+      "prev_close": 639.8,
+      "gap_pct": 1.67,
+      "beta": 0.229,
+      "turnover_cr": 1058.2
     },
     {
       "symbol": "MANAPPURAM",
       "lender": true,
       "tradable": true,
-      "prev_close": 267.5,
-      "gap_pct": 1.33,
-      "beta": 0.411,
-      "turnover_cr": 230.9
+      "prev_close": 270.0,
+      "gap_pct": 1.52,
+      "beta": 0.413,
+      "turnover_cr": 233.9
     },
     {
       "symbol": "MOTISONS",
       "lender": false,
       "tradable": false,
-      "prev_close": 12.82,
-      "gap_pct": 0.39,
+      "prev_close": 12.97,
+      "gap_pct": 2.16,
       "beta": 0.118,
-      "turnover_cr": 32.2
+      "turnover_cr": 29.6
     },
     {
       "symbol": "MUTHOOTFIN",
       "lender": true,
       "tradable": true,
-      "prev_close": 2549.6,
-      "gap_pct": 1.19,
-      "beta": 0.505,
-      "turnover_cr": 291.3
+      "prev_close": 2558.0,
+      "gap_pct": 2.34,
+      "beta": 0.507,
+      "turnover_cr": 303.1
     },
     {
       "symbol": "PCJEWELLER",
       "lender": false,
       "tradable": false,
-      "prev_close": 14.1,
-      "gap_pct": 0.0,
-      "beta": 0.182,
-      "turnover_cr": 651.5
+      "prev_close": 14.16,
+      "gap_pct": 0.99,
+      "beta": 0.181,
+      "turnover_cr": 589.3
     },
     {
       "symbol": "PNGJL",
       "lender": false,
       "tradable": true,
-      "prev_close": 558.0,
-      "gap_pct": 0.36,
-      "beta": 0.199,
-      "turnover_cr": 29.0
+      "prev_close": 569.35,
+      "gap_pct": 0.11,
+      "beta": 0.197,
+      "turnover_cr": 28.9
     },
     {
       "symbol": "RAJESHEXPO",
@@ -147,64 +147,64 @@
       "symbol": "SENCO",
       "lender": false,
       "tradable": true,
-      "prev_close": 314.0,
-      "gap_pct": 0.64,
+      "prev_close": 304.45,
+      "gap_pct": 0.1,
       "beta": 0.255,
-      "turnover_cr": 47.1
+      "turnover_cr": 47.7
     },
     {
       "symbol": "SHANTIGOLD",
       "lender": false,
       "tradable": true,
-      "prev_close": 208.2,
-      "gap_pct": -1.01,
-      "beta": 0.192,
-      "turnover_cr": 48.2
+      "prev_close": 221.35,
+      "gap_pct": 1.58,
+      "beta": 0.189,
+      "turnover_cr": 47.3
     },
     {
       "symbol": "SKYGOLD",
       "lender": false,
       "tradable": true,
-      "prev_close": 802.3,
-      "gap_pct": 0.46,
-      "beta": 0.16,
-      "turnover_cr": 166.4
+      "prev_close": 808.9,
+      "gap_pct": 0.75,
+      "beta": 0.161,
+      "turnover_cr": 143.3
     },
     {
       "symbol": "TBZ",
       "lender": false,
       "tradable": false,
-      "prev_close": 513.7,
+      "prev_close": 539.35,
       "gap_pct": null,
-      "beta": 0.206,
-      "turnover_cr": 8.4
+      "beta": 0.201,
+      "turnover_cr": 8.1
     },
     {
       "symbol": "THANGAMAYL",
       "lender": false,
       "tradable": true,
-      "prev_close": 3842.6,
-      "gap_pct": -0.07,
-      "beta": 0.191,
-      "turnover_cr": 37.1
+      "prev_close": 3950.0,
+      "gap_pct": -0.1,
+      "beta": 0.189,
+      "turnover_cr": 37.5
     },
     {
       "symbol": "TITAN",
       "lender": false,
       "tradable": true,
-      "prev_close": 4686.6,
-      "gap_pct": 0.01,
+      "prev_close": 4631.1,
+      "gap_pct": 0.73,
       "beta": 0.154,
-      "turnover_cr": 534.3
+      "turnover_cr": 539.3
     },
     {
       "symbol": "VAIBHAVGBL",
       "lender": false,
       "tradable": false,
-      "prev_close": 156.43,
-      "gap_pct": 0.36,
-      "beta": 0.278,
-      "turnover_cr": 9.2
+      "prev_close": 156.03,
+      "gap_pct": 0.01,
+      "beta": 0.279,
+      "turnover_cr": 9.0
     }
   ],
   "rules": {
@@ -217,7 +217,6 @@
   "opens_from": "pre-open auction (NSE)",
   "publisher": "github-actions",
   "published": {
-    "preopen": "2026-11-26T09:02:50+05:30",
-    "open": "2026-11-26T09:16:00+05:30"
+    "open": "2026-11-27T09:16:00+05:30"
   }
 }
